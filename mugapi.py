@@ -7,17 +7,46 @@ import meetup.api
 import pymongo
 import datetime
 
-class Mug_Audit(object):
+
+
+class MUG_API(object):
     '''
     classdocs
     '''
 
-
-    def __init__(self, params):
+    API_KEY = "4a1e51774664e3412136d6457522120"
+    
+    def __init__(self, api_key =  API_KEY  ):
         '''
         Constructor
         '''
-        pass
+        self._meetup_client = meetup.api.Client( api_key )
+ 
+        
+    def get_mugs( self, member_id ):
+        '''
+         Get a list of all the MUGS that a user is registered for.
+         '''
+        
+        groups = self._meetup_client.GetGroups({'member_id': member_id } )
+            
+        return groups.results
+    
+    
+    def get_events(self, group_id, status="upcoming" ):
+        
+        events = self._meetup_client.GetEvents( { "group_id" : group_id, "status" : status }) 
+        
+        return events[ "results" ]
+        
+    def get_members(self, group_id ):
+        
+        members = self._meetup_client.GetMembers( { "group_id" : group_id })
+        
+        
+        
+        
+        
         
        
 import pprint
@@ -29,9 +58,9 @@ if __name__ == "__main__" :
                      "DublinMUG"                  : None, 
                      "Paris-MongoDB-User-Group"   : None }
     
-    meetup_API_key = "4a1e51774664e3412136d6457522120"
+
     
-    client = meetup.api.Client( meetup_API_key )
+    client = meetup.api.Client( meetup_API_key  )
     
     mclient = pymongo.MongoClient()
     db = mclient.MUGAudit
