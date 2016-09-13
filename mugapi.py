@@ -14,7 +14,6 @@ class MUG_API(object):
     classdocs
     '''
 
-    API_KEY = "4a1e51774664e3412136d6457522120"
     
     def __init__(self, api_key =  API_KEY  ):
         '''
