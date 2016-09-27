@@ -5,9 +5,16 @@ Created on 26 Sep 2016
 '''
 from mugalyser import MUGAlyser
 from apikey import MEETUP_API_KEY
-import pprint
-import json
 
+def count( gen ):
+    
+    total=0
+    
+    for i in gen :
+        print( "Batch size  : %i" % len( i ))
+        total = total + len( i )
+        print( "Total batch : %i" % total )
+        
 if __name__ == '__main__':
     
     mlyser = MUGAlyser( api_key = MEETUP_API_KEY )
@@ -19,14 +26,15 @@ if __name__ == '__main__':
 
     events = mlyser.get_past_events( "DublinMUG" )
     
+    for i in events:
+        print( i[ 'name' ] )
+    
+    count( events )
     #pprint.pprint( events[0] )
     
     members = mlyser.get_members( "DublinMUG" )
     
-    total = 0
-    for batch in members :
-        print( "Batch size  : %i" % len( batch ))
-        total = total + len( batch )
-        print( "Total batch : %i" % total )
+    count( members )
+
 
     
