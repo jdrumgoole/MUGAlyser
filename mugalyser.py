@@ -6,21 +6,91 @@ Created on 6 Sep 2016
 import meetup.api
 import pymongo
 import datetime
+import requests
+import json
+
+from copy import deepcopy
+
+from   apikey import MEETUP_API_KEY
 
 
+def convert( meetupObj ):
+    
+    retVal = {}
+    for i in dir( meetupObj  ) :
+        if not i.startswith( "__"):
+            obj = getattr( meetupObj, i, None )
+            retVal[ i ] = obj
+            
+    return retVal
 
-class MUG_API(object):
+
+def returnData( r, returnText = False ):
+    if r.raise_for_status() is None:
+        if returnText :
+            return r.text
+        else:
+            return r.json()[ "results" ]
+        
+class MUGAlyser(object):
     '''
     classdocs
     '''
 
-    
-    def __init__(self, api_key =  API_KEY  ):
+
+    def __init__(self, api_key = MEETUP_API_KEY ):
         '''
         Constructor
         '''
-        self._meetup_client = meetup.api.Client( api_key )
- 
+        
+        self._api = "https://api.meetup.com/"
+        self._params = {}
+        self._params[ "key" ] = api_key
+        self._params[ "sign"] = "true"
+        
+
+    def get_group(self, url_name, returnText=False ):
+        
+        params = deepcopy( self._params )
+        
+        r = requests.get( self._api + url_name, params = params )
+        
+        if r.raise_for_status() is None:
+            if returnText :
+                return r.text
+            else:
+                return r.json()
+            
+    def get_past_events(self, url_name,returnText=False):
+        
+        params = deepcopy( self._params )
+        params[ "status" ] = "past"
+        params[ "page"]    = "20"
+        r = requests.get( self._api + url_name + "/events", params = params )
+        
+        if r.raise_for_status() is None:
+            if returnText :
+                return r.text
+            else:
+                return r.json()
+    
+    
+    def get_members(self, url_name, items=100, returnText=False ):
+        
+        params = deepcopy( self._params )
+        params[ "group_urlname" ] = url_name
+        params[ "page"]    = str( items )
+
+        r = requests.get( self._api + "2/members", params = params )
+        print( r.url )
+        meta = r.json()[ "meta"]
+
+        yield returnData( r, returnText )
+
+        while meta[ "next" ] != "" :
+            nextBatch = requests.get( meta[ 'next' ])
+            meta = nextBatch.json()["meta"]
+            yield returnData( nextBatch, returnText )        
         
     def get_mugs( self, member_id ):
         '''
@@ -30,20 +100,6 @@ class MUG_API(object):
         groups = self._meetup_client.GetGroups({'member_id': member_id } )
             
         return groups.results
-    
-    
-    def get_events(self, group_id, status="upcoming" ):
-        
-        events = self._meetup_client.GetEvents( { "group_id" : group_id, "status" : status }) 
-        
-        return events[ "results" ]
-        
-    def get_members(self, group_id ):
-        
-        members = self._meetup_client.GetMembers( { "group_id" : group_id })
-        
-        
-        
         
         
         
