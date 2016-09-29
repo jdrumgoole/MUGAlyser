@@ -6,6 +6,8 @@ Created on 26 Sep 2016
 from mugalyser import MUGAlyser
 from apikey import MEETUP_API_KEY
 
+import pprint 
+
 def count( gen ):
     
     total=0
@@ -33,7 +35,7 @@ if __name__ == '__main__':
     #pprint.pprint( events[0] )
     
     members = mlyser.get_members( "DublinMUG" )
-    
+    pprint.pprint( dir ( group ))
     count( members )
 
 

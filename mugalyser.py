@@ -3,16 +3,12 @@ Created on 6 Sep 2016
 
 @author: jdrumgoole
 '''
-import meetup.api
-import pymongo
-import datetime
+
 import requests
-
-
+import logging
 from copy import deepcopy
 
 from apikey import MEETUP_API_KEY
-
 
 def convert( meetupObj ):
     
@@ -35,17 +31,36 @@ def returnData( r, returnText = False ):
 def listinator( l ):
     for i in l :
         yield i
+
+def reshapeGeospatial( doc ):
+    doc[ "location" ] = { "type" : "Point", "coordinates": [ doc[ "lon"], doc[ "lat"] ] }
+    del doc[ 'lat']
+    del doc[ 'lon']
+    return doc 
+
+def unpackMembers( members ):
     
+    for i in members :
+        # Can't use full stops in MDB keys
+        yield reshapeGeospatial( i )
+
+def noop( d ):
+    return d
+        
 def paginator( r, returnText = False ):
     
     meta = r.json()[ "meta"]
-
-    yield returnData( r, returnText )
-
-    while meta[ "next" ] != "" :
-        nextBatch = requests.get( meta[ 'next' ])
-        meta = nextBatch.json()["meta"]
-        yield returnData( nextBatch, returnText ) 
+    
+    if meta:
+        yield returnData( r, returnText )
+    
+        while meta[ "next" ] != "" :
+            nextBatch = requests.get( meta[ 'next' ])
+            meta = nextBatch.json()["meta"]
+            
+            yield returnData( nextBatch, returnText )
+    else:
+        yield returnData( r, returnText )
         
 class MUGAlyser(object):
     '''
@@ -76,10 +91,9 @@ class MUGAlyser(object):
             else:
                 return r.json()
             
-    def makeRequest(self, req, params, log=True):
+    def makeRequest(self, req, params ):
         r = requests.get( req, params=params )
-        if log:
-            print( "request: '%s'" % r.url )
+        logging.debug( "request: '%s'" % r.url )
             
         if r.raise_for_status() is None:
             return r
@@ -91,11 +105,21 @@ class MUGAlyser(object):
         params[ "status" ] = "past"
         params[ "page"]    = str( items )
         
-        #r = self.makeRequest( self._api + url_name + "/events", params = params )
-        r = requests.get( self._api + url_name + "/events", params = params )
-        print( "request: '%s'" % r.url )
+        r = self.makeRequest( self._api + url_name + "/events", params = params )
+        #r = requests.get( self._api + url_name + "/events", params = params )
+        #print( "request: '%s'" % r.url )
         return listinator( r.json() )
 
+    def get_upcoming_events(self, url_name, items=200 ):
+        
+        params = deepcopy( self._params )
+        params[ "status" ] = "upcoming"
+        params[ "page"]    = str( items )
+        
+        r = self.makeRequest( self._api + url_name + "/events", params = params )
+        #r = requests.get( self._api + url_name + "/events", params = params )
+        #print( "request: '%s'" % r.url )
+        return listinator( r.json() )
     
     def get_members(self, url_name, items=100, returnText=False ):
         
@@ -103,9 +127,9 @@ class MUGAlyser(object):
         params[ "group_urlname" ] = url_name
         params[ "page"]    = str( items )
 
+        logging.debug( "get_members")
         r = self.makeRequest( self._api + "2/members", params = params )
         #r = requests.get( self._api + "2/members", params = params )
-
-        return paginator( r, returnText )
         
+        return unpackMembers( r.json()[ "results"] )
     

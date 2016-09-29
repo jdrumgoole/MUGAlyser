@@ -9,12 +9,11 @@ import logging
 
 class MUGAlyserMongoDB( object ):
     
-    def __init__(self, host, port, databaseName, collectionName, 
+    def __init__(self, host, port, databaseName, 
                  username=None, password=None, ssl=False, admindb="admin"):
         self._host = host
         self._port = port
         self._databaseName = databaseName
-        self._collectionName = collectionName
         self._database = None
         self._collection = None
         self._username = username
@@ -39,14 +38,30 @@ class MUGAlyserMongoDB( object ):
             else:
                 logging.error( "login failed for %s (method SCRAM-SHA-1)", self._username )
                 
-        self._audit = self._database[ "audit" ]
-        self._users = self._database[ "users" ]
-        self._mugs  = self._database[ "MUGS" ]
-        self._events = self._database[ "events" ]
+        self._audit           = self._database[ "audit" ]
+        self._members         = self._database[ "members" ]
+        self._groups          = self._database[ "groups" ]
+        self._pastEvents      = self._database[ "past_events" ]
+        self._upcomingEvents  = self._database[ "upcoming_events" ]
+        
+        self._members.create_index([("location", pymongo.GEOSPHERE)])
+        self._members.create_index([("name", pymongo.ASCENDING )])
         
     def auditCollection(self):
         return self._audit
+    
+    def pastEventsCollection(self):
+        return self._pastEvents
+    
+    def upcomingEventsCollection(self):
+        return self._upcomingEvents
+    
+    def groupsCollection(self):
+        return self._groups
 
+    def membersCollection(self):
+        return self._members
+    
     def database(self):
         return self._database
     

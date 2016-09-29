@@ -3,10 +3,6 @@
 '''
 mugalyser_main -- Grab MUG Stats and stuff them into a MongoDB Database
 
-
-
-
-
 @author:     Joe.Drumgoole@mongodb.com
 
 @license:    AFGPL
@@ -19,9 +15,11 @@ import re
 from datetime import datetime
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
+import logging
+from apikey import MEETUP_API_KEY
 
 from mongodb import MUGAlyserMongoDB
-from pydoc import Doc
+from mugalyser import MUGAlyser
 from traceback import print_exception
 
 __version__ = 0.1
@@ -30,31 +28,39 @@ DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
-def addTimestamp( doc, ts=None ):
-    
+def insertTimestamp( doc, ts=None ):
     if ts :
-        doc[ "timestamp"] = ts
+        doc[ "timestamp" ] = ts
     else:
-        doc[ "timestamp"] = datetime.now()
+        doc[ "timestamp" ] = datetime.now()
         
-    return Doc
+    return doc
+  
+    
+def addTimestamp( name, doc, ts=None ):
+    
+    tsDoc = { name : doc, "timestamp" : None }
+    return insertTimestamp( tsDoc, ts )
 
 def getMugs( mugfile, collection ):
     
     frontCommentRegex = re.compile( '^\s*#' )
     MUGS = []
     
-    with open( mugfile ) as inputFile :
-        for line in inputFile:
-            if not frontCommentRegex.match( line ):
-                MUGS.append( line )
-                
-    collection.insert_one( { "MUGS" : MUGS })
+    try:
+        with open( mugfile ) as inputFile :
+            for line in inputFile:
+                if not frontCommentRegex.match( line ):
+                    MUGS.append( line.rstrip())
+                    
+        collection.insert_one( addTimestamp( "MUGS" , MUGS))
+        
+    except IOError:
+        print( "Can't open file: '%s'" % mugfile )
+        sys.exit( 2 )
     
     return MUGS
-                
-             
-        
+                 
 class CLIError(Exception):
     '''Generic exception to raise and log different fatal errors.'''
     def __init__(self, msg):
@@ -66,8 +72,29 @@ class CLIError(Exception):
         return self.msg
 
 
-def StartSnapshot( collection ):
-    pass
+def processMUG( urlName, mdb ):
+    
+    mlyser = MUGAlyser( MEETUP_API_KEY )
+    logging.info( "Processing: '%s'" % urlName )
+    group = mlyser.get_group( urlName )
+    
+    mdb.groupsCollection().insert_one( addTimestamp( "group", group ))
+    
+    pastEvents = mlyser.get_past_events( urlName )
+    
+    for i in pastEvents:
+        mdb.pastEventsCollection().insert_one( addTimestamp( "event", i ))
+        
+    upcomingEvents = mlyser.get_upcoming_events( urlName )
+    
+    for i in upcomingEvents:
+        mdb.upcomingEventsCollection().insert_one( addTimestamp( "event", i ))
+    members = mlyser.get_members( urlName )
+        
+    for i in members :
+        mdb.membersCollection().insert_one( insertTimestamp( i ))
+        
+    return group
 
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
@@ -114,22 +141,37 @@ USAGE
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
         parser.add_argument('--capture', default=False, action='store_true', help="Capture a snapshot of data")
         parser.add_argument( '--mugfile', default="MUGS", help='List of MUGs stored in [default: %(default)s]')
+        parser.add_argument( '--mug', default="", help='Process a single MUG [default: %(default)s]')
+        
+        parser.add_argument( '--loglevel', default="DEBUG", help='Logging level [default: %(default)s]')
         # Process arguments
         args = parser.parse_args()
 
         verbose = args.verbose
 
+        
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        root.addHandler(ch)
+        
         if verbose > 0:
-            print("Verbose mode on")
+            logging.info("Verbose mode on")
             
         if args.capture :
-            mlyser = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
-            mlyser.connect()
-            StartSnapshot( mlyser.auditCollection )
+            mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
+            mdb.connect()
             
-        if args.mugfile :
-            getMugs( args.mugfile, mlyser.auditCollection())
-            
+            if args.mug :
+                processMUG( args.mug, mdb )
+            elif args.mugfile :
+                muglist = getMugs( args.mugfile, mdb.auditCollection())
+                for i in muglist :
+                    processMUG( i, mdb )
 
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
