@@ -36,6 +36,8 @@ def insertTimestamp( doc, ts=None ):
         
     return doc
   
+def newSnapShot(mdb ):
+    mdb.adminCollection.findOne(  { "name" : "admin" } )
     
 def addTimestamp( name, doc, ts=None ):
     
@@ -92,7 +94,8 @@ def processMUG( urlName, mdb ):
     members = mlyser.get_members( urlName )
         
     for i in members :
-        mdb.membersCollection().insert_one( insertTimestamp( i ))
+        #print( "Adding: %s" % i[ 'name'] )
+        mdb.membersCollection().insert_one( addTimestamp( "member",  i ))
         
     return group
 
@@ -143,7 +146,7 @@ USAGE
         parser.add_argument( '--mugfile', default="MUGS", help='List of MUGs stored in [default: %(default)s]')
         parser.add_argument( '--mug', default="", help='Process a single MUG [default: %(default)s]')
         
-        parser.add_argument( '--loglevel', default="DEBUG", help='Logging level [default: %(default)s]')
+        parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
         # Process arguments
         args = parser.parse_args()
 
