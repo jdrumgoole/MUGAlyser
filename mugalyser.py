@@ -25,10 +25,6 @@ def returnData( r ):
     if r.raise_for_status() is None:
         return r.json()
         
-def listinator( ):
-    for i in l :
-        
-        yield i
 
 def reshapeGeospatial( doc ):
     doc[ "location" ] = { "type" : "Point", "coordinates": [ doc[ "lon"], doc[ "lat"] ] }

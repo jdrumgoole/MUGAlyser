@@ -28,6 +28,31 @@ DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
+
+class AuditDB( object ):
+    
+    def __init__(self, auditCollection ):
+        self._auditCollection = auditCollection
+        self._batchID = self._auditCollection.find_one( { "name": "BatchID"})
+        
+        if self._batchID is None:
+            self._batchID = {}
+            self._batchID[ "name"] = "BatchID"
+            self._batchID[ "ID" ] = 1
+        
+    def incrementBatchID(self):
+        
+        self._batchID[ "ID" ] = self._batchID[ "ID" ]  + 1
+        self._batchID[ "timestamp" ] = datetime.now()
+        self._auditCollection.update( { "name" : "BatchID"}, self._batchID, upsert=True) 
+        
+    def auditCollection(self):
+        return self._auditCollection
+    
+    def batchID(self):
+        return self._batchID[ "ID"]
+    
+                
 def insertTimestamp( doc, ts=None ):
     if ts :
         doc[ "timestamp" ] = ts
@@ -36,15 +61,14 @@ def insertTimestamp( doc, ts=None ):
         
     return doc
   
-def newSnapShot(mdb ):
-    mdb.adminCollection.findOne(  { "name" : "admin" } )
+
     
-def addTimestamp( name, doc, ts=None ):
+def addTimestamp( audit, name, doc, ts=None ):
     
-    tsDoc = { name : doc, "timestamp" : None }
+    tsDoc = { name : doc, "timestamp" : None, "batchID": audit.batchID()}
     return insertTimestamp( tsDoc, ts )
 
-def getMugs( mugfile, collection ):
+def getMugs( mugfile, audit ):
     
     frontCommentRegex = re.compile( '^\s*#' )
     MUGS = []
@@ -55,7 +79,7 @@ def getMugs( mugfile, collection ):
                 if not frontCommentRegex.match( line ):
                     MUGS.append( line.rstrip())
                     
-        collection.insert_one( addTimestamp( "MUGS" , MUGS))
+        audit.auditCollection().insert_one( addTimestamp( audit, "MUGS" , MUGS))
         
     except IOError:
         print( "Can't open file: '%s'" % mugfile )
@@ -74,28 +98,29 @@ class CLIError(Exception):
         return self.msg
 
 
-def processMUG( urlName, mdb ):
+def processMUG( urlName, mdb, audit ):
     
     mlyser = MUGAlyser( MEETUP_API_KEY )
     logging.info( "Processing: '%s'" % urlName )
+    
     group = mlyser.get_group( urlName )
     
-    mdb.groupsCollection().insert_one( addTimestamp( "group", group ))
+    mdb.groupsCollection().insert_one( addTimestamp( audit, "group", group))
     
     pastEvents = mlyser.get_past_events( urlName )
     
     for i in pastEvents:
-        mdb.pastEventsCollection().insert_one( addTimestamp( "event", i ))
+        mdb.pastEventsCollection().insert_one( addTimestamp( audit, "event", i ))
         
     upcomingEvents = mlyser.get_upcoming_events( urlName )
     
     for i in upcomingEvents:
-        mdb.upcomingEventsCollection().insert_one( addTimestamp( "event", i ))
+        mdb.upcomingEventsCollection().insert_one( addTimestamp( audit, "event", i ))
     members = mlyser.get_members( urlName )
         
     for i in members :
         #print( "Adding: %s" % i[ 'name'] )
-        mdb.membersCollection().insert_one( addTimestamp( "member",  i ))
+        mdb.membersCollection().insert_one( addTimestamp(  audit, "member",  i ))
         
     return group
 
@@ -142,9 +167,9 @@ USAGE
         #
         parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
-        parser.add_argument('--capture', default=False, action='store_true', help="Capture a snapshot of data")
-        parser.add_argument( '--mugfile', default="MUGS", help='List of MUGs stored in [default: %(default)s]')
-        parser.add_argument( '--mug', default="", help='Process a single MUG [default: %(default)s]')
+        parser.add_argument('--capture', default=True, action='store_true', help="Capture a snapshot of data")
+        parser.add_argument( '--mugfile', help='List of MUGs stored in [default: %(default)s]')
+        parser.add_argument( '--mug', help='Process a single MUG [default: %(default)s]')
         
         parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
         # Process arguments
@@ -154,13 +179,15 @@ USAGE
 
         
         root = logging.getLogger()
-        root.setLevel(logging.DEBUG)
+        root.setLevel(logging.INFO)
 
         ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
         root.addHandler(ch)
+        
+
         
         if verbose > 0:
             logging.info("Verbose mode on")
@@ -169,12 +196,15 @@ USAGE
             mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
             mdb.connect()
             
+
+            audit = AuditDB( mdb.auditCollection())
+            audit.incrementBatchID()
             if args.mug :
-                processMUG( args.mug, mdb )
+                processMUG( args.mug, mdb, audit )
             elif args.mugfile :
-                muglist = getMugs( args.mugfile, mdb.auditCollection())
+                muglist = getMugs( args.mugfile, audit )
                 for i in muglist :
-                    processMUG( i, mdb )
+                    processMUG( i, mdb, audit )
 
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
