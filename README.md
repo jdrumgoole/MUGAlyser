@@ -1,5 +1,7 @@
 # MUGAlyser
 
+VERSION : 0.5 beta
+
 MUGAlyser is a python program that uses the Meetup API to extract longitudinal data from the Meetup website for a collection of meetup
 groups. Its designed to capture MongoDB meetup information but it could be used to collect data on any group of meetups by changing the
 list of urlnames in the MUGFILE.
@@ -8,6 +10,9 @@ It puts the data in a MongoDB database. There are seperate collections for group
 
 There is also an audit collection which tracks when the data was collected. Each record is associated with a Batch ID which is
 tracked in the audit collection.
+
+This is beta software. Not all combinations of options have been tested. Specifically I haven't tested 
+usernames and passwords for the db yet.
 
 
 ```
