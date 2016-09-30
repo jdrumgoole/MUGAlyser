@@ -10,7 +10,7 @@ There is also an audit collection which tracks when the data was collected. Each
 tracked in the audit collection.
 
 
-'''
+```
 JD10Gen-old:MUGAlyser jdrumgoole$ python mugalyser_main.py -h
 usage: mugalyser_main.py [-h] [--database DATABASE] [--host HOST]
                          [--port PORT] [--username USERNAME]
@@ -44,4 +44,4 @@ optional arguments:
   --trialrun           Trial run, no updates [default: False]
   --loglevel LOGLEVEL  Logging level [default: INFO]
 JD10Gen-old:MUGAlyser jdrumgoole$ 
-'''
+```

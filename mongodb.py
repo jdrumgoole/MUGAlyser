@@ -7,6 +7,7 @@ Created on 22 Jun 2016
 import pymongo
 import logging
 
+
 class MUGAlyserMongoDB( object ):
     
     def __init__(self, host, port, databaseName, 
@@ -19,12 +20,16 @@ class MUGAlyserMongoDB( object ):
         self._username = username
         self._password = password
         self._ssl = ssl
-        self._admindb = admindb
         self._logger = logging.getLogger( databaseName )
-    
+        self._admindb = admindb
+        self._client = None
+        self._members         = None
+        self._groups          = None
+        self._pastEvents      = None
+        self._upcomingEvents  = None
+        
     def connect(self, source=None):
         
-        admindb = self._admindb
         if source:
             admindb = source
             
@@ -38,7 +43,6 @@ class MUGAlyserMongoDB( object ):
             else:
                 logging.error( "login failed for %s (method SCRAM-SHA-1)", self._username )
                 
-        self._audit           = self._database[ "audit" ]
         self._members         = self._database[ "members" ]
         self._groups          = self._database[ "groups" ]
         self._pastEvents      = self._database[ "past_events" ]
@@ -46,10 +50,9 @@ class MUGAlyserMongoDB( object ):
         
         self._members.create_index([("location", pymongo.GEOSPHERE)])
         self._members.create_index([("name", pymongo.ASCENDING )])
-
-    def auditCollection(self):
-        return self._audit
     
+    def database(self) :
+        return self._database
     def pastEventsCollection(self):
         return self._pastEvents
     

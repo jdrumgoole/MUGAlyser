@@ -16,42 +16,20 @@ from datetime import datetime
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
-from apikey import MEETUP_API_KEY
-
-from mongodb import MUGAlyserMongoDB
-from mugalyser import MUGAlyser
 from traceback import print_exception
 
-__version__ = 0.1
+from apikey import MEETUP_API_KEY
+from audit import AuditDB
+from mongodb import MUGAlyserMongoDB
+from mugalyser import MUGAlyser
+
+
+__version__ = "0.5 beta"
 
 DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
-
-class AuditDB( object ):
-    
-    def __init__(self, auditCollection ):
-        self._auditCollection = auditCollection
-        self._batchID = self._auditCollection.find_one( { "name": "BatchID"})
-        
-        if self._batchID is None:
-            self._batchID = {}
-            self._batchID[ "name"] = "BatchID"
-            self._batchID[ "ID" ] = 1
-        
-    def incrementBatchID(self):
-        
-        self._batchID[ "ID" ] = self._batchID[ "ID" ]  + 1
-        self._batchID[ "timestamp" ] = datetime.now()
-        self._auditCollection.update( { "name" : "BatchID"}, self._batchID, upsert=True) 
-        
-    def auditCollection(self):
-        return self._auditCollection
-    
-    def batchID(self):
-        return self._batchID[ "ID"]
-    
                 
 def insertTimestamp( doc, ts=None ):
     if ts :
@@ -68,7 +46,7 @@ def addTimestamp( audit, name, doc, ts=None ):
     tsDoc = { name : doc, "timestamp" : None, "batchID": audit.batchID()}
     return insertTimestamp( tsDoc, ts )
 
-def getMugs( mugfile, audit ):
+def getMugs( mugfile ):
     
     frontCommentRegex = re.compile( '^\s*#' )
     MUGS = []
@@ -78,8 +56,6 @@ def getMugs( mugfile, audit ):
             for line in inputFile:
                 if not frontCommentRegex.match( line ):
                     MUGS.append( line.rstrip())
-                    
-        audit.auditCollection().insert_one( addTimestamp( audit, "MUGS" , MUGS))
         
     except IOError:
         print( "Can't open file: '%s'" % mugfile )
@@ -167,9 +143,9 @@ USAGE
         #
         parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
-        parser.add_argument('--capture', default=True, action='store_true', help="Capture a snapshot of data")
         parser.add_argument( '--mugfile', help='List of MUGs stored in [default: %(default)s]')
         parser.add_argument( '--mug', help='Process a single MUG [default: %(default)s]')
+        parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
         
         parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
         # Process arguments
@@ -187,24 +163,32 @@ USAGE
         ch.setFormatter(formatter)
         root.addHandler(ch)
         
-
-        
         if verbose > 0:
             logging.info("Verbose mode on")
             
-        if args.capture :
-            mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
-            mdb.connect()
+        mugList = []
+        if args.mugfile:
+            mugList = getMugs( args.mugfile )
             
+        if args.mug :
+            mugList.append( args.mug )
 
-            audit = AuditDB( mdb.auditCollection())
-            audit.incrementBatchID()
-            if args.mug :
-                processMUG( args.mug, mdb, audit )
-            elif args.mugfile :
-                muglist = getMugs( args.mugfile, audit )
-                for i in muglist :
-                    processMUG( i, mdb, audit )
+        mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
+        mdb.connect()
+            
+        audit = AuditDB( mdb )
+        audit.startBatch( args.trialrun,
+                         { "args"    : vars( args ), 
+                           "MUGS"    : mugList, 
+                           "version" : program_name + " " + __version__ })
+        
+        for i in mugList :
+            if args.trialrun:
+                pass
+            else:
+                processMUG( i, mdb, audit )
+                
+        audit.endBatch()
 
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###

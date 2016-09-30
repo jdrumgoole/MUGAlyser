@@ -25,37 +25,34 @@ def returnData( r ):
     if r.raise_for_status() is None:
         return r.json()
         
-
 def reshapeGeospatial( doc ):
-    doc[ "location" ] = { "type" : "Point", "coordinates": [ doc[ "lon"], doc[ "lat"] ] }
+    doc[ "location" ] = { "type" : "Point", "coordinates": [ doc["lon"], doc["lat" ]] }
     del doc[ 'lat']
     del doc[ 'lon']
     return doc 
 
-def unpackMembers( members ):
-    
-    for i in members :
-        # Can't use full stops in MDB keys
-        yield reshapeGeospatial( i )
 
 def noop( d ):
     return d
         
-def paginator( r ):
+def paginator( r, func=None):
     
+    if func is None:
+        func = noop
+        
     data = r.json()
     #pprint.pprint( data )
     
     if data[ 'meta' ]:
         for i in data[ "results"]:
-            yield i
+            yield func( i )
     
         while data[ 'meta' ][ "next" ] != "" :
             nextBatch = requests.get( data['meta'][ 'next' ])
             data = nextBatch.json()
         
             for i in data[ "results"]:
-                yield i
+                yield  func( i )
     else:
         yield r 
         
@@ -115,7 +112,7 @@ class MUGAlyser(object):
         
         r = self.makeRequest( self._api + "2/events", params = params )
         #r = requests.get( self._api + url_name + "/events", params = params )
-        print( "request: '%s'" % r.url )
+        #print( "request: '%s'" % r.url )
         return paginator( r )
     
     def get_members(self, url_name, items=100, returnText=False ):
@@ -128,6 +125,6 @@ class MUGAlyser(object):
         r = self.makeRequest( self._api + "2/members", params = params )
         #r = requests.get( self._api + "2/members", params = params )
         
-        return paginator( r )
+        return paginator( r, reshapeGeospatial )
     
 
