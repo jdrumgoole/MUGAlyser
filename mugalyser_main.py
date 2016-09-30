@@ -142,7 +142,7 @@ USAGE
         # Program args
         #
         parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
-        parser.add_argument('-V', '--version', action='version', version=program_version_message)
+        parser.add_argument('-V', '--version', action='version', version="hello" )
         parser.add_argument( '--mugfile', help='List of MUGs stored in [default: %(default)s]')
         parser.add_argument( '--mug', help='Process a single MUG [default: %(default)s]')
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')

@@ -53,6 +53,7 @@ class MUGAlyserMongoDB( object ):
     
     def database(self) :
         return self._database
+    
     def pastEventsCollection(self):
         return self._pastEvents
     
@@ -64,7 +65,4 @@ class MUGAlyserMongoDB( object ):
 
     def membersCollection(self):
         return self._members
-    
-    def database(self):
-        return self._database
     
