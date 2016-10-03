@@ -18,7 +18,12 @@ from argparse import RawDescriptionHelpFormatter
 import logging
 from traceback import print_exception
 
-from apikey import MEETUP_API_KEY
+try:
+    from apikey import MEETUP_API_KEY
+except ImportError,e :
+    print( "Failed to import apikey: have you run makeapikeyfile.py <APIKEY>")
+    sys.exit( 2 )
+
 from audit import AuditDB
 from mongodb import MUGAlyserMongoDB
 from mugalyser import MUGAlyser
@@ -200,6 +205,9 @@ USAGE
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help\n")
         return 2
+    except ImportError, e:
+        print( "e.detail:%s" % e.detail )
+        
 
 if __name__ == "__main__":
 
