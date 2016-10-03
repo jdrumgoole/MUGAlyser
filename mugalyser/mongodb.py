@@ -36,8 +36,8 @@ class MUGAlyserMongoDB( object ):
         self._database = self._client[ self._databaseName]
         
         if self._username :
-            self._admindb = self._client[ self._admin ]
-            if self._database.authenticate( name=self._username, password=self._password, source=self._admindb ):
+            #self._admindb = self._client[ self._admin ]
+            if self._database.authenticate( name=self._username, password=self._password, source=self._admin ):
 #            if self._database.authenticate( self._username, self._password, mechanism='MONGODB-CR'):
                 logging.debug( "successful login by %s (method SCRAM-SHA-1)", self._username )
             else:
