@@ -3,8 +3,8 @@ Created on 26 Sep 2016
 
 @author: jdrumgoole
 '''
-from mugalyser import MUGAlyser
-from apikey import MEETUP_API_KEY
+from mugalyser.mugalyser import MUGAlyser
+from mugalyser.apikey import MEETUP_API_KEY
 
 import pprint 
 
