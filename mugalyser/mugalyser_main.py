@@ -18,6 +18,8 @@ from argparse import RawDescriptionHelpFormatter
 import logging
 from traceback import print_exception
 
+import pymongo
+
 try:
     from apikey import MEETUP_API_KEY
 except ImportError,e :
@@ -142,7 +144,6 @@ USAGE
         parser.add_argument( '--password', default=None, help='password to login to database')
         parser.add_argument( '--admindb', default="admin", help="Admin database used for authentication [default: %(default)s]" )
         parser.add_argument( '--ssl', default=False, action="store_true", help='use SSL for connections')
-
         #
         # Program args
         #
@@ -198,6 +199,9 @@ USAGE
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
+    except pymongo.errors.ServerSelectionTimeoutError, e :
+        print( "Failed to connect to MongoDB Server (server timeout): %s" % e )
+        sys.exit( 2 )
     except Exception, e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print_exception( exc_type, exc_value, exc_traceback )
@@ -205,8 +209,7 @@ USAGE
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help\n")
         return 2
-    except ImportError, e:
-        print( "e.detail:%s" % e.detail )
+
         
 
 if __name__ == "__main__":
