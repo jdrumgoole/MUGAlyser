@@ -116,9 +116,7 @@ def main(argv=None): # IGNORE:C0111
         sys.argv.extend(argv)
 
     program_name = os.path.basename(sys.argv[0])
-    program_version = "v%s" % __version__
-    program_version_message = '%%(prog)s %s' % (program_version )
-    program_shortdesc = __import__('__main__').__doc__.split("\n")[1]
+    program_shortdesc = "A program to read data from the Meetup API into MongoDB"
     program_license = '''%s
 
   Licensed under the AFGPL
@@ -147,8 +145,8 @@ USAGE
         #
         # Program args
         #
-        parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
-        parser.add_argument('-V', '--version', action='version', version="hello" )
+        parser.add_argument( "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
+        parser.add_argument( "-v", "--version", action='version', version="MUGAlyser " + __version__ )
         parser.add_argument( '--mugfile', help='List of MUGs stored in [default: %(default)s]')
         parser.add_argument( '--mug', help='Process a single MUG [default: %(default)s]')
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
@@ -159,7 +157,6 @@ USAGE
 
         verbose = args.verbose
 
-        
         root = logging.getLogger()
         root.setLevel(logging.INFO)
 
