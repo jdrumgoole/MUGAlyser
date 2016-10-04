@@ -177,7 +177,6 @@ USAGE
             mugList.append( args.mug )
 
         mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
-        mdb.connect()
             
         audit = AuditDB( mdb )
         audit.startBatch( args.trialrun,

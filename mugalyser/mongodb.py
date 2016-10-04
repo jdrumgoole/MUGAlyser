@@ -10,8 +10,8 @@ import logging
 
 class MUGAlyserMongoDB( object ):
     
-    def __init__(self, host, port, databaseName, 
-                 username=None, password=None, ssl=False, admin="admin"):
+    def __init__(self, host="localhost", port=27017, databaseName="MUGS", 
+                 username=None, password=None, ssl=False, admin="admin", connect=True):
         self._host = host
         self._port = port
         self._databaseName = databaseName
@@ -28,6 +28,9 @@ class MUGAlyserMongoDB( object ):
         self._pastEvents      = None
         self._upcomingEvents  = None
         
+        if connect:
+            self.connect()
+            
     def connect(self ):
         
 
