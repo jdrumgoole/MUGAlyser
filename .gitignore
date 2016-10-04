@@ -92,4 +92,6 @@ ENV/
 #key file
 apikey.py
 
-
+.project
+.pydevproject
+.settings
