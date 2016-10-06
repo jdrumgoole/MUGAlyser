@@ -19,6 +19,10 @@ import logging
 from traceback import print_exception
 
 import pymongo
+import multiprocessing
+import time
+
+from requests import HTTPError
 
 try:
     from apikey import MEETUP_API_KEY
@@ -81,32 +85,54 @@ class CLIError(Exception):
         return self.msg
 
 
-def processMUG( urlName, mdb, audit ):
+def processMUG( args, urlName ):
     
+    mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
+    audit = AuditDB( mdb )
     mlyser = MUGAlyser( MEETUP_API_KEY )
     logging.info( "Processing: '%s'" % urlName )
     
-    group = mlyser.get_group( urlName )
-    
-    mdb.groupsCollection().insert_one( addTimestamp( audit, "group", group))
-    
-    pastEvents = mlyser.get_past_events( urlName )
-    
-    for i in pastEvents:
-        mdb.pastEventsCollection().insert_one( addTimestamp( audit, "event", i ))
+    try :
+        group = mlyser.get_group( urlName )
         
-    upcomingEvents = mlyser.get_upcoming_events( urlName )
-    
-    for i in upcomingEvents:
-        mdb.upcomingEventsCollection().insert_one( addTimestamp( audit, "event", i ))
-    members = mlyser.get_members( urlName )
+        mdb.groupsCollection().insert_one( addTimestamp( audit, "group", group))
         
-    for i in members :
-        #print( "Adding: %s" % i[ 'name'] )
-        mdb.membersCollection().insert_one( addTimestamp(  audit, "member",  i ))
+        pastEvents = mlyser.get_past_events( urlName )
         
-    return group
+        for i in pastEvents:
+            mdb.pastEventsCollection().insert_one( addTimestamp( audit, "event", i ))
+            
+        upcomingEvents = mlyser.get_upcoming_events( urlName )
+        
+        for i in upcomingEvents:
+            mdb.upcomingEventsCollection().insert_one( addTimestamp( audit, "event", i ))
+        members = mlyser.get_members( urlName )
+            
+        for i in members :
+            #print( "Adding: %s" % i[ 'name'] )
+            mdb.membersCollection().insert_one( addTimestamp(  audit, "member",  i ))
+        
+        return group
+    except HTTPError, e :
+        logging.fatal( "Stopped processing: %s" % urlName )
+        sys.exit( 2 )
+        
 
+def setLoggingLevel(  logger, level="WARN"):
+    
+    if level == "DEBUG" :
+        logger.SetLevel( logging.DEBUG )
+    elif level == "INFO" :
+        logger.setLevel( logging.INFO )
+    elif level == "WARNING" :
+        logger.setLevel( logging.WARNING )
+    elif level == "ERROR" :
+        logger.setLevel( logging.ERROR )
+    elif level == "CRITICAL" :
+        logger.setLevel( logging.CRITICAL )
+        
+    return logger  
+        
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
 
@@ -149,6 +175,7 @@ USAGE
         parser.add_argument( "-v", "--version", action='version', version="MUGAlyser " + __version__ )
         parser.add_argument( '--mugfile', help='List of MUGs stored in [default: %(default)s]')
         parser.add_argument( '--mug', help='Process a single MUG [default: %(default)s]')
+        parser.add_argument( "--wait", default=4, type=int, help='How long to wait between processing the next parallel MUG request [default: %(default)s]')
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
         
         parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
@@ -158,7 +185,7 @@ USAGE
         verbose = args.verbose
 
         root = logging.getLogger()
-        root.setLevel(logging.INFO)
+        setLoggingLevel( root, args.loglevel )
 
         ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(logging.DEBUG)
@@ -188,7 +215,11 @@ USAGE
             if args.trialrun:
                 pass
             else:
-                processMUG( i, mdb, audit )
+                p = multiprocessing.Process(target=processMUG, args=(args, i, ))
+                logging.info( "Starting job: %s" % i )
+                p.start()
+                time.sleep( args.wait )
+                #processMUG( args, i, mdb, audit )
                 
         audit.endBatch()
 

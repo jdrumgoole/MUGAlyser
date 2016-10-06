@@ -8,6 +8,7 @@ import requests
 import logging
 from copy import deepcopy
 
+
 from apikey import MEETUP_API_KEY
 
 def convert( meetupObj ):
@@ -25,22 +26,40 @@ def returnData( r ):
     if r.raise_for_status() is None:
         return r.json()
         
+def makeRequest( req, params=None ):
+    logger = logging.getLogger()
+    level = logger.getEffectiveLevel()
+    
+    logger.setLevel( logging.WARN )
+    
+    r = requests.get( req, params=params )
+    #logging.debug( "request: '%s'" % r.url )
+        
+    try:
+        return returnData( r )
+    except requests.HTTPError, e :
+
+        logger.error( "HTTP Error  : %s:" % e )
+        raise
+    finally:
+        logger.setLevel( level )
+        
 def reshapeGeospatial( doc ):
     doc[ "location" ] = { "type" : "Point", "coordinates": [ doc["lon"], doc["lat" ]] }
     del doc[ 'lat']
     del doc[ 'lon']
-    return doc 
+    return doc
 
 
 def noop( d ):
     return d
-        
+ 
 def paginator( r, func=None):
     
     if func is None:
         func = noop
         
-    data = r.json()
+    data = r
     #pprint.pprint( data )
     
     if data[ 'meta' ]:
@@ -48,8 +67,8 @@ def paginator( r, func=None):
             yield func( i )
     
         while data[ 'meta' ][ "next" ] != "" :
-            nextBatch = requests.get( data['meta'][ 'next' ])
-            data = nextBatch.json()
+            nextBatch = makeRequest( data['meta'][ 'next' ])
+            data = nextBatch
         
             for i in data[ "results"]:
                 yield  func( i )
@@ -60,7 +79,6 @@ class MUGAlyser(object):
     '''
     classdocs
     '''
-
 
     def __init__(self, api_key = MEETUP_API_KEY ):
         '''
@@ -77,19 +95,8 @@ class MUGAlyser(object):
         
         params = deepcopy( self._params )
         
-        r = requests.get( self._api + url_name, params = params )
-        
-        return returnData( r )
+        return makeRequest( self._api + url_name, params = params )  
 
-            
-    def makeRequest(self, req, params ):
-        r = requests.get( req, params=params )
-        logging.debug( "request: '%s'" % r.url )
-            
-        if r.raise_for_status() is None:
-            return r
-        
-        
     def get_past_events(self, url_name, items=20 ) :
         
         params = deepcopy( self._params )
@@ -98,7 +105,7 @@ class MUGAlyser(object):
         params[ "page" ]         = str( items )
         params[ "group_urlname"] = url_name
         
-        r = self.makeRequest( self._api + "2/events", params = params )
+        r = makeRequest( self._api + "2/events", params = params )
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
         return paginator( r )
@@ -110,10 +117,10 @@ class MUGAlyser(object):
         params[ "page"]    = str( items )
         params[ "group_urlname"] = url_name
         
-        r = self.makeRequest( self._api + "2/events", params = params )
+        r = makeRequest( self._api + "2/events", params = params )
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
-        return paginator( r )
+        return paginator( r  )
     
     def get_members(self, url_name, items=100, returnText=False ):
         
@@ -122,7 +129,7 @@ class MUGAlyser(object):
         params[ "page"]    = str( items )
 
         logging.debug( "get_members")
-        r = self.makeRequest( self._api + "2/members", params = params )
+        r = makeRequest( self._api + "2/members", params = params )
         #r = requests.get( self._api + "2/members", params = params )
         
         return paginator( r, reshapeGeospatial )

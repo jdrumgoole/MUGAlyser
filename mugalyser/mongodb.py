@@ -52,7 +52,7 @@ class MUGAlyserMongoDB( object ):
         self._upcomingEvents  = self._database[ "upcoming_events" ]
         
         self._members.create_index([("location", pymongo.GEOSPHERE)])
-        self._members.create_index([("name", pymongo.ASCENDING )])
+        self._members.create_index([("members.name", pymongo.ASCENDING )])
     
     def database(self) :
         return self._database
