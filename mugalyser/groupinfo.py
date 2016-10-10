@@ -26,13 +26,13 @@ if __name__ == '__main__':
         
         for i in args.hasgroup:
             if i in MUGS:
-                print( "{:30} :is a MongoDB MUG".format( i ))
+                print( "{:40} :is a MongoDB MUG".format( i ))
             else:
-                print( "{:30} :is not a MongoDB MUG".format( i ))
+                print( "{:40} :is not a MongoDB MUG".format( i ))
             
         if args.listgroups:
             for k,v in MUGS.iteritems():
-                print( "{:35} (location: {})".format( k,v["country"] ))
+                print( "{:40} (location: {})".format( k,v["country"] ))
             print( "%i total" % len( MUGS ))
             
         count = 0

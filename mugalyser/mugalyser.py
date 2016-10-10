@@ -80,7 +80,7 @@ class MUGAlyser(object):
     classdocs
     '''
 
-    def __init__(self, api_key = MEETUP_API_KEY ):
+    def __init__(self, api_key = MEETUP_API_KEY, ratePerHr = 200 ):
         '''
         Constructor
         '''
