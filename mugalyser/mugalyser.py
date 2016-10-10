@@ -39,7 +39,7 @@ def makeRequest( req, params=None ):
         return returnData( r )
     except requests.HTTPError, e :
 
-        logger.error( "HTTP Error  : %s:" % e )
+        logger.error( "HTTP Error  : %s:", e )
         raise
     finally:
         logger.setLevel( level )
@@ -80,7 +80,7 @@ class MUGAlyser(object):
     classdocs
     '''
 
-    def __init__(self, api_key = MEETUP_API_KEY, ratePerHr = 200 ):
+    def __init__(self, api_key = MEETUP_API_KEY ):
         '''
         Constructor
         '''
@@ -122,7 +122,7 @@ class MUGAlyser(object):
         #print( "request: '%s'" % r.url )
         return paginator( r  )
     
-    def get_members(self, url_name, items=100, returnText=False ):
+    def get_members(self, url_name, items=100 ):
         
         params = deepcopy( self._params )
         params[ "group_urlname" ] = url_name

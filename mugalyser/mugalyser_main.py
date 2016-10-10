@@ -95,7 +95,7 @@ def processMUG( args, urlName ):
     if args.trialrun:
         return 
     
-    mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
+    mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
     audit = AuditDB( mdb )
     mlyser = MUGAlyser( MEETUP_API_KEY )
     #logging.info( "Processing: '%s'" % urlName )
