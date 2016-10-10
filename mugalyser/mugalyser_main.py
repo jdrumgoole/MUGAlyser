@@ -33,9 +33,13 @@ except ImportError,e :
 from audit import AuditDB
 from mongodb import MUGAlyserMongoDB
 from mugalyser import MUGAlyser
+from mugs import MUGS
 
+__version__ = "0.7 beta"
+'''
+    10-Oct-2016, 0.7 beta:  Added multi-processing. Also put list of canonical mugs into a Python list.
+'''
 
-__version__ = "0.5 beta"
 
 DEBUG = 1
 TESTRUN = 0
@@ -57,16 +61,17 @@ def addTimestamp( audit, name, doc, ts=None ):
     tsDoc = { name : doc, "timestamp" : None, "batchID": audit.batchID()}
     return insertTimestamp( tsDoc, ts )
 
-def getMugs( mugfile ):
+def getMugs( muglist, mugfile ):
     
     frontCommentRegex = re.compile( '^\s*#' )
-    MUGS = []
     
     try:
         with open( mugfile ) as inputFile :
             for line in inputFile:
                 if not frontCommentRegex.match( line ):
-                    MUGS.append( line.rstrip())
+                    muglist.append( line.rstrip())
+        
+        return muglist 
         
     except IOError:
         print( "Can't open file: '%s'" % mugfile )
@@ -87,11 +92,13 @@ class CLIError(Exception):
 
 def processMUG( args, urlName ):
     
+    if args.trialrun:
+        return 
+    
     mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
     audit = AuditDB( mdb )
     mlyser = MUGAlyser( MEETUP_API_KEY )
-    logging.info( "Processing: '%s'" % urlName )
-    
+    #logging.info( "Processing: '%s'" % urlName )
     try :
         group = mlyser.get_group( urlName )
         
@@ -132,7 +139,12 @@ def setLoggingLevel(  logger, level="WARN"):
         logger.setLevel( logging.CRITICAL )
         
     return logger  
-        
+   
+def cleanUp( procs ) :
+    for i in procs:
+        i.terminate()
+        i.join()
+             
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
 
@@ -168,6 +180,7 @@ USAGE
         parser.add_argument( '--password', default=None, help='password to login to database')
         parser.add_argument( '--admindb', default="admin", help="Admin database used for authentication [default: %(default)s]" )
         parser.add_argument( '--ssl', default=False, action="store_true", help='use SSL for connections')
+        parser.add_argument( '--multi', default=False, action="store_true", help='use multi-processing')
         #
         # Program args
         #
@@ -175,7 +188,7 @@ USAGE
         parser.add_argument( "-v", "--version", action='version', version="MUGAlyser " + __version__ )
         parser.add_argument( '--mugfile', help='List of MUGs stored in [default: %(default)s]')
         parser.add_argument( '--mug', help='Process a single MUG [default: %(default)s]')
-        parser.add_argument( "--wait", default=4, type=int, help='How long to wait between processing the next parallel MUG request [default: %(default)s]')
+        parser.add_argument( "--wait", default=5, type=int, help='How long to wait between processing the next parallel MUG request [default: %(default)s]')
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
         
         parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
@@ -196,11 +209,13 @@ USAGE
         if verbose > 0:
             logging.info("Verbose mode on")
             
-        mugList = []
+        mugList = MUGS
+        
         if args.mugfile:
-            mugList = getMugs( args.mugfile )
+            mugList = getMugs( mugList, args.mugfile )
             
         if args.mug :
+            mugList = []
             mugList.append( args.mug )
 
         mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
@@ -212,19 +227,24 @@ USAGE
                            "version" : program_name + " " + __version__ })
         
         for i in mugList :
-            if args.trialrun:
-                pass
-            else:
+            if args.multi:
+                procs = []
                 p = multiprocessing.Process(target=processMUG, args=(args, i, ))
-                logging.info( "Starting job: %s" % i )
+                procs.append( p )
+                logging.info( "Getting data for : %s (via subprocess)" % i )
                 p.start()
                 time.sleep( args.wait )
-                #processMUG( args, i, mdb, audit )
+            else:
+                logging.info( "Getting data for: %s" % i )
+                processMUG( args, i )
+                time.sleep( args.wait )
                 
         audit.endBatch()
 
     except KeyboardInterrupt:
-        ### handle keyboard interrupt ###
+        if args.multi:
+            logging.info( "Cleaning up subprocesses..")
+            cleanUp(procs)
         return 0
     except pymongo.errors.ServerSelectionTimeoutError, e :
         print( "Failed to connect to MongoDB Server (server timeout): %s" % e )

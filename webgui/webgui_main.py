@@ -7,6 +7,7 @@ Created on 4 Oct 2016
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import AuditDB
 from flask import Flask, jsonify
+from flask.templating import render_template
 app = Flask(__name__)
 
 mdb = MUGAlyserMongoDB()
@@ -19,17 +20,19 @@ auditCollection = auditdb.auditCollection()
 def currentBatch():
     curBatch = auditCollection.find_one( { "name" : "Current Batch" }, {"_id" : 0 } )
     return jsonify( curBatch )
-    
+
+     
 @app.route('/')
 def index():
-    return currentBatch()
+    #return currentBatch()
+    return render_template( "index.html", batches= )
 
 @app.route('/groups')
 def groups():
     
     #db.audit.find( { "batchID" : { "$exists" : 1  }}, { "end" : 1 }).sort( { "end" : -1 } ).pretty()
 
-    curBatch = auditCollection.find_one( { "name" : "Current Batch" } )
+    curBatch = auditdb.currentBatch()
     curGroups = groupCollection.find( { "batchID" : curBatch["ID"]}, 
                                       { "_id"           : 0, 
                                         "group.urlname" : 1 })
@@ -42,8 +45,8 @@ def groups():
         
     return jsonify( output )
 
-@app.route( "/users")
-def users():
+@app.route( "/members")
+def members():
     
     output =[]
     cursor = membersCollection.find({}, { "_id" :0, "member.name" : 1 }).distinct( "member.name")
@@ -53,11 +56,9 @@ def users():
         count = count + 1
         output.append( i )
         
-    return jsonify( { "count": count, "members" : output } )
+    return render_template( "index.html", members=output )
+    #return jsonify( { "count": count, "members" : output } )
         
-        
-    return "users"
-    
 @app.route('/user/<member>')
 def get_member(member):
     # show the user profile for that user

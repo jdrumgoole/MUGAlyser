@@ -21,6 +21,9 @@ class AuditDB( object ):
             self._batchID[ "ID" ] = 0
             self._auditCollection.insert_one( self._batchID )
     
+    def currentBatch(self):
+        return self._batchID[ "ID"]
+    
     def incrementBatchID(self):
         
         self._batchID[ "ID" ] = self._batchID[ "ID" ]  + 1
