@@ -178,6 +178,7 @@ USAGE
         parser.add_argument( '--port', default="27017", help='port name [default: %(default)s]', type=int)
         parser.add_argument( '--username', default=None, help='username to login to database')
         parser.add_argument( '--password', default=None, help='password to login to database')
+        parser.add_argument( '--replset', default="MUGAlyser", help='replica set to use [default: %(default)s]' )
         parser.add_argument( '--admindb', default="admin", help="Admin database used for authentication [default: %(default)s]" )
         parser.add_argument( '--ssl', default=False, action="store_true", help='use SSL for connections')
         parser.add_argument( '--multi', default=False, action="store_true", help='use multi-processing')
@@ -218,7 +219,7 @@ USAGE
             mugList = []
             mugList.append( args.mug )
 
-        mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.username, args.password, args.ssl, args.admindb )
+        mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
             
         audit = AuditDB( mdb )
         audit.startBatch( args.trialrun,
