@@ -35,7 +35,11 @@ class MUGAlyserMongoDB( object ):
             
     def connect(self ):
 
-        self._client = pymongo.MongoClient( host=self._host, port=self._port, ssl=self._ssl, replicaSet=self._replset )
+        if self._host.startswith( "mongodb://" ) :
+            self._client = pymongo.MongoClient( host=self._host )
+        else:
+            self._client = pymongo.MongoClient( host=self._host, port=self._port, ssl=self._ssl, replicaSet=self._replset )
+            
         self._database = self._client[ self._databaseName]
         
         if self._username :
