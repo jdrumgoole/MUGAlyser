@@ -74,10 +74,16 @@ class AuditDB( object ):
             if self._currentBatch.has_key( "ID" ):
                 self._auditCollection.update( { "_id" : self._currentBatch[ "_id"]},
                                               { "$rename" : { "ID" : "currentID" }})
+                
+                curid = self._currentBatch[ "ID"]
+                del self._currentBatch[ "ID"]
+                self.currentBatch[ "currentID" ]= curid
+                
             if not "batchID" in self._currentBatch :
                 self._auditCollection.update( { "_id" : self._currentBatch[ "_id"]},
                                               { "$set" : { "batchID" : 0 }})
             
+                self._currentBatch[ "batchID" ] = 0
             
             self._auditCollection.update( { "_id" : self._currentBatch[ "_id"]},
                                           { "$set" : { "schemaVersion" : __version__  }})
