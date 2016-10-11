@@ -11,6 +11,7 @@ import sys
 from mugs import MUGS
 from mongodb import MUGAlyserMongoDB
 from audit import AuditDB
+from members import Members
 
 def getCountryMugs( mugs, country ):
     for k,v in mugs.iteritems() :
@@ -23,13 +24,15 @@ if __name__ == '__main__':
         
     parser.add_argument( "--host", default="mongodb://localhost:27017", help="URI for connecting to MongoDB [default: %(default)s]" )
     
-    parser.add_argument( "-g", "--hasgroup", nargs="+", default=[], help="Is this a MongoDB Group")
+    parser.add_argument( "--hasgroup", nargs="+", default=[], help="Is this a MongoDB Group")
     
-    parser.add_argument( "-l", "--listgroups", action="store_true", default=False,  help="print out all the groups")
+    parser.add_argument( "--groups", action="store_true", default=False,  help="print out all the groups")
     
-    parser.add_argument( "-c", "--listcountry", nargs="+", default=[],  help="print groups by country")
+    parser.add_argument( "--members", action="store_true", default=False,  help="list all users")
     
-    parser.add_argument( "-b", "--batches", action="store_true", default=False, help="List all the batches in the audit database [default: %(default)s]")
+    parser.add_argument( "--country", nargs="+", default=[],  help="print groups by country")
+    
+    parser.add_argument( "--batches", action="store_true", default=False, help="List all the batches in the audit database [default: %(default)s]")
     
     args = parser.parse_args()
     
@@ -42,13 +45,13 @@ if __name__ == '__main__':
         else:
             print( "{:40} :is not a MongoDB MUG".format( i ))
         
-    if args.listgroups:
+    if args.groups:
         for mug,location in MUGS.iteritems():
             print( "{:40} (location: {})".format( mug, location["country"] ))
         print( "%i total" % len( MUGS ))
         
     count = 0
-    for i in args.listcountry:
+    for i in args.country:
         byCountry = getCountryMugs( MUGS, i )
         for mug, location  in byCountry :
             count = count +1
@@ -63,6 +66,16 @@ if __name__ == '__main__':
         batchIDs = audit.getBatchIDs()
         for b in batchIDs :
             print( b )
-        
             
+    if args.members:
+        count = 0
+        collection = Members( mdb )
+        members = collection.getMembers()
+        for i in members :
+            member = collection.getMember( i )
+            count = count + 1
+            #print( member )
+            print ( u"{:20}, {:20}, {:20}".format( member[ "name"], member[ "country"], member[ "id"]) )
+            
+        print( "%i total" % count )
     

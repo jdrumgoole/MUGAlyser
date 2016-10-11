@@ -59,7 +59,7 @@ class AuditDB( object ):
     name="audit"
     
     def __init__(self, mdb ):
-        self._auditCollection = mdb.database()[ "audit"]
+        self._auditCollection = mdb.auditCollection()
         self._currentBatch = self._auditCollection.find_one( { "name" : "Current Batch"})
         
         if self._currentBatch is None:
