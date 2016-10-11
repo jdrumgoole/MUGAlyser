@@ -25,7 +25,7 @@ def currentBatch():
 @app.route('/')
 def index():
     #return currentBatch()
-    return render_template( "index.html", batches= )
+    return "WIP"
 
 @app.route('/groups')
 def groups():

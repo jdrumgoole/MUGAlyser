@@ -10,8 +10,9 @@ import logging
 
 class MUGAlyserMongoDB( object ):
     
-    def __init__(self, host="localhost", port=27017, databaseName="MUGS", replset="MUGALyser",
+    def __init__(self, host="localhost", port=27017, databaseName="MUGS", replset="",
                  username=None, password=None, ssl=False, admin="admin", connect=True):
+        
         self._host = host
         self._port = port
         self._databaseName = databaseName
@@ -33,7 +34,7 @@ class MUGAlyserMongoDB( object ):
             self.connect()
             
     def connect(self ):
-            
+
         self._client = pymongo.MongoClient( host=self._host, port=self._port, ssl=self._ssl, replicaSet=self._replset )
         self._database = self._client[ self._databaseName]
         
@@ -52,7 +53,12 @@ class MUGAlyserMongoDB( object ):
         
         self._members.create_index([("location", pymongo.GEOSPHERE)])
         self._members.create_index([("members.name", pymongo.ASCENDING )])
-    
+        
+        self._members.create_index([( "batchID", pymongo.ASCENDING )])
+        self._groups.create_index([( "batchID", pymongo.ASCENDING )])
+        self._pastEvents.create_index([( "batchID", pymongo.ASCENDING )])
+        self._upcomingEvents.create_index([( "batchID", pymongo.ASCENDING )])
+
     def database(self) :
         return self._database
     

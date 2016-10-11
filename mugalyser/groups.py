@@ -14,7 +14,8 @@ class Groups(object):
         '''
         Constructor
         '''
-        self._groups = mdb.database()["groups"]
+        self._mdb = mdb
+        self._groups = self._mdb.database()["groups"]
         
     def getGroups(self):
         pass

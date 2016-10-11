@@ -1,5 +1,16 @@
 # MUGAlyser
 
+Version 0.8 Beta
+
+Updated audit schema to make it more consistent. Added a utility
+program to get info (called muginfo.py). Now data is read from a
+MUGS.py file so no reading of files is required.  You can still get a
+single MUG instance by using the --mug parameter.
+
+Added support for replica set parameters so we can connect to Atlas.
+
+There is now a very basic REST API for some of the functions in webgui.
+
 VERSION : 0.5 beta
 
 MUGAlyser is a python program that uses the Meetup API to extract longitudinal data from the Meetup website for a collection of meetup
@@ -16,14 +27,15 @@ usernames and passwords for the db yet.
 
 
 ```
-JD10Gen-old:MUGAlyser jdrumgoole$ python mugalyser_main.py -h
+JD10Gen-old:mugalyser jdrumgoole$ python mugalyser_main.py -h
 usage: mugalyser_main.py [-h] [--database DATABASE] [--host HOST]
                          [--port PORT] [--username USERNAME]
-                         [--password PASSWORD] [--admindb ADMINDB] [--ssl]
-                         [-v] [-V] [--mugfile MUGFILE] [--mug MUG]
+                         [--password PASSWORD] [--replset REPLSET]
+                         [--admindb ADMINDB] [--ssl] [--multi] [--verbose]
+                         [-v] [--mugfile MUGFILE] [--mug MUG] [--wait WAIT]
                          [--trialrun] [--loglevel LOGLEVEL]
 
-mugalyser_main -- Grab MUG Stats and stuff them into a MongoDB Database
+A program to read data from the Meetup API into MongoDB
 
   Licensed under the AFGPL
   https://www.gnu.org/licenses/agpl-3.0.en.html
@@ -40,13 +52,16 @@ optional arguments:
   --port PORT          port name [default: 27017]
   --username USERNAME  username to login to database
   --password PASSWORD  password to login to database
+  --replset REPLSET    replica set to use [default: ]
   --admindb ADMINDB    Admin database used for authentication [default: admin]
   --ssl                use SSL for connections
-  -v, --verbose        set verbosity level [default: None]
-  -V, --version        show program's version number and exit
+  --multi              use multi-processing
+  --verbose            set verbosity level [default: None]
+  -v, --version        show program's version number and exit
   --mugfile MUGFILE    List of MUGs stored in [default: None]
   --mug MUG            Process a single MUG [default: None]
+  --wait WAIT          How long to wait between processing the next parallel
+                       MUG request [default: 5]
   --trialrun           Trial run, no updates [default: False]
   --loglevel LOGLEVEL  Logging level [default: INFO]
-JD10Gen-old:MUGAlyser jdrumgoole$ 
 ```

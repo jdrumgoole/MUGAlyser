@@ -35,8 +35,11 @@ from mongodb import MUGAlyserMongoDB
 from mugalyser import MUGAlyser
 from mugs import MUGS
 
-__version__ = "0.7 beta"
+from version import __version__, __programName__
 '''
+    11-Oct-2016, 0.8 beta: Bumped version. Changed format of master record in Audit Collection. Changed
+    name of groupinfo script to muginfo. Added support for URI format arguments. Added replica set argument.
+    
     10-Oct-2016, 0.7 beta:  Added multi-processing. Also put list of canonical mugs into a Python list.
 '''
 
@@ -58,7 +61,7 @@ def insertTimestamp( doc, ts=None ):
     
 def addTimestamp( audit, name, doc, ts=None ):
     
-    tsDoc = { name : doc, "timestamp" : None, "batchID": audit.batchID()}
+    tsDoc = { name : doc, "timestamp" : None, "batchID": audit.currentBatchID()}
     return insertTimestamp( tsDoc, ts )
 
 def getMugs( muglist, mugfile ):
@@ -178,7 +181,7 @@ USAGE
         parser.add_argument( '--port', default="27017", help='port name [default: %(default)s]', type=int)
         parser.add_argument( '--username', default=None, help='username to login to database')
         parser.add_argument( '--password', default=None, help='password to login to database')
-        parser.add_argument( '--replset', default="MUGAlyser", help='replica set to use [default: %(default)s]' )
+        parser.add_argument( '--replset', default="", help='replica set to use [default: %(default)s]' )
         parser.add_argument( '--admindb', default="admin", help="Admin database used for authentication [default: %(default)s]" )
         parser.add_argument( '--ssl', default=False, action="store_true", help='use SSL for connections')
         parser.add_argument( '--multi', default=False, action="store_true", help='use multi-processing')
