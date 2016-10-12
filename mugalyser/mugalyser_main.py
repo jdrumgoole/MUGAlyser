@@ -230,7 +230,9 @@ USAGE
                            "MUGS"    : mugList, 
                            "version" : program_name + " " + __version__ })
         
+        start = datetime.utcnow()
         for i in mugList :
+
             if args.multi:
                 procs = []
                 p = multiprocessing.Process(target=processMUG, args=(args, i, ))
@@ -244,6 +246,10 @@ USAGE
                 time.sleep( args.wait )
                 
         audit.endBatch()
+        end = datetime.utcnow()
+        
+        elapsed = end - start
+        logging.info( "Run took: %s", elapsed )
 
     except KeyboardInterrupt:
         if args.multi:
