@@ -54,6 +54,7 @@ class MUGAlyserMongoDB( object ):
         self._groups          = self._database[ "groups" ]
         self._pastEvents      = self._database[ "past_events" ]
         self._upcomingEvents  = self._database[ "upcoming_events" ]
+        self._audit           = self._database[ "audit" ]
         
         self._members.create_index([("location", pymongo.GEOSPHERE)])
         self._members.create_index([("member.name", pymongo.ASCENDING )])
@@ -75,6 +76,9 @@ class MUGAlyserMongoDB( object ):
     def groupsCollection(self):
         return self._groups
 
+    def auditCollection(self):
+        return self._audit
+    
     def membersCollection(self):
         return self._members
     

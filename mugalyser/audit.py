@@ -77,7 +77,7 @@ class AuditDB( object ):
                 
                 curid = self._currentBatch[ "ID"]
                 del self._currentBatch[ "ID"]
-                self.currentBatch[ "currentID" ]= curid
+                self._currentBatch[ "currentID" ]= curid
                 
             if not "batchID" in self._currentBatch :
                 self._auditCollection.update( { "_id" : self._currentBatch[ "_id"]},
