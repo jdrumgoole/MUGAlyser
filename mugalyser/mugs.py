@@ -3,7 +3,7 @@ Created on 10 Oct 2016
 
 @author: jdrumgoole
 '''
-from collections import OrderedDict
+
 MUGS = {
     "DublinMUG"                                  : { "country" : "Ireland"},
     "Glasgow-MongoDB-User-Group"                 : { "country" : "United Kingdom"},

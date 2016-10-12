@@ -27,7 +27,7 @@ from requests import HTTPError
 try:
     from apikey import MEETUP_API_KEY
 except ImportError,e :
-    print( "Failed to import apikey: have you run makeapikeyfile.py <APIKEY>")
+    print( "Failed to import apikey: have you run makeapikeyfile_main.py <APIKEY> : %s" % e )
     sys.exit( 2 )
 
 from audit import AuditDB

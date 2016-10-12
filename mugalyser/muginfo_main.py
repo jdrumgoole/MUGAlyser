@@ -68,14 +68,19 @@ if __name__ == '__main__':
             print( b )
             
     if args.members:
+        
         count = 0
         collection = Members( mdb )
+        
+
         members = collection.getMembers()
         for i in members :
-            member = collection.getMember( i )
+            member = collection.getMember( i[ "_id"] )
             count = count + 1
-            #print( member )
-            print ( u"{:20}, {:20}, {:20}".format( member[ "name"], member[ "country"], member[ "id"]) )
+            print ( u"{:30}, {:20}, {:20}".format( member[ "name"], member[ "country"], member[ "id"]) )
             
         print( "%i total" % count )
+        
+        n = collection.bruteCount()
+        print( "BruteCount :%i" % n)
     
