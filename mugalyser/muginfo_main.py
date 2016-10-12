@@ -30,6 +30,7 @@ if __name__ == '__main__':
     
     parser.add_argument( "--members", action="store_true", default=False,  help="list all users")
     
+    parser.add_argument( "--event", nargs="+",  help="")
     parser.add_argument( "--country", nargs="+", default=[],  help="print groups by country")
     
     parser.add_argument( "--batches", action="store_true", default=False, help="List all the batches in the audit database [default: %(default)s]")

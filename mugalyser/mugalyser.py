@@ -7,9 +7,11 @@ Created on 6 Sep 2016
 import requests
 import logging
 from copy import deepcopy
-
+from mugs import MUGS
 
 from apikey import MEETUP_API_KEY
+
+from pprint import pprint
 
 def convert( meetupObj ):
     
@@ -130,6 +132,10 @@ class MUGAlyser(object):
         self._params[ "sign"] = "true"
         
 
+    def get_groups(self):
+        for i in MUGS:
+            yield i
+            
     def get_group(self, url_name ):
         
         params = deepcopy( self._params )
@@ -150,6 +156,20 @@ class MUGAlyser(object):
         return paginator( header, body, params )
 
 
+    def get_attendees( self, groups=None, items=50 ):
+        
+        groupsIterator = None
+        if groups :
+            groupsIterator = groups
+        else:
+            groupsIterator = self.get_groups()
+            
+        for group in groupsIterator :
+            for event in self.get_past_events( group ):
+                #pprint( event )
+                for attendee in self.get_event_attendees(event[ "id"], group, items ):
+                    yield attendee
+    
             
     def get_event_attendees(self, eventID, url_name, items=20 ):
         params = deepcopy( self._params )

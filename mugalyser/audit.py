@@ -88,7 +88,20 @@ class AuditDB( object ):
             self._auditCollection.update( { "_id" : self._currentBatch[ "_id"]},
                                           { "$set" : { "schemaVersion" : __version__  }})
 
+    def insertTimestamp( self, doc, ts=None ):
+        if ts :
+            doc[ "timestamp" ] = ts
+        else:
+            doc[ "timestamp" ] = datetime.utcnow()
+            
+        return doc
     
+    def addTimestamp( self, name, doc, ts=None ):
+    
+        tsDoc = { name : doc, "timestamp" : None, "batchID": self.currentBatchID()}
+        return self.insertTimestamp( tsDoc, ts )
+    
+ 
     
     def getBatchIDs(self):
         cursor = self._auditCollection.find( { "batchID" : { "$exists" : 1 }}, { "_id" : 0, "batchID" : 1})

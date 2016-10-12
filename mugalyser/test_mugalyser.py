@@ -5,8 +5,12 @@ Created on 12 Oct 2016
 '''
 import unittest
 from mugalyser import MUGAlyser
+
 from apikey import MEETUP_API_KEY
 from pprint import pprint
+
+from mugs import MUGS
+
 class Test(unittest.TestCase):
 
 
@@ -17,6 +21,11 @@ class Test(unittest.TestCase):
     def tearDown(self):
         pass
 
+
+    def test_get_groups(self):
+        for i in self._m.get_groups() :
+            self._x = i
+            
     def test_get_group(self):
         
         group = self._m.get_group( "DublinMUG" )
@@ -37,6 +46,10 @@ class Test(unittest.TestCase):
         for i in attendees:
             self._x = i
 
+    def test_get_attendees(self):
+        for attendee in self._m.get_attendees():
+            print( attendee )
+            
     def test_get_members(self):
         
         members = self._m.get_members( "DublinMUG" )

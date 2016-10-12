@@ -22,6 +22,8 @@ import pymongo
 import multiprocessing
 import time
 
+from batchwriter import BatchWriter
+
 from requests import HTTPError
 
 try:
@@ -31,6 +33,7 @@ except ImportError,e :
     sys.exit( 2 )
 
 from audit import AuditDB
+
 from mongodb import MUGAlyserMongoDB
 from mugalyser import MUGAlyser
 from mugs import MUGS
@@ -48,21 +51,6 @@ DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
-                
-def insertTimestamp( doc, ts=None ):
-    if ts :
-        doc[ "timestamp" ] = ts
-    else:
-        doc[ "timestamp" ] = datetime.now()
-        
-    return doc
-  
-
-    
-def addTimestamp( audit, name, doc, ts=None ):
-    
-    tsDoc = { name : doc, "timestamp" : None, "batchID": audit.currentBatchID()}
-    return insertTimestamp( tsDoc, ts )
 
 def getMugs( muglist, mugfile ):
     
@@ -93,6 +81,19 @@ class CLIError(Exception):
         return self.msg
 
 
+def processAttendees( args, groups, func ):
+    
+    mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
+
+    mlyser = MUGAlyser( MEETUP_API_KEY )
+    
+    writer = mlyser.get_attendees( groups, items=100)
+    
+    bw = BatchWriter( mdb.attendeeCollection(), mdb.auditCollection())
+    
+    bw.bulkWrite( writer, func, "attendee" )
+    
+    
 def processMUG( args, urlName ):
     
     if args.trialrun:
@@ -105,22 +106,22 @@ def processMUG( args, urlName ):
     try :
         group = mlyser.get_group( urlName )
         
-        mdb.groupsCollection().insert_one( addTimestamp( audit, "group", group))
+        mdb.groupsCollection().insert_one( audit.addTimestamp( "group", group))
         
         pastEvents = mlyser.get_past_events( urlName )
         
         for i in pastEvents:
-            mdb.pastEventsCollection().insert_one( addTimestamp( audit, "event", i ))
+            mdb.pastEventsCollection().insert_one( audit.addTimestamp(  "event", i ))
             
         upcomingEvents = mlyser.get_upcoming_events( urlName )
         
         for i in upcomingEvents:
-            mdb.upcomingEventsCollection().insert_one( addTimestamp( audit, "event", i ))
+            mdb.upcomingEventsCollection().insert_one( audit.addTimestamp( "event", i ))
         members = mlyser.get_members( urlName )
             
         for i in members :
             #print( "Adding: %s" % i[ 'name'] )
-            mdb.membersCollection().insert_one( addTimestamp(  audit, "member",  i ))
+            mdb.membersCollection().insert_one( audit.addTimestamp( "member",  i ))
         
         return group
     except HTTPError, e :
@@ -190,11 +191,13 @@ USAGE
         #
         parser.add_argument( "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         parser.add_argument( "-v", "--version", action='version', version="MUGAlyser " + __version__ )
-        parser.add_argument( '--mugfile', help='List of MUGs stored in [default: %(default)s]')
-        parser.add_argument( '--mug', help='Process a single MUG [default: %(default)s]')
         parser.add_argument( "--wait", default=5, type=int, help='How long to wait between processing the next parallel MUG request [default: %(default)s]')
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
-        
+     
+        parser.add_argument( '--mugs', nargs="+", default=[], help='Process MUGs list list mugs by name or use "all"')
+   
+        parser.add_argument( '--attendees', nargs="+", default=["DUblinMUG"], help='Capture attendees for these groups')
+
         parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
         # Process arguments
         args = parser.parse_args()
@@ -213,43 +216,64 @@ USAGE
         if verbose > 0:
             logging.info("Verbose mode on")
             
-        mugList = MUGS
+        mugList = []
         
-        if args.mugfile:
-            mugList = getMugs( mugList, args.mugfile )
-            
-        if args.mug :
-            mugList = []
-            mugList.append( args.mug )
-
-        mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
-            
-        audit = AuditDB( mdb )
-        audit.startBatch( args.trialrun,
-                         { "args"    : vars( args ), 
-                           "MUGS"    : mugList, 
-                           "version" : program_name + " " + __version__ })
-        
-        start = datetime.utcnow()
-        for i in mugList :
-
-            if args.multi:
-                procs = []
-                p = multiprocessing.Process(target=processMUG, args=(args, i, ))
-                procs.append( p )
-                logging.info( "Getting data for : %s (via subprocess)" % i )
-                p.start()
-                time.sleep( args.wait )
+        if len( args.mugs ) > 0 :
+            if args.mug[0]  == "all":
+                mugList = MUGS.keys()
             else:
-                logging.info( "Getting data for: %s" % i )
-                processMUG( args, i )
-                time.sleep( args.wait )
-                
-        audit.endBatch()
-        end = datetime.utcnow()
+                mugList.append( args.mug )
+
+                mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
+            
+                audit = AuditDB( mdb )
+                audit.startBatch( args.trialrun,
+                                 { "args"    : vars( args ), 
+                                   "MUGS"    : mugList, 
+                                   "version" : program_name + " " + __version__ })
         
-        elapsed = end - start
-        logging.info( "Run took: %s", elapsed )
+                start = datetime.utcnow()
+                for i in mugList :
+
+                    if args.multi:
+                        procs = []
+                        p = multiprocessing.Process(target=processMUG, args=(args, i, ))
+                        procs.append( p )
+                        logging.info( "Getting data for : %s (via subprocess)" % i )
+                        p.start()
+                        time.sleep( args.wait )
+                    else:
+                        logging.info( "Getting data for: %s" % i )
+                        processMUG( args, i )
+                        time.sleep( args.wait )
+                
+                    audit.endBatch()
+                    end = datetime.utcnow()
+            
+                    elapsed = end - start
+                    logging.info( "MUG processing took: %s", elapsed )
+                    
+        if len( args.attendees ) > 0 :
+            if args.attendees[ 0 ] == "all" :
+                groups = MUGS.keys()
+            else:
+                groups = args.attendees
+            
+            mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
+            
+            audit = AuditDB( mdb )
+            audit.startBatch( args.trialrun,
+                              { "args"         : vars( args ), 
+                                "attendees"    : groups, 
+                                "version"      : program_name + " " + __version__ } )
+            start = datetime.utcnow()
+            processAttendees( args, groups, audit.addTimestamp )
+            audit.endBatch()
+
+            end = datetime.utcnow()
+            
+            elapsed = end - start
+            logging.info( "Attendee processing took: %s", elapsed )
 
     except KeyboardInterrupt:
         if args.multi:
