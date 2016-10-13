@@ -81,7 +81,17 @@ def paginator( headers, body, params=None, func=None):
     data = body
     #pprint.pprint( data )
     
-    if ( "Link" in headers ) :
+    # old style format 
+    if "meta" in body :
+        for i in body[ "results"]:
+            yield func( i )
+    
+        while data[ 'meta' ][ "next" ] != "" :
+            data = makeRequest( data['meta'][ 'next' ])[1]
+        
+            for i in data[ "results"]:
+                yield  func( i )
+    elif ( "Link" in headers ) : #new style pagination
         for i in data :
             yield func( i )
             
@@ -96,17 +106,10 @@ def paginator( headers, body, params=None, func=None):
             for i in data :
                 yield  func( i )
 
-    elif "meta" in body :
-        for i in body[ "results"]:
+
+    else: # new style but we have all the data
+        for i in data:
             yield func( i )
-    
-        while data[ 'meta' ][ "next" ] != "" :
-            data = makeRequest( data['meta'][ 'next' ])[1]
-        
-            for i in data[ "results"]:
-                yield  func( i )
-    else:
-        yield data
         
 class MUGAlyser(object):
     '''
