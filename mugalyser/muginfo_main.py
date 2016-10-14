@@ -77,14 +77,15 @@ if __name__ == '__main__':
         for i in members :
             member = collection.getMember( i[ "_id"] )
             count = count + 1
-            print ( u"{:30}, {:20}, {:20}".format( member[ "name"], member[ "country"], member[ "id"]) )
+            #print( "member: %s" % member )
+            
+            country = member.pop( "country", "Undefined")
+
+            print ( u"{:30}, {:20}, {:20}".format( member[ "name"], country, member[ "id"]) )
             
         print( "%i total" % count )
         
         n = collection.bruteCount()
         print( "BruteCount :%i" % n)
         
-    if args.attendees :
-        mdb = MUGAlyserMongoDB( host=args.host )
-        mlyser = MUG
     
