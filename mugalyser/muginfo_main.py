@@ -72,7 +72,6 @@ if __name__ == '__main__':
         
         count = 0
         collection = Members( mdb )
-        
 
         members = collection.getMembers()
         for i in members :
@@ -84,4 +83,8 @@ if __name__ == '__main__':
         
         n = collection.bruteCount()
         print( "BruteCount :%i" % n)
+        
+    if args.attendees :
+        mdb = MUGAlyserMongoDB( host=args.host )
+        mlyser = MUG
     

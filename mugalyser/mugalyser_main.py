@@ -25,6 +25,7 @@ import time
 from batchwriter import BatchWriter
 
 from requests import HTTPError
+from pydoc import Doc
 
 try:
     from apikey import MEETUP_API_KEY
@@ -80,18 +81,27 @@ class CLIError(Exception):
     def __unicode__(self):
         return self.msg
 
-
-def processAttendees( args, groups, func ):
+def mergeEvents( writer ):
+    for attendee, event in writer:
+        doc = { "attendee" : attendee,
+                "event" : event }
+        yield doc 
+        
+def processAttendees( args, groups ):
     
     mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
 
     mlyser = MUGAlyser( MEETUP_API_KEY )
     
-    writer = mlyser.get_attendees( groups, items=100)
-    
     bw = BatchWriter( mdb.attendeeCollection(), mdb.auditCollection())
     
-    bw.bulkWrite( writer, func, "attendee" )
+    audit= AuditDB( mdb )
+    
+    writer = mlyser.get_attendees( groups, items=100)
+    
+    newWriter = mergeEvents( writer )
+    
+    bw.bulkWrite( newWriter, audit.addTimestamp, "info")
     
     
 def processMUG( args, urlName ):
@@ -267,7 +277,8 @@ USAGE
                                 "attendees"    : groups, 
                                 "version"      : program_name + " " + __version__ } )
             start = datetime.utcnow()
-            processAttendees( args, groups, audit.addTimestamp )
+            logging.info( "Processing attendees")
+            processAttendees( args, groups )
             audit.endBatch()
 
             end = datetime.utcnow()
