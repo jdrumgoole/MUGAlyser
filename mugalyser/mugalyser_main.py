@@ -206,7 +206,7 @@ USAGE
      
         parser.add_argument( '--mugs', nargs="+", default=[], help='Process MUGs list list mugs by name or use "all"')
    
-        parser.add_argument( '--attendees', nargs="+", default=["DUblinMUG"], help='Capture attendees for these groups')
+        parser.add_argument( '--attendees', nargs="+", default=[], help='Capture attendees for these groups')
 
         parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
         # Process arguments
@@ -229,39 +229,41 @@ USAGE
         mugList = []
         
         if len( args.mugs ) > 0 :
-            if args.mug[0]  == "all":
+            if args.mugs[0]  == "all":
                 mugList = MUGS.keys()
             else:
                 mugList.append( args.mug )
 
-                mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
-            
-                audit = AuditDB( mdb )
-                audit.startBatch( args.trialrun,
-                                 { "args"    : vars( args ), 
-                                   "MUGS"    : mugList, 
-                                   "version" : program_name + " " + __version__ })
+            mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
         
-                start = datetime.utcnow()
-                for i in mugList :
+            audit = AuditDB( mdb )
+            audit.startBatch( args.trialrun,
+                             { "args"    : vars( args ), 
+                               "MUGS"    : mugList, 
+                               "version" : program_name + " " + __version__ })
+    
+            start = datetime.utcnow()
+            logging.info( "Started MUG processing for batch ID: %i", audit.currentBatchID())
+            for i in mugList :
 
-                    if args.multi:
-                        procs = []
-                        p = multiprocessing.Process(target=processMUG, args=(args, i, ))
-                        procs.append( p )
-                        logging.info( "Getting data for : %s (via subprocess)" % i )
-                        p.start()
-                        time.sleep( args.wait )
-                    else:
-                        logging.info( "Getting data for: %s" % i )
-                        processMUG( args, i )
-                        time.sleep( args.wait )
-                
-                    audit.endBatch()
-                    end = datetime.utcnow()
+                if args.multi:
+                    procs = []
+                    p = multiprocessing.Process(target=processMUG, args=(args, i, ))
+                    procs.append( p )
+                    logging.info( "Getting data for : %s (via subprocess)" % i )
+                    p.start()
+                    time.sleep( args.wait )
+                else:
+                    logging.info( "Getting data for: %s" % i )
+                    processMUG( args, i )
+                    time.sleep( args.wait )
             
-                    elapsed = end - start
-                    logging.info( "MUG processing took: %s", elapsed )
+                audit.endBatch()
+                end = datetime.utcnow()
+        
+                elapsed = end - start
+                
+            logging.info( "MUG processing took %s for BatchID : %i", elapsed, audit.currentBatchID())
                     
         if len( args.attendees ) > 0 :
             if args.attendees[ 0 ] == "all" :
