@@ -237,10 +237,10 @@ USAGE
             mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
         
             audit = AuditDB( mdb )
-            audit.startBatch( args.trialrun,
-                             { "args"    : vars( args ), 
-                               "MUGS"    : mugList, 
-                               "version" : program_name + " " + __version__ })
+            batchID = audit.startBatch( args.trialrun,
+                                        { "args"    : vars( args ), 
+                                          "MUGS"    : mugList, 
+                                          "version" : program_name + " " + __version__ })
     
             start = datetime.utcnow()
             logging.info( "Started MUG processing for batch ID: %i", audit.currentBatchID())
@@ -258,7 +258,7 @@ USAGE
                     processMUG( args, i )
                     time.sleep( args.wait )
             
-                audit.endBatch()
+                audit.endBatch( batchID )
                 end = datetime.utcnow()
         
                 elapsed = end - start
@@ -274,14 +274,14 @@ USAGE
             mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
             
             audit = AuditDB( mdb )
-            audit.startBatch( args.trialrun,
-                              { "args"         : vars( args ), 
-                                "attendees"    : groups, 
-                                "version"      : program_name + " " + __version__ } )
+            batchID = audit.startBatch( args.trialrun,
+                                        { "args"         : vars( args ), 
+                                          "attendees"    : groups, 
+                                          "version"      : program_name + " " + __version__ } )
             start = datetime.utcnow()
             logging.info( "Processing attendees")
             processAttendees( args, groups )
-            audit.endBatch()
+            audit.endBatch( batchID )
 
             end = datetime.utcnow()
             

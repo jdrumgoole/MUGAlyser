@@ -73,6 +73,15 @@ def getHeaderLink( header ):
     return ( link, relVal )
 
 def paginator( headers, body, params=None, func=None):
+    '''
+    Meetup API returns results as pages. The old API embeds the 
+    page data in a meta data object in the response object. The new API
+    returns page data in the Header info. 
+    
+    Func is a function that takes a doc and returns a doc. Right now
+    we use this to reshape geospatial coordinates into a format that MongoDB
+    understands.
+    '''
     
     #print( "paginatorEntry( %s )" % headers )
     if func is None:
@@ -171,7 +180,7 @@ class MUGAlyser(object):
             for event in self.get_past_events( group ):
                 #pprint( event )
                 for attendee in self.get_event_attendees(event[ "id"], group, items ):
-                    yield attendee
+                    yield ( attendee, event )
     
             
     def get_event_attendees(self, eventID, url_name, items=20 ):

@@ -4,6 +4,7 @@ Created on 7 Oct 2016
 @author: jdrumgoole
 '''
 from audit import AuditDB
+
 class Attendees(object):
     
     def __init__(self, mdb ):
