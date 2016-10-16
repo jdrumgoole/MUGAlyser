@@ -109,32 +109,42 @@ class AuditDB( object ):
             if i[ "batchID"] == 0 :
                 continue
             yield i[ 'batchID' ]
-        
-        
+            
     def incrementBatchID(self):
+        #
+        # We can have multiple batches running in parallel as long as each has a unique
+        # batch ID. Find And Modify ensures that each batch ID is unique.
+        curBatch = self._auditCollection.find_and_modify( { "name" : "Current Batch" },
+                                                          update= { "$inc" : { "currentID" : 1 },
+                                                                    "$set" : { "timestamp" : datetime.now() }},
+                                                         new = True )
         
-        self._currentBatch[ "currentID" ] = self.currentBatchID()  + 1
-        self._currentBatch[ "timestamp" ] = datetime.now()
-        self._auditCollection.update( { "name" : "Current Batch" }, 
-                                      { "$set" : { "currentID" : self._currentBatch[ "currentID"],
-                                                   "timestamp" : self._currentBatch[ "timestamp" ] }} )
+        return curBatch[ "currentID" ]
+#         self._currentBatch[ "currentID" ] = self.currentBatchID()  + 1
+#         self._currentBatch[ "timestamp" ] = datetime.now()
+#         self._auditCollection.update( { "name" : "Current Batch" }, 
+#                                       { "$set" : { "currentID" : self._currentBatch[ "currentID"],
+#                                                    "timestamp" : self._currentBatch[ "timestamp" ] }} )
         
     def startBatch(self, trial, doc ):
-        self.incrementBatchID()
-        self._auditCollection.insert_one( { "batchID" : self.currentBatchID(),
+        thisBatchID = self.incrementBatchID()
+        self._auditCollection.insert_one( { "batchID" : thisBatchID,
                                             "start"   : datetime.now(),
                                             "trial"   : trial,
                                             "end"     : None,
                                             "info"    : doc })
         
-    def endBatch(self):
-        self._auditCollection.update( { "batchID" : self.currentBatchID()},
-                                        { "$set" : { "end" : datetime.now() }})
+        return thisBatchID
+        
+    def endBatch(self, id ):
+        self._auditCollection.update( { "batchID" : id },
+                                      { "$set" : { "end" : datetime.now() }})
         
         
     def auditCollection(self):
         return self._auditCollection
     
     def currentBatchID(self ):
-        return self._currentBatch[ "currentID"]
+        curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
+        return curBatch[ "currentID"]
     
