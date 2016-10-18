@@ -135,7 +135,7 @@ def processMUG( args, urlName ):
         
         return group
     except HTTPError, e :
-        logging.fatal( "Stopped processing: %s" % urlName )
+        logging.fatal( "Stopped processing: %s : %s", urlName, e )
         sys.exit( 2 )
         
 
