@@ -1,0 +1,22 @@
+Clone the repo
+
+git clone https://github.com/jdrumgoole/MUGAlyser.git
+
+Make an API key file
+
+(Create an account on meetup.com, login and go here to get your API key : https://secure.meetup.com/meetup_api/key/)
+
+makeapikeyfile_main.py <API_KEY>
+
+Install the mongodb driver for Python
+
+pip install pymongo
+
+Run a mongod locally:
+
+mongod
+
+Run the program:
+
+ python mugalyser_main.py --mugs all
+
