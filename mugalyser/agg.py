@@ -14,7 +14,10 @@ class Agg(object):
         '''
         Constructor
         '''
-        self._collection = collection
+        self._collection   = collection
+        self._hasDollarOut = False
+        self._cursor       = None
+        self._elapsed      = None
         self.clear()
     
     @staticmethod
