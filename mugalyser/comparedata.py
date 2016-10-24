@@ -29,15 +29,16 @@ if __name__ == '__main__':
         with open( "csvfile.out", "w" ) as csvout:
             reader = csv.DictReader( csvdata, delimiter="," )
             for r in reader:
+                #print( r )
                 count = count + 1
-                csvmembers[ r["member_name"]] = r 
-                if members.find_one( { "member.name" :  r[ "member_name" ], "batchID" : 67 } ) :
+                csvmembers[ r[" member_id" ]] = r 
+                if members.find_one( { "member.id" :  int( r[ " member_id" ] ), "batchID" : 67 } ) :
                     #print( "%i. %s found" % ( count, r["member_name"] ))
                     foundCount = foundCount + 1
-                    csvout.write( "found: '%s'\n" % r["member_name"])
+                    csvout.write( "found in db: '%s'\n" % r[" member_id"])
                 else:
-                    #print( "%i. %s not found ********************" % (count, r[ "member_name"] ))
-                    csvout.write( "notfound: '%s'\n" % r[ "member_name"])
+                    print( "%i. %s not found ********************" % (count, r[ "member_name"] ))
+                    csvout.write( "not found in db: '%s %s'\n" % ( r[ " member_id"], r[ "member_name"]))
                     notFoundCount = notFoundCount + 1
                     
         
@@ -48,16 +49,13 @@ if __name__ == '__main__':
     
                 countCSV = countCSV + 1
                 if "member" in i:
-                    if "name" in i[ "member"]:
-                        if i[ "member"]["name"] in csvmembers :
-                            dbout.write( (u"in csv : %s\n" % i["member"]['name']).encode('utf-8'))
-                        else:
-                            dbout.write( ( u"not in csv : %s\n" % i["member"]['name']).encode('utf-8'))
-                            missing.append( i["member"]["name"] )
+                    if i[ "member" ][ "id" ] in csvmembers :
+                        dbout.write( (u"in csv : %s\n" % i["member"]["id"]).encode('utf-8'))
                     else:
-                        print( "No name field")
+                        dbout.write( ( u"not in csv : %s\n" % i["member"]["id"]).encode('utf-8'))
+                        missing.append( i["member"]["id"] )   
                 else:
-                    print( "no member field")
+                    print( "no member field" )
                     
             #print( "processed: %i" % countCSV )
          
@@ -67,7 +65,5 @@ if __name__ == '__main__':
     print( "Total db docs : %i" % count )
     print( "Total Db missing : %i" % len( missing )) 
     
-    for i in range( 5 ):
-        print( "%s" % missing[i] )
         
         

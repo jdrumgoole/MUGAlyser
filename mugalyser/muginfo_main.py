@@ -7,6 +7,7 @@ Simple program to Dump group data..
 '''
 from argparse import ArgumentParser
 import sys
+from pprint import pprint
 
 from mugs import MUGS
 from mongodb import MUGAlyserMongoDB
@@ -29,6 +30,10 @@ if __name__ == '__main__':
     parser.add_argument( "--groups", action="store_true", default=False,  help="print out all the groups")
     
     parser.add_argument( "--members", action="store_true", default=False,  help="list all users")
+
+    parser.add_argument( "--memberid", type=int, help="get info for member id")
+    
+    parser.add_argument( "--membername",  help="get info for member id")
     
     parser.add_argument( "--event", nargs="+",  help="")
     parser.add_argument( "--country", nargs="+", default=[],  help="print groups by country")
@@ -40,6 +45,20 @@ if __name__ == '__main__':
     if args.host:
         mdb = MUGAlyserMongoDB( host=args.host )
         
+    if args.memberid :
+        member = mdb.membersCollection().find_one( { "member.id" : args.memberid })
+        if member :
+            pprint( member )
+        else:
+            print( "No such member: %s" % args.memberid )
+            
+    if args.membername :
+        member = mdb.membersCollection().find_one( { "member.name" : args.membername })
+        if member :
+            pprint( member )
+        else:
+            print( "No such member: %s" % args.membername )
+              
     for i in args.hasgroup:
         if i in MUGS:
             print( "{:40} :is a MongoDB MUG".format( i ))
