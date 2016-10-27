@@ -27,7 +27,7 @@ from batchwriter import BatchWriter
 from requests import HTTPError
 
 try:
-    from mugalyser.apikey import get_meetup_key
+    from apikey import get_meetup_key
 except ImportError,e :
     print( "Failed to import apikey: have you run makeapikeyfile_main.py <APIKEY> : %s" % e )
     sys.exit( 2 )
