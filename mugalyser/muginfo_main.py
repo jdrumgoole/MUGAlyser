@@ -13,6 +13,7 @@ from mugs import MUGS
 from mongodb import MUGAlyserMongoDB
 from audit import AuditDB
 from members import Members
+from upcomingevents import UpcomingEvents
 
 def getCountryMugs( mugs, country ):
     for k,v in mugs.iteritems() :
@@ -35,11 +36,13 @@ if __name__ == '__main__':
     
     parser.add_argument( "--membername",  help="get info for member id")
     
-    parser.add_argument( "--event", nargs="+",  help="")
+    parser.add_argument( "--upcomingevents", default=False, action="store_true",  help="List upcoming events")
+    
     parser.add_argument( "--country", nargs="+", default=[],  help="print groups by country")
     
     parser.add_argument( "--batches", action="store_true", default=False, help="List all the batches in the audit database [default: %(default)s]")
     
+    parser.add_argument( "--summary", default=False, action="store_true",  help="print a summary")
     args = parser.parse_args()
     
     if args.host:
@@ -106,5 +109,14 @@ if __name__ == '__main__':
         
         n = collection.bruteCount()
         print( "BruteCount :%i" % n)
+        
+    if args.upcomingevents:
+        events = UpcomingEvents( mdb )
+        
+        for i in events.upcoming() :
+            if args.summary:
+                print( events.summary( i[ "event" ]))
+            else:
+                pprint( i[ "event" ] )
         
     

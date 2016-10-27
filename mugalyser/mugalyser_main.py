@@ -25,10 +25,9 @@ import time
 from batchwriter import BatchWriter
 
 from requests import HTTPError
-from pydoc import Doc
 
 try:
-    from apikey import MEETUP_API_KEY
+    from mugalyser.apikey import get_meetup_key
 except ImportError,e :
     print( "Failed to import apikey: have you run makeapikeyfile_main.py <APIKEY> : %s" % e )
     sys.exit( 2 )
@@ -87,11 +86,11 @@ def mergeEvents( writer ):
                 "event" : event }
         yield doc 
         
-def processAttendees( args, groups ):
+def processAttendees( args, apikey, groups ):
     
     mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
 
-    mlyser = MUGAlyser( MEETUP_API_KEY )
+    mlyser = MUGAlyser( apikey  )
     
     bw = BatchWriter( mdb.attendeeCollection(), mdb.auditCollection())
     
@@ -104,14 +103,14 @@ def processAttendees( args, groups ):
     bw.bulkWrite( newWriter, audit.addTimestamp, "info")
     
     
-def processMUG( args, urlName ):
+def processMUG( args, apikey, urlName ):
     
     if args.trialrun:
         return 
     
     mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
     audit = AuditDB( mdb )
-    mlyser = MUGAlyser( MEETUP_API_KEY )
+    mlyser = MUGAlyser( apikey )
     #logging.info( "Processing: '%s'" % urlName )
     try :
         group = mlyser.get_group( urlName )
@@ -209,9 +208,19 @@ USAGE
         parser.add_argument( '--attendees', nargs="+", default=[], help='Capture attendees for these groups')
 
         parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
+        
+        parser.add_argument( '--apikey', default=None, help='Default API key for meetup')
+        
         # Process arguments
         args = parser.parse_args()
-
+            
+        apikey=""
+        
+        if args.apikey :
+            apikey = args.apikey
+        else:
+            apikey = get_meetup_key()
+        
         verbose = args.verbose
 
         root = logging.getLogger()
@@ -243,19 +252,19 @@ USAGE
                                           "version" : program_name + " " + __version__ })
     
             start = datetime.utcnow()
-            logging.info( "Started MUG processing for batch ID: %i", audit.currentBatchID())
+            logging.info( "Started MUG processing for batch ID: %i", audit.getCurrentBatchID())
             for i in mugList :
 
                 if args.multi:
                     procs = []
-                    p = multiprocessing.Process(target=processMUG, args=(args, i, ))
+                    p = multiprocessing.Process(target=processMUG, args=(args, apikey, i, ))
                     procs.append( p )
                     logging.info( "Getting data for : %s (via subprocess)" % i )
                     p.start()
                     time.sleep( args.wait )
                 else:
                     logging.info( "Getting data for: %s" % i )
-                    processMUG( args, i )
+                    processMUG( args, apikey, i )
                     time.sleep( args.wait )
             
                 audit.endBatch( batchID )
@@ -263,7 +272,7 @@ USAGE
         
                 elapsed = end - start
                 
-            logging.info( "MUG processing took %s for BatchID : %i", elapsed, audit.currentBatchID())
+            logging.info( "MUG processing took %s for BatchID : %i", elapsed, audit.getCurrentBatchID())
                     
         if len( args.attendees ) > 0 :
             if args.attendees[ 0 ] == "all" :
@@ -280,7 +289,7 @@ USAGE
                                           "version"      : program_name + " " + __version__ } )
             start = datetime.utcnow()
             logging.info( "Processing attendees")
-            processAttendees( args, groups )
+            processAttendees( args, apikey, groups )
             audit.endBatch( batchID )
 
             end = datetime.utcnow()

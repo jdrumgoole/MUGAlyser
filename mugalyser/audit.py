@@ -98,7 +98,7 @@ class AuditDB( object ):
     
     def addTimestamp( self, name, doc, ts=None ):
     
-        tsDoc = { name : doc, "timestamp" : None, "batchID": self.currentBatchID()}
+        tsDoc = { name : doc, "timestamp" : None, "batchID": self.getCurrentBatchID()}
         return self.insertTimestamp( tsDoc, ts )
     
  
@@ -120,7 +120,7 @@ class AuditDB( object ):
                                                          new = True )
         
         return curBatch[ "currentID" ]
-#         self._currentBatch[ "currentID" ] = self.currentBatchID()  + 1
+#         self._currentBatch[ "currentID" ] = self.getCurrentBatchID()  + 1
 #         self._currentBatch[ "timestamp" ] = datetime.now()
 #         self._auditCollection.update( { "name" : "Current Batch" }, 
 #                                       { "$set" : { "currentID" : self._currentBatch[ "currentID"],
@@ -144,7 +144,7 @@ class AuditDB( object ):
     def auditCollection(self):
         return self._auditCollection
     
-    def currentBatchID(self ):
+    def getCurrentBatchID(self ):
         curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
         return curBatch[ "currentID"]
     

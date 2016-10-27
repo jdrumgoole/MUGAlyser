@@ -5,7 +5,7 @@ from fabric.api import run, env, local,cd
 import os
 import json
 
-from mugalyser.apikey import MEETUP_API_KEY, PASSWD
+from mugalyser.apikey import get_meetup_key, get_mugalyer_passwd
 
 env.hosts = ["ec2-52-212-52-126.eu-west-1.compute.amazonaws.com"]
 env.user = 'ec2-user'
@@ -59,7 +59,7 @@ def gitclone() :
         
 def apikey():
     with cd( "GIT/MUGAlyser/mugalyser") :
-        run( "python makeapikeyfile_main.py " + MEETUP_API_KEY )
+        run( "python makeapikeyfile_main.py %s %s" % ( get_meetup_key(), get_mugalyer_passwd()))
         
 def mugs():
     with cd( "GIT/MUGAlyser/mugalyser") :
@@ -71,7 +71,7 @@ def attendees():
     
 def process_batch():
     start_instance()
-    #get_dns_name()
+    get_dns_name()
     update()
     gitpull()
     mugs()

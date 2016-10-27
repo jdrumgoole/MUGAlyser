@@ -9,7 +9,7 @@ import logging
 from copy import deepcopy
 from mugs import MUGS
 
-from apikey import MEETUP_API_KEY
+from apikey import get_meetup_key
 
 from pprint import pprint
 
@@ -133,7 +133,7 @@ class MUGAlyser(object):
             
         return url
     
-    def __init__(self, api_key = MEETUP_API_KEY ):
+    def __init__(self, api_key = get_meetup_key()):
         '''
         Constructor
         '''
