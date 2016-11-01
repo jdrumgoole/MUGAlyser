@@ -26,13 +26,18 @@ from batchwriter import BatchWriter
 
 from requests import HTTPError
 
+from groups import Groups
+from events import PastEvents, UpcomingEvents
+from members import Members
+from attendees import Attendees
+
 try:
     from apikey import get_meetup_key
 except ImportError,e :
     print( "Failed to import apikey: have you run makeapikeyfile_main.py <APIKEY> : %s" % e )
     sys.exit( 2 )
 
-from audit import AuditDB
+from audit import Audit
 
 from mongodb import MUGAlyserMongoDB
 from mugalyser import MUGAlyser
@@ -80,68 +85,54 @@ class CLIError(Exception):
     def __unicode__(self):
         return self.msg
 
-def mergeEvents( writer ):
-    for attendee, event in writer:
-        doc = { "attendee" : attendee,
-                "event" : event }
-        yield doc 
-        
-def processAttendees( args, apikey, groups ):
-    
-    mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
 
-    mlyser = MUGAlyser( apikey  )
+
+
     
-    bw = BatchWriter( mdb.attendeeCollection(), mdb.auditCollection())
-    
-    audit= AuditDB( mdb )
-    
-    writer = mlyser.get_attendees( groups, items=100)
-    
-    newWriter = mergeEvents( writer )
-    
-    bw.bulkWrite( newWriter, audit.addTimestamp, "info")
-    
-    
-def processMUG( args, apikey, urlName ):
+def processMUGs( args, apikey, mugs, phases ):
     
     if args.trialrun:
         return 
     
-    mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
-    audit = AuditDB( mdb )
-    mlyser = MUGAlyser( apikey )
+    mdb = MUGAlyserMongoDB( args.host, args.database )
+
+    logger = logging.getLogger( __programName__ )
     #logging.info( "Processing: '%s'" % urlName )
+    
     try :
-        group = mlyser.get_group( urlName )
         
-        mdb.groupsCollection().insert_one( audit.addTimestamp( "group", group))
-        
-        pastEvents = mlyser.get_past_events( urlName )
-        
-        for i in pastEvents:
-            mdb.pastEventsCollection().insert_one( audit.addTimestamp(  "event", i ))
+        for i in phases:
+            if  i == "groups" :
+                groups = Groups( mdb, apikey )
+                groupCount = groups.get_meetup_groups( mugs )
             
-        upcomingEvents = mlyser.get_upcoming_events( urlName )
-        
-        for i in upcomingEvents:
-            mdb.upcomingEventsCollection().insert_one( audit.addTimestamp( "event", i ))
-        members = mlyser.get_members( urlName )
+            elif i == "pastevents" :
+                pastEvents = PastEvents( mdb, apikey )
+                pastEvents.get_all_events( mugs )
             
-        for i in members :
-            #print( "Adding: %s" % i[ 'name'] )
-            mdb.membersCollection().insert_one( audit.addTimestamp( "member",  i ))
-        
-        return group
+            elif i == "upcomingevents" :
+                upcomingEvents = UpcomingEvents( mdb, apikey )
+                upcomingEvents.get_all_events( mugs )
+            
+            elif  i == "members" :
+                members = Members( mdb, apikey )
+                members.get_all_members( mugs )
+                
+            elif i == "attendees" :
+                attendees = Attendees( mdb, apikey )
+                attendees.get_all_attendees( mugs )
+            else:
+                logger.warn( "%s is not a valid execution phase", i )
+    
     except HTTPError, e :
-        logging.fatal( "Stopped processing: %s : %s", urlName, e )
+        logger.fatal( "Stopped processing: %s", e )
         sys.exit( 2 )
         
 
 def setLoggingLevel(  logger, level="WARN"):
     
     if level == "DEBUG" :
-        logger.SetLevel( logging.DEBUG )
+        logger.setLevel( logging.DEBUG )
     elif level == "INFO" :
         logger.setLevel( logging.INFO )
     elif level == "WARNING" :
@@ -187,14 +178,14 @@ USAGE
         #
         # MongoDB Args
         parser.add_argument( '--database', default="MUGS", help='specify the database name [default: %(default)s]')
-        parser.add_argument( '--host', default="localhost", help='hostname [default: %(default)s]')
-        parser.add_argument( '--port', default="27017", help='port name [default: %(default)s]', type=int)
-        parser.add_argument( '--username', default=None, help='username to login to database')
-        parser.add_argument( '--password', default=None, help='password to login to database')
-        parser.add_argument( '--replset', default="", help='replica set to use [default: %(default)s]' )
-        parser.add_argument( '--admindb', default="admin", help="Admin database used for authentication [default: %(default)s]" )
-        parser.add_argument( '--ssl', default=False, action="store_true", help='use SSL for connections')
-        parser.add_argument( '--multi', default=False, action="store_true", help='use multi-processing')
+        parser.add_argument( '--host', default="mongodb://localhost", help='hostname [default: %(default)s]')
+#         parser.add_argument( '--port', default="27017", help='port name [default: %(default)s]', type=int)
+#         parser.add_argument( '--username', default=None, help='username to login to database')
+#         parser.add_argument( '--password', default=None, help='password to login to database')
+#         parser.add_argument( '--replset', default="", help='replica set to use [default: %(default)s]' )
+#         parser.add_argument( '--admindb', default="admin", help="Admin database used for authentication [default: %(default)s]" )
+#         parser.add_argument( '--ssl', default=False, action="store_true", help='use SSL for connections')
+        #parser.add_argument( '--multi', default=False, action="store_true", help='use multi-processing')
         #
         # Program args
         #
@@ -205,6 +196,7 @@ USAGE
      
         parser.add_argument( '--mugs', nargs="+", default=[], help='Process MUGs list list mugs by name or use "all"')
    
+        parser.add_argument( '--phases', nargs="+", default=[ "all"], help='execution phases')
         parser.add_argument( '--attendees', nargs="+", default=[], help='Capture attendees for these groups')
 
         parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
@@ -223,84 +215,54 @@ USAGE
         
         verbose = args.verbose
 
-        root = logging.getLogger()
-        setLoggingLevel( root, args.loglevel )
+        logger = logging.getLogger( __programName__ )
+        setLoggingLevel( logger, args.loglevel )
 
         ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
-        root.addHandler(ch)
+        logger.addHandler(ch)
         
+        #print( "logging to: %s" % __programName__ )
         if verbose > 0:
-            logging.info("Verbose mode on")
+            logger.info("Verbose mode on")
             
         mugList = []
         
+        if "all" in args.phases :
+            phases = [ "groups", "members", "attendees", "upcomingevents", "pastevents"]
+        else:
+            phases = args.phases
+            
         if len( args.mugs ) > 0 :
             if args.mugs[0]  == "all":
                 mugList = MUGS.keys()
             else:
-                mugList.append( args.mug )
+                mugList.extend( args.mugs )
 
-            mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
+            mdb = MUGAlyserMongoDB( args.host, args.database )
         
-            audit = AuditDB( mdb )
+            audit = Audit( mdb )
             batchID = audit.startBatch( args.trialrun,
                                         { "args"    : vars( args ), 
                                           "MUGS"    : mugList, 
                                           "version" : program_name + " " + __version__ })
     
             start = datetime.utcnow()
-            logging.info( "Started MUG processing for batch ID: %i", audit.getCurrentBatchID())
-            for i in mugList :
+            logger.info( "Started MUG processing for batch ID: %i", audit.getCurrentBatchID())
 
-                if args.multi:
-                    procs = []
-                    p = multiprocessing.Process(target=processMUG, args=(args, apikey, i, ))
-                    procs.append( p )
-                    logging.info( "Getting data for : %s (via subprocess)" % i )
-                    p.start()
-                    time.sleep( args.wait )
-                else:
-                    logging.info( "Getting data for: %s" % i )
-                    processMUG( args, apikey, i )
-                    time.sleep( args.wait )
-            
-                audit.endBatch( batchID )
-                end = datetime.utcnow()
+            processMUGs( args, apikey, mugList, phases )
+            time.sleep( args.wait )
         
-                elapsed = end - start
-                
-            logging.info( "MUG processing took %s for BatchID : %i", elapsed, audit.getCurrentBatchID())
-                    
-        if len( args.attendees ) > 0 :
-            if args.attendees[ 0 ] == "all" :
-                groups = MUGS.keys()
-            else:
-                groups = args.attendees
-            
-            mdb = MUGAlyserMongoDB( args.host, args.port, args.database, args.replset, args.username, args.password, args.ssl, args.admindb )
-            
-            audit = AuditDB( mdb )
-            batchID = audit.startBatch( args.trialrun,
-                                        { "args"         : vars( args ), 
-                                          "attendees"    : groups, 
-                                          "version"      : program_name + " " + __version__ } )
-            start = datetime.utcnow()
-            logging.info( "Processing attendees")
-            processAttendees( args, apikey, groups )
             audit.endBatch( batchID )
-
             end = datetime.utcnow()
-            
+    
             elapsed = end - start
-            logging.info( "Attendee processing took: %s", elapsed )
+                
+            logger.info( "MUG processing took %s for BatchID : %i", elapsed, audit.getCurrentBatchID())
 
     except KeyboardInterrupt:
-        if args.multi:
-            logging.info( "Cleaning up subprocesses..")
-            cleanUp(procs)
         return 0
     except pymongo.errors.ServerSelectionTimeoutError, e :
         print( "Failed to connect to MongoDB Server (server timeout): %s" % e )

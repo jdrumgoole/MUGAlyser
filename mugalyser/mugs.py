@@ -49,6 +49,7 @@ MUGS = {
     "Bergen-NoSQL"                               : { "country" : "Norway"},
     "Copenhagen-MongoDB-User-Group"              : { "country" : "Sweden"},
     "Finland-MongoDB-User-Group"                 : { "country" : "Finland"},
+    "Stockholm-MongoDB-User-Group"               : { "country" : "Sweden"},
 
     "Tbilisi-MongoDB-User-Group"                 : { "country" : "Georgia"},
     "MongoDB-Istanbul"                           : { "country" : "Turkey"},
@@ -114,6 +115,8 @@ MUGS = {
     
     "mongodbperu"                                : { "country" : "Peru"},
     
+    "MongoDB-Ecuador"                            : { "country" : "Ecuador"},
+    
     "SP-MongoDB"                                 : { "country" : "Brazil"},
     
     "Santiago-MongoDB-User-Group"                : { "country" : "Chile"},
@@ -129,8 +132,6 @@ MUGS = {
     "Butwal-MongoDB-User-Group"                  : { "country" : "Nepal"}, 
     
     "Nepal-MongoDB-User-Group"                   : { "country" : "Nepal"},
-    
-
     
     "MelbourneMUG"                               : { "country" : "Australia"},
     

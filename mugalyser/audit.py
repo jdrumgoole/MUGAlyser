@@ -54,7 +54,7 @@ have an end date field.
 from datetime import datetime
 from version import __version__
 
-class AuditDB( object ):
+class Audit( object ):
     
     name="audit"
     
@@ -88,6 +88,10 @@ class AuditDB( object ):
             self._auditCollection.update( { "_id" : self._currentBatch[ "_id"]},
                                           { "$set" : { "schemaVersion" : __version__  }})
 
+
+    def collection(self):
+        return self._auditCollection
+        
     def insertTimestamp( self, doc, ts=None ):
         if ts :
             doc[ "timestamp" ] = ts
@@ -101,7 +105,20 @@ class AuditDB( object ):
         tsDoc = { name : doc, "timestamp" : None, "batchID": self.getCurrentBatchID()}
         return self.insertTimestamp( tsDoc, ts )
     
- 
+    def addInfoTimestamp(self, doc, ts=None ):
+        return self.addTimestamp( "info", doc, ts )
+    
+    def addMemberTimestamp(self, doc, ts=None ):
+        return self.addTimestamp( "member", doc, ts )
+    
+    def addEventTimestamp(self, doc, ts=None ):
+        return self.addTimestamp( "event", doc, ts )
+    
+    def addGroupTimestamp(self, doc, ts=None ):
+        return self.addTimestamp( "group", doc, ts )
+    
+    def addAttendeeTimestamp(self, doc, ts=None ):
+        return self.addTimestamp( "attendee", doc, ts )
     
     def getBatchIDs(self):
         cursor = self._auditCollection.find( { "batchID" : { "$exists" : 1 }}, { "_id" : 0, "batchID" : 1})
@@ -136,13 +153,17 @@ class AuditDB( object ):
         
         return thisBatchID
         
-    def endBatch(self, id ):
-        self._auditCollection.update( { "batchID" : id },
+    def endBatch(self, batchID ):
+        self._auditCollection.update( { "batchID" : batchID },
                                       { "$set" : { "end" : datetime.now() }})
         
         
     def auditCollection(self):
         return self._auditCollection
+    
+    def getLastBatchID(self):
+        curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
+        return curBatch[ "currentID"] - 1
     
     def getCurrentBatchID(self ):
         curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )

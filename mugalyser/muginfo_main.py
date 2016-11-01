@@ -11,7 +11,7 @@ from pprint import pprint
 
 from mugs import MUGS
 from mongodb import MUGAlyserMongoDB
-from audit import AuditDB
+from audit import Audit
 from members import Members
 from upcomingevents import UpcomingEvents
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     
     parser.add_argument( "--members", action="store_true", default=False,  help="list all users")
 
-    parser.add_argument( "--memberid", type=int, help="get info for member id")
+    parser.add_argument( "--memberid", help="get info for member id")
     
     parser.add_argument( "--membername",  help="get info for member id")
     
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     if args.host:
-        mdb = MUGAlyserMongoDB( host=args.host )
+        mdb = MUGAlyserMongoDB( uri=args.host )
         
     if args.memberid :
         member = mdb.membersCollection().find_one( { "member.id" : args.memberid })
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         if not args.host:
             print( "Need to specify --host for batchIDs")
             sys.exit( 2 )
-        audit = AuditDB( mdb )
+        audit = Audit( mdb )
         batchIDs = audit.getBatchIDs()
         for b in batchIDs :
             print( b )
