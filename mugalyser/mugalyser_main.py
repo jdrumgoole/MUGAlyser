@@ -104,7 +104,7 @@ def processMUGs( args, apikey, mugs, phases ):
         for i in phases:
             if  i == "groups" :
                 groups = Groups( mdb, apikey )
-                groupCount = groups.get_meetup_groups( mugs )
+                groups.get_meetup_groups( mugs )
             
             elif i == "pastevents" :
                 pastEvents = PastEvents( mdb, apikey )
