@@ -30,6 +30,7 @@ if __name__ == '__main__':
     
     parser.add_argument( "--groups", action="store_true", default=False,  help="print out all the groups")
     
+    parser.add_argument( "--group", nargs="+", default=[], help="filter by this list of groups")
     parser.add_argument( "--members", action="store_true", default=False,  help="list all users")
 
     parser.add_argument( "--memberid", help="get info for member id")
@@ -95,15 +96,19 @@ if __name__ == '__main__':
         count = 0
         collection = Members( mdb )
 
-        members = collection.getMembers()
+        if args.group : 
+            members = collection.get_by_group(args.group )
+        else:
+            members = collection.get_members()
+            
         for i in members :
-            member = collection.getMember( i[ "_id"] )
+            member = collection.get_by_ID( i[ "_id"] )
             count = count + 1
             #print( "member: %s" % member )
             
             country = member.pop( "country", "Undefined")
 
-            print ( u"{:30}, {:20}, {:20}".format( member[ "name"], country, member[ "id"]) )
+            print( u"{:30}, {:20}, {:20}".format( member[ "name"], country, member[ "id"]) )
             
         print( "%i total" % count )
         
@@ -113,10 +118,17 @@ if __name__ == '__main__':
     if args.upcomingevents:
         events = UpcomingEvents( mdb )
         
+        count = 0
+        rsvp = 0 
         for i in events.upcoming() :
+            count = count + 1
             if args.summary:
                 print( events.summary( i[ "event" ]))
             else:
                 pprint( i[ "event" ] )
+                
+            rsvp = rsvp + i["event"][ "yes_rsvp_count"]
+        print( "Total RSVP count: %i" % rsvp )
+        print( "Total Event count: %i" % count )
         
     

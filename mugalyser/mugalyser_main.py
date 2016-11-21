@@ -19,10 +19,7 @@ import logging
 from traceback import print_exception
 
 import pymongo
-import multiprocessing
 import time
-
-from batchwriter import BatchWriter
 
 from requests import HTTPError
 
@@ -130,7 +127,7 @@ def processMUGs( args, apikey, mugs, phases ):
         
 
 def setLoggingLevel(  logger, level="WARN"):
-    
+
     if level == "DEBUG" :
         logger.setLevel( logging.DEBUG )
     elif level == "INFO" :
@@ -161,7 +158,7 @@ def main(argv=None): # IGNORE:C0111
     program_shortdesc = "A program to read data from the Meetup API into MongoDB"
     program_license = '''%s
 
-  Licensed under the AFGPL
+  Licensed under the AGPL
   https://www.gnu.org/licenses/agpl-3.0.en.html
 
   Distributed on an "AS IS" basis without warranties
@@ -196,10 +193,10 @@ USAGE
      
         parser.add_argument( '--mugs', nargs="+", default=[], help='Process MUGs list list mugs by name or use "all"')
    
-        parser.add_argument( '--phases', nargs="+", default=[ "all"], help='execution phases')
-        parser.add_argument( '--attendees', nargs="+", default=[], help='Capture attendees for these groups')
+        parser.add_argument( '--phases', nargs="+", choices=[ "groups", "members", "attendees", "upcomingevents", "pastevents"], 
+                             default=[ "all"], help='execution phases')
 
-        parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
+        parser.add_argument( '--loglevel', default="INFO", choices=[ "CRITICAL", "ERROR", "WARNING", "INFO",  "DEBUG" ], help='Logging level [default: %(default)s]')
         
         parser.add_argument( '--apikey', default=None, help='Default API key for meetup')
         

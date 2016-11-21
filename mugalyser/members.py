@@ -12,13 +12,14 @@ import logging
 from mugs import MUGS
 from feedback import Feedback
 from batchwriter import BatchWriter
+from apikey import get_meetup_key
 
 class Members(object):
     '''
     classdocs
     '''
     
-    def __init__(self, mdb, apikey ):
+    def __init__(self, mdb, apikey = get_meetup_key()):
         '''
         Constructor
         '''
@@ -36,7 +37,10 @@ class Members(object):
     def collection( self ):
         return self._members
         
-    def get_members(self, url_name ):
+    def get_meetup_group_members(self, url_name ):
+        '''
+        Query meetup API directly and update database.
+        '''
         
         memberCount = 0
         try:
@@ -52,13 +56,16 @@ class Members(object):
             logging.error( "Stopped members request: %s : %s", url_name, e )
             raise
         
-    def get_all_members(self, groups=None):
+    def get_meetup_members(self, groups=None):
+        '''
+        Query meetup API for multiple groups.
+        '''
         
         if groups is None:
             groups = MUGS
         
         for i in groups:
-            self._memberCount = self._memberCount + self.get_members( i )
+            self._memberCount = self._memberCount + self.get_meetup_group_members( i )
             
         return self._memberCount
         
@@ -78,6 +85,9 @@ class Members(object):
         else:
             return val[ "member"]
         
+    def get_by_group(self, url_name ):
+        pass
+        
     def bruteCount(self ):
         count = 0
         members = self._members.find({ "member.name": { "$exists" : 1 }}, { "_id" : 0, "member.name" : 1 }).sort( "member.name", 1 )
@@ -93,7 +103,7 @@ class Members(object):
  
         return count
     
-    def getMembers(self):
+    def get_members(self):
         members = self._membersAgg.aggregate()
         for i in members:
             yield i

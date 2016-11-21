@@ -220,6 +220,14 @@ class MUGAlyser(object):
         #print( "request: '%s'" % r.url )
         return paginator(  header, body, params )
     
+    
+    def get_member_by_id(self, member_id ):
+        params = deepcopy( self._params )
+
+        ( header, body ) = makeRequest( self._api + "2/member/" + str( member_id ), params = params )
+        
+        return body
+    
     def get_members(self, url_name, items=100 ):
         
         params = deepcopy( self._params )
