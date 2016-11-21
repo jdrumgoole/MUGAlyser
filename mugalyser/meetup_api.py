@@ -11,8 +11,6 @@ from mugs import MUGS
 
 from apikey import MEETUP_API_KEY
 
-from pprint import pprint
-
 def convert( meetupObj ):
     
     retVal = {}
@@ -120,7 +118,7 @@ def paginator( headers, body, params=None, func=None):
         for i in data:
             yield func( i )
         
-class MUGAlyser(object):
+class MeetupAPI(object):
     '''
     classdocs
     '''
@@ -168,8 +166,7 @@ class MUGAlyser(object):
         return paginator( header, body, params )
 
 
-    def get_attendees( self, groups=None, items=50 ):
-        
+    def get_all_attendees(self, groups=None, items=50 ):
         groupsIterator = None
         if groups :
             groupsIterator = groups
@@ -177,10 +174,14 @@ class MUGAlyser(object):
             groupsIterator = self.get_groups()
             
         for group in groupsIterator :
-            for event in self.get_past_events( group ):
-                #pprint( event )
-                for attendee in self.get_event_attendees(event[ "id"], group, items ):
-                    yield ( attendee, event )
+            return self.get_attendees(group, items)
+        
+    def get_attendees( self, url_name, items=50 ):
+        
+        for event in self.get_past_events( url_name ):
+            #pprint( event )
+            for attendee in self.get_event_attendees(event[ "id"], url_name, items ):
+                yield ( attendee, event )
     
             
     def get_event_attendees(self, eventID, url_name, items=20 ):
@@ -188,7 +189,7 @@ class MUGAlyser(object):
         params[ "page" ] = str( items )
         
         #https://api.meetup.com/DublinMUG/events/62760772/attendance?&sign=true&photo-host=public&page=20
-        reqURL = MUGAlyser.makeRequestURL( url_name, "events", str( eventID ), "attendance")
+        reqURL = self.makeRequestURL( url_name, "events", str( eventID ), "attendance")
 
         ( header, body ) = makeRequest( reqURL, params=params)
 

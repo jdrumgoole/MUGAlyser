@@ -4,7 +4,7 @@ Created on 12 Oct 2016
 @author: jdrumgoole
 '''
 import unittest
-from mugalyser import MUGAlyser
+from mugalyser.meetup_api import MeetupAPI
 
 from apikey import MEETUP_API_KEY
 from pprint import pprint
@@ -15,7 +15,7 @@ class Test(unittest.TestCase):
 
 
     def setUp(self):
-        self._m = MUGAlyser( MEETUP_API_KEY )
+        self._m = MeetupAPI( MEETUP_API_KEY )
         self._x = None
 
     def tearDown(self):
