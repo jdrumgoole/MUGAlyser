@@ -54,6 +54,7 @@ have an end date field.
 from datetime import datetime
 from version import __version__
 
+from apikey import get_meetup_key
 class Audit( object ):
     
     name="audit"
@@ -143,12 +144,13 @@ class Audit( object ):
 #                                       { "$set" : { "currentID" : self._currentBatch[ "currentID"],
 #                                                    "timestamp" : self._currentBatch[ "timestamp" ] }} )
         
-    def startBatch(self, trial, doc ):
+    def startBatch(self, trial, doc, apikey = get_meetup_key()):
         thisBatchID = self.incrementBatchID()
         self._auditCollection.insert_one( { "batchID" : thisBatchID,
                                             "start"   : datetime.now(),
                                             "trial"   : trial,
                                             "end"     : None,
+                                            "apikey"  : apikey,
                                             "info"    : doc })
         
         return thisBatchID

@@ -30,7 +30,7 @@ from groups import Groups
 from events import PastEvents, UpcomingEvents
 from members import Members
 from attendees import Attendees
-
+from audit import Audit
 
 try:
     from apikey import get_meetup_key
@@ -92,44 +92,6 @@ class CLIError(Exception):
 
 
     
-def processMUGs( args, apikey, mugs, phases ):
-    
-    if args.trialrun:
-        return 
-    
-    mdb = MUGAlyserMongoDB( args.host, args.database )
-
-    logger = logging.getLogger( __programName__ )
-    #logging.info( "Processing: '%s'" % urlName )
-    
-    try :
-        
-        for i in phases:
-            if  i == "groups" :
-                groups = Groups( mdb, apikey )
-                groups.get_meetup_groups( mugs )
-            
-            elif i == "pastevents" :
-                pastEvents = PastEvents( mdb, apikey )
-                pastEvents.get_all_events( mugs )
-            
-            elif i == "upcomingevents" :
-                upcomingEvents = UpcomingEvents( mdb, apikey )
-                upcomingEvents.get_all_events( mugs )
-            
-            elif  i == "members" :
-                members = Members( mdb, apikey )
-                members.get_all_members( mugs )
-                
-            elif i == "attendees" :
-                attendees = Attendees( mdb, apikey )
-                attendees.get_all_attendees( mugs )
-            else:
-                logger.warn( "%s is not a valid execution phase", i )
-    
-    except HTTPError, e :
-        logger.fatal( "Stopped processing: %s", e )
-        sys.exit( 2 )
         
 
 def setLoggingLevel(  logger, level="WARN"):
@@ -199,7 +161,7 @@ USAGE
         parser.add_argument( "--wait", default=5, type=int, help='How long to wait between processing the next parallel MUG request [default: %(default)s]')
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
      
-        parser.add_argument( '--mugs', nargs="+", default=[], help='Process MUGs list list mugs by name or use "all"')
+        parser.add_argument( '--mugs', nargs="+", default=[ "all" ], help='Process MUGs list list mugs by name [default: %(default)s]')
    
         parser.add_argument( '--phases', nargs="+", choices=[ "groups", "members", "attendees", "upcomingevents", "pastevents"], 
                              default=[ "all"], help='execution phases')
@@ -247,12 +209,11 @@ USAGE
             else:
                 mugList.extend( args.mugs )
 
-<<<<<<< HEAD
             mdb = MUGAlyserMongoDB( args.url )
         
             reader = MeetupAPI()
             writer = MeetupWriter( mdb, reader )
-            audit = AuditDB( mdb )
+            audit = Audit( mdb )
 
             batchID = audit.startBatch( args.trialrun,
                                         { "args"    : vars( args ), 
@@ -260,11 +221,11 @@ USAGE
                                           "version" : program_name + " " + __version__ })
     
             start = datetime.utcnow()
-            logging.info( "Started MUG processing for batch ID: %i", audit.currentBatchID())
+            logging.info( "Started MUG processing for batch ID: %i", batchID )
             for i in mugList :
 
                 logging.info( "Getting data for: %s" % i )
-                writer.capture_snapshot( i )
+                writer.capture_snapshot( i, phases )
                 time.sleep( args.wait )
             
             audit.endBatch( batchID )
@@ -272,7 +233,7 @@ USAGE
         
             elapsed = end - start
                 
-            logging.info( "MUG processing took %s for BatchID : %i", elapsed, audit.currentBatchID())
+            logging.info( "MUG processing took %s for BatchID : %i", batchID )
 
     except KeyboardInterrupt:
         print("Keyboard interrupt : Exiting...")

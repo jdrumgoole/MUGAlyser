@@ -12,8 +12,9 @@ from pprint import pprint
 from mugs import MUGS
 from mongodb import MUGAlyserMongoDB
 from audit import Audit
+from events import Events
 from members import Members
-from upcomingevents import UpcomingEvents
+from events import UpcomingEvents, PastEvents, Events
 
 def getCountryMugs( mugs, country ):
     for k,v in mugs.iteritems() :
@@ -28,9 +29,9 @@ if __name__ == '__main__':
     
     parser.add_argument( "--hasgroup", nargs="+", default=[], help="Is this a MongoDB Group")
     
-    parser.add_argument( "--groups", action="store_true", default=False,  help="print out all the groups")
+    parser.add_argument( "--listgroups", action="store_true", default=False,  help="print out all the groups")
     
-    parser.add_argument( "--group", nargs="+", default=[], help="filter by this list of groups")
+    parser.add_argument( "--groups", nargs="+", default=[], help="filter by this list of groups")
     parser.add_argument( "--members", action="store_true", default=False,  help="list all users")
 
     parser.add_argument( "--memberid", help="get info for member id")
@@ -39,15 +40,24 @@ if __name__ == '__main__':
     
     parser.add_argument( "--upcomingevents", default=False, action="store_true",  help="List upcoming events")
     
+    parser.add_argument( "--pastevents", default=False, action="store_true",  help="List past events")
+    
     parser.add_argument( "--country", nargs="+", default=[],  help="print groups by country")
     
     parser.add_argument( "--batches", action="store_true", default=False, help="List all the batches in the audit database [default: %(default)s]")
+    
+    parser.add_argument( "--curbatch", action="store_true", default=False, help="Report current batch ID")
     
     parser.add_argument( "--summary", default=False, action="store_true",  help="print a summary")
     args = parser.parse_args()
     
     if args.host:
         mdb = MUGAlyserMongoDB( uri=args.host )
+        
+    if args.curbatch :
+        audit = Audit( mdb )
+        curbatch = audit.getCurrentBatchID()
+        print ( "current batch ID = {'batchID': %i}" % curbatch )
         
     if args.memberid :
         member = mdb.membersCollection().find_one( { "member.id" : args.memberid })
@@ -69,7 +79,7 @@ if __name__ == '__main__':
         else:
             print( "{:40} :is not a MongoDB MUG".format( i ))
         
-    if args.groups:
+    if args.listgroups:
         for mug,location in MUGS.iteritems():
             print( "{:40} (location: {})".format( mug, location["country"] ))
         print( "%i total" % len( MUGS ))
@@ -120,7 +130,7 @@ if __name__ == '__main__':
         
         count = 0
         rsvp = 0 
-        for i in events.upcoming() :
+        for i in events.get_groups_events( args.groups ):
             count = count + 1
             if args.summary:
                 print( events.summary( i[ "event" ]))

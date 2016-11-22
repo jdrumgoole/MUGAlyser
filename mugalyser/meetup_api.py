@@ -147,20 +147,15 @@ class MeetupAPI(object):
             
         return url
     
-    def __init__(self, api_key = get_meetup_key()):
+    def __init__(self, apikey = get_meetup_key()):
         '''
         Constructor
         '''
         
         self._api = "https://api.meetup.com/"
         self._params = {}
-        self._params[ "key" ] = api_key
+        self._params[ "key" ] = apikey
         self._params[ "sign"] = "true"
-        
-
-    def get_groups(self):
-        for i in MUGS:
-            yield i
             
     def get_group(self, url_name ):
         
@@ -242,5 +237,16 @@ class MeetupAPI(object):
         #r = requests.get( self._api + "2/members", params = params )
         
         return paginator( header, body, params, reshapeMemberDoc )
+    
+    def get_groups(self ):
+        '''
+        Get all groups associated with this API key.
+        '''
+        
+        params = deepcopy( self._params )
+        logging.debug( "get_groups")
+        ( header, body ) = makeRequest( self._api + "self/groups", params = params )
+
+        return paginator( header, body, params )
     
 
