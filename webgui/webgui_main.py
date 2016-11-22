@@ -5,13 +5,13 @@ Created on 4 Oct 2016
 '''
 
 from mugalyser.mongodb import MUGAlyserMongoDB
-from mugalyser.audit import AuditDB
+from mugalyser.audit import Audit
 from flask import Flask, jsonify
 from flask.templating import render_template
 app = Flask(__name__)
 
 mdb = MUGAlyserMongoDB()
-auditdb = AuditDB( mdb )
+auditdb = Audit( mdb )
 membersCollection = mdb.membersCollection()
 groupCollection = mdb.groupsCollection()
 auditCollection = auditdb.auditCollection()

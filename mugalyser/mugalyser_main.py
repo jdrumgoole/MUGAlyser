@@ -20,15 +20,25 @@ from traceback import print_exception
 
 import pymongo
 import time
+
 from meetup_api import MeetupAPI
 
+
+from requests import HTTPError
+
+from groups import Groups
+from events import PastEvents, UpcomingEvents
+from members import Members
+from attendees import Attendees
+
+
 try:
-    from apikey import MEETUP_API_KEY
+    from apikey import get_meetup_key
 except ImportError,e :
     print( "Failed to import apikey: have you run makeapikeyfile_main.py <APIKEY> : %s" % e )
     sys.exit( 2 )
 
-from audit import AuditDB
+from audit import Audit
 
 from mongodb import MUGAlyserMongoDB
 from meetup_writer import MeetupWriter
@@ -76,13 +86,56 @@ class CLIError(Exception):
     def __str__(self):
         return self.msg
     def __unicode__(self):
-        return self.msg  
+        return self.msg
+
+
+
+
+    
+def processMUGs( args, apikey, mugs, phases ):
+    
+    if args.trialrun:
+        return 
+    
+    mdb = MUGAlyserMongoDB( args.host, args.database )
+
+    logger = logging.getLogger( __programName__ )
+    #logging.info( "Processing: '%s'" % urlName )
+    
+    try :
+        
+        for i in phases:
+            if  i == "groups" :
+                groups = Groups( mdb, apikey )
+                groups.get_meetup_groups( mugs )
+            
+            elif i == "pastevents" :
+                pastEvents = PastEvents( mdb, apikey )
+                pastEvents.get_all_events( mugs )
+            
+            elif i == "upcomingevents" :
+                upcomingEvents = UpcomingEvents( mdb, apikey )
+                upcomingEvents.get_all_events( mugs )
+            
+            elif  i == "members" :
+                members = Members( mdb, apikey )
+                members.get_all_members( mugs )
+                
+            elif i == "attendees" :
+                attendees = Attendees( mdb, apikey )
+                attendees.get_all_attendees( mugs )
+            else:
+                logger.warn( "%s is not a valid execution phase", i )
+    
+    except HTTPError, e :
+        logger.fatal( "Stopped processing: %s", e )
+        sys.exit( 2 )
         
 
 def setLoggingLevel(  logger, level="WARN"):
-    
+
     if level == "DEBUG" :
-        logger.SetLevel( logging.DEBUG )
+        logger.setLevel( logging.DEBUG )
     elif level == "INFO" :
         logger.setLevel( logging.INFO )
     elif level == "WARNING" :
@@ -111,7 +164,7 @@ def main(argv=None): # IGNORE:C0111
     program_shortdesc = "A program to read data from the Meetup API into MongoDB"
     program_license = '''%s
 
-  Licensed under the AFGPL
+  Licensed under the AGPL
   https://www.gnu.org/licenses/agpl-3.0.en.html
 
   Distributed on an "AS IS" basis without warranties
@@ -129,6 +182,8 @@ USAGE
         # MongoDB Args
         parser.add_argument( '--database', default="MUGS", help='specify the database name [default: %(default)s]')
         parser.add_argument( '--url', default="mongodb://localhost:27017", help='URI to connect to : [default: %(default)s]')
+
+
 #         parser.add_argument( '--port', default="27017", help='port name [default: %(default)s]', type=int)
 #         parser.add_argument( '--username', default=None, help='username to login to database')
 #         parser.add_argument( '--password', default=None, help='password to login to database')
@@ -146,40 +201,59 @@ USAGE
      
         parser.add_argument( '--mugs', nargs="+", default=[], help='Process MUGs list list mugs by name or use "all"')
    
-        parser.add_argument( '--attendees', nargs="+", default=[], help='Capture attendees for these groups')
+        parser.add_argument( '--phases', nargs="+", choices=[ "groups", "members", "attendees", "upcomingevents", "pastevents"], 
+                             default=[ "all"], help='execution phases')
 
-        parser.add_argument( '--loglevel', default="INFO", help='Logging level [default: %(default)s]')
+        parser.add_argument( '--loglevel', default="INFO", choices=[ "CRITICAL", "ERROR", "WARNING", "INFO",  "DEBUG" ], help='Logging level [default: %(default)s]')
+        
+        parser.add_argument( '--apikey', default=None, help='Default API key for meetup')
+        
         # Process arguments
         args = parser.parse_args()
-
+            
+        apikey=""
+        
+        if args.apikey :
+            apikey = args.apikey
+        else:
+            apikey = get_meetup_key()
+        
         verbose = args.verbose
 
-        root = logging.getLogger()
-        setLoggingLevel( root, args.loglevel )
+        logger = logging.getLogger( __programName__ )
+        setLoggingLevel( logger, args.loglevel )
 
         ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
-        root.addHandler(ch)
+        logger.addHandler(ch)
         
+        #print( "logging to: %s" % __programName__ )
         if verbose > 0:
-            logging.info("Verbose mode on")
+            logger.info("Verbose mode on")
             
         mugList = []
 
         
+        if "all" in args.phases :
+            phases = [ "groups", "members", "attendees", "upcomingevents", "pastevents"]
+        else:
+            phases = args.phases
+            
         if len( args.mugs ) > 0 :
             if args.mugs[0]  == "all":
                 mugList = MUGS.keys()
             else:
-                mugList.append( args.mug )
+                mugList.extend( args.mugs )
 
+<<<<<<< HEAD
             mdb = MUGAlyserMongoDB( args.url )
         
             reader = MeetupAPI()
             writer = MeetupWriter( mdb, reader )
             audit = AuditDB( mdb )
+
             batchID = audit.startBatch( args.trialrun,
                                         { "args"    : vars( args ), 
                                           "MUGS"    : mugList, 
@@ -203,6 +277,7 @@ USAGE
     except KeyboardInterrupt:
         print("Keyboard interrupt : Exiting...")
         sys.exit( 2 )
+
     except pymongo.errors.ServerSelectionTimeoutError, e :
         print( "Failed to connect to MongoDB Server (server timeout): %s" % e )
         sys.exit( 2 )

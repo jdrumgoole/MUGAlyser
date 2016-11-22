@@ -6,10 +6,14 @@ Created on 6 Sep 2016
 
 import requests
 import logging
+import datetime
 from copy import deepcopy
 from mugs import MUGS
 
-from apikey import MEETUP_API_KEY
+from apikey import get_meetup_key
+
+from pprint import pprint
+from version import __programName__
 
 def convert( meetupObj ):
     
@@ -27,7 +31,7 @@ def returnData( r ):
         return ( r.headers, r.json())
         
 def makeRequest( req, params=None ):
-    logger = logging.getLogger()
+    logger = logging.getLogger( __programName__ )
     level = logger.getEffectiveLevel()
     
     logger.setLevel( logging.WARN ) # turn of info output for requests
@@ -51,7 +55,19 @@ def reshapeGeospatial( doc ):
     del doc[ 'lon']
     return doc
 
+def epochToDatetime( ts ):
+    return datetime.datetime.fromtimestamp( ts /1000 )
 
+def reshapeTime( doc, keys ):
+    for i in keys:
+        if i in doc :
+            doc[ i ] =epochToDatetime( doc[ i ])
+        
+    return doc
+        
+def reshapeMemberDoc( doc ):
+    return reshapeTime( reshapeGeospatial(doc), [ "joined", "visited" ])
+    
 def noop( d ):
     return d
  
@@ -131,7 +147,7 @@ class MeetupAPI(object):
             
         return url
     
-    def __init__(self, api_key = MEETUP_API_KEY ):
+    def __init__(self, api_key = get_meetup_key()):
         '''
         Constructor
         '''
@@ -207,6 +223,14 @@ class MeetupAPI(object):
         #print( "request: '%s'" % r.url )
         return paginator(  header, body, params )
     
+    
+    def get_member_by_id(self, member_id ):
+        params = deepcopy( self._params )
+
+        ( header, body ) = makeRequest( self._api + "2/member/" + str( member_id ), params = params )
+        
+        return body
+    
     def get_members(self, url_name, items=100 ):
         
         params = deepcopy( self._params )
@@ -217,6 +241,6 @@ class MeetupAPI(object):
         ( header, body ) = makeRequest( self._api + "2/members", params = params )
         #r = requests.get( self._api + "2/members", params = params )
         
-        return paginator( header, body, params, reshapeGeospatial )
+        return paginator( header, body, params, reshapeMemberDoc )
     
 

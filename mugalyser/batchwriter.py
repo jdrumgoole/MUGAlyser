@@ -7,7 +7,6 @@ Created on 12 Oct 2016
 import pymongo
 
 
-
 def coroutine(func):
     def start( *args,**kwargs):
         cr = func(*args,**kwargs)
@@ -21,12 +20,12 @@ class BatchWriter(object):
     def __init__(self, collection, auditCollection, transformFunc, newDocName, orderedWrites=False, writeLimit=200 ):
          
         self._collection = collection
-        self._auditCollection = auditCollection
         self._orderedWrites = orderedWrites
         self._writeLimit = writeLimit
         self._processFunc = transformFunc
         self._newDocName = newDocName
          
+
 
     '''
     Intialise corountine by calling next
@@ -34,6 +33,8 @@ class BatchWriter(object):
     @coroutine 
     def bulkWrite(self ):
         bulker = None
+        result = None
+        inserted = 0
         try : 
             if self._orderedWrites :
                 bulker = self._collection.initialize_ordered_bulk_op()

@@ -5,7 +5,7 @@ Created on 16 Oct 2016
 '''
 
 from mongodb import MUGAlyserMongoDB
-from audit import AuditDB
+from audit import Audit
 
 import unittest
 
@@ -15,14 +15,14 @@ class Test(unittest.TestCase):
 
     def setUp(self):
         self._mdb = MUGAlyserMongoDB()
-        self._audit = AuditDB( self._mdb )
+        self._audit = Audit( self._mdb )
     
 
     def tearDown(self):
         pass
 
     def test_incrementID(self):
-        curID = self._audit.currentBatchID()
+        curID = self._audit.getCurrentBatchID()
         newID = self._audit.incrementBatchID()
         self.assertEqual( curID + 1, newID )
         newID = self._audit.incrementBatchID()
