@@ -203,15 +203,16 @@ USAGE
         else:
             phases = args.phases
             
+        reader = MeetupAPI()
         if len( args.mugs ) > 0 :
             if args.mugs[0]  == "all":
-                mugList = MUGS.keys()
+                mugList = reader.get_groups()
             else:
                 mugList.extend( args.mugs )
 
             mdb = MUGAlyserMongoDB( args.url )
         
-            reader = MeetupAPI()
+
             writer = MeetupWriter( mdb, reader )
             audit = Audit( mdb )
 
@@ -223,7 +224,6 @@ USAGE
             start = datetime.utcnow()
             logging.info( "Started MUG processing for batch ID: %i", batchID )
             for i in mugList :
-
                 logging.info( "Getting data for: %s" % i )
                 writer.capture_snapshot( i, phases )
                 time.sleep( args.wait )

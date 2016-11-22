@@ -249,4 +249,8 @@ class MeetupAPI(object):
 
         return paginator( header, body, params )
     
+    def get_group_names( self ):
+        for i in self.get_groups() :
+            yield i[ "urlname" ]
+    
 

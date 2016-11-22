@@ -85,7 +85,7 @@ class MeetupWriter(object):
         
             for i in phases:
                 if  i == "groups" :
-                    self._processGroup( url_name )
+                    self.processGroup( url_name )
                 
                 elif i == "pastevents" :
                     self._logger.info( "Getting past events     : '%s'"  % url_name )

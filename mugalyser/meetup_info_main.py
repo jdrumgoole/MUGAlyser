@@ -13,11 +13,14 @@ from events import Events
 from groups import Groups
 
 
-def printCount( iterator, printFunc=pprint.pprint, format="short" ):
+def printCount( iterator, printFunc=pprint.pprint, format=None ):
     count = 0
     for i in iterator :
         count = count + 1
-        printFunc( i, format  )
+        if format is None:
+            printFunc( i )
+        else:
+            printFunc( i, format  )
     print( "Total: %i" % count )
     
 if __name__ == '__main__':
@@ -29,6 +32,7 @@ if __name__ == '__main__':
     parser.add_argument( "-g", "--mug", help="Get Info for MUG")
     parser.add_argument( "-m", "--members", help="Get Info for MUG")
     parser.add_argument( "-l", "--listgroups", action="store_true", default=False, help = "List all groups")
+    parser.add_argument( "-u", "--urlnames", action="store_true", default=False, help = "List all groups by URL name")
     parser.add_argument( "--past", help="Get past events for MUG")
     parser.add_argument( "-f", "--format", choices=[ "short", "summary", "full" ], default="short", help="Get Info for MUG")
     # Process arguments
@@ -66,6 +70,13 @@ if __name__ == '__main__':
         
     if args.listgroups :
         printCount( m.get_groups(), Groups.printGroup, args.format )
+        
+    def printer( i ):
+        print( i )
+        
+    if args.urlnames :
+        printCount( m.get_group_names(), printer )
+        
         
 
 
