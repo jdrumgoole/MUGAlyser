@@ -17,7 +17,6 @@ class Feedback(object):
         '''
         self._report = self.report()
         self._report.next()
-        self._logger = logging.getLogger( __programName__ )
         
     def report(self):
         while True:
@@ -25,13 +24,11 @@ class Feedback(object):
             if line is None:
                 break
             else:
-                self._logger.info( line )
+                logging.info( line )
                 #print( line )
                 
     def output(self, line ):
-        #print( "Logging to: %s" % __programName__ )
-        #self._report.send( line )
-        self._logger.propagate = False
-        self._logger.info( line )
+
+        logging.info( line )
         
     

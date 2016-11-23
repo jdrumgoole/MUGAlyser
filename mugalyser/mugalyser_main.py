@@ -58,20 +58,21 @@ class CLIError(Exception):
     def __unicode__(self):
         return self.msg  
 
-def setLoggingLevel(  logger, level="WARN"):
+def LoggingLevel( level="WARN"):
 
+    loglevel = None
     if level == "DEBUG" :
-        logger.setLevel( logging.DEBUG )
+        loglevel = logging.DEBUG 
     elif level == "INFO" :
-        logger.setLevel( logging.INFO )
+        loglevel = logging.INFO 
     elif level == "WARNING" :
-        logger.setLevel( logging.WARNING )
+        loglevel = logging.WARNING 
     elif level == "ERROR" :
-        logger.setLevel( logging.ERROR )
+        loglevel = logging.ERROR 
     elif level == "CRITICAL" :
-        logger.setLevel( logging.CRITICAL )
+        loglevel = logging.CRITICAL
         
-    return logger  
+    return loglevel  
    
 def cleanUp( procs ) :
     for i in procs:
@@ -135,18 +136,15 @@ USAGE
         
         verbose = args.verbose
 
-        logger = logging.getLogger( __programName__ )
-        setLoggingLevel( logger, args.loglevel )
+        format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        logging.basicConfig(format=format_string, level=LoggingLevel( args.loglevel ))
+            
+        # Turn off logging for requests
+        logging.getLogger("requests").setLevel(logging.WARNING)
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        ch.setFormatter(formatter)
-        logger.addHandler(ch)
-        
-        #print( "logging to: %s" % __programName__ )
         if verbose > 0:
-            logger.info("Verbose mode on")
+            logging.info("Verbose mode on")
             
         mugList = []
 
@@ -160,7 +158,7 @@ USAGE
                                    apikey )
 
         start = datetime.utcnow()
-        logger.info( "Started MUG processing for batch ID: %i", batchID )
+        logging.info( "Started MUG processing for batch ID: %i", batchID )
         reader = MeetupAPI( apikey )
 
             
@@ -176,7 +174,7 @@ USAGE
                 phases = args.phases
             
             for i in mugList :
-                logger.info( "Getting data for: %s", i )
+                logging.info( "Getting data for: %s", i )
                 writer.capture_snapshot( i, phases )
                 time.sleep( args.wait )
         
@@ -185,7 +183,7 @@ USAGE
     
         elapsed = end - start
             
-        logger.info( "MUG processing took %s for BatchID : %i", elapsed, batchID )
+        logging.info( "MUG processing took %s for BatchID : %i", elapsed, batchID )
 
     except KeyboardInterrupt:
         print("Keyboard interrupt : Exiting...")

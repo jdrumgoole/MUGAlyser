@@ -4,10 +4,9 @@ Created on 21 Nov 2016
 @author: jdrumgoole
 '''
 
-from .audit import Audit
-from .batchwriter import BatchWriter
+from audit import Audit
+from batchwriter import BatchWriter
 from requests import HTTPError
-from .version import __programName__
 import logging
 
 
@@ -27,7 +26,7 @@ class MeetupWriter(object):
         '''
         Write contents of meetup API to MongoDB
         '''
-        self._logger = logging.getLogger( __programName__ )
+
         self._mdb = mdb
         self._meetup_api = meetup_api
         self._audit = Audit( mdb )
@@ -92,16 +91,16 @@ class MeetupWriter(object):
         
     def capture_complete_snapshot(self ):
         
-        self._logger.info( "groups")
+        logging.info( "groups")
         self.processGroups()
         for url_name in self._mugs :
-            self._logger.info( "process past events for      : %s", url_name )
+            logging.info( "process past events for      : %s", url_name )
             self.processPastEvents( url_name )
-            self._logger.info( "process upcoming events for  : %s", url_name )
+            logging.info( "process upcoming events for  : %s", url_name )
             self.processUpcomingEvents( url_name )
-            self._logger.info( "process members for          : %s", url_name )
+            logging.info( "process members for          : %s", url_name )
             self.processMembers( url_name )
-            self._logger.info( "process attendees for        : %s", url_name )
+            logging.info( "process attendees for        : %s", url_name )
             self.processAttendees( url_name )
             
     def mug_list(self):
@@ -116,25 +115,25 @@ class MeetupWriter(object):
                     self.processGroup( url_name )
                 
                 elif i == "pastevents" :
-                    self._logger.info( "Getting past events     : '%s'", url_name )
+                    logging.info( "Getting past events     : '%s'", url_name )
                     self.processPastEvents( url_name )
                 
                 elif i == "upcomingevents" :
-                    self._logger.info( "Getting upcoming events : '%s'", url_name )
+                    logging.info( "Getting upcoming events : '%s'", url_name )
                     self.processUpcomingEvents( url_name )
                 
                 elif  i == "members" :
-                    self._logger.info( "Getting members         : '%s'", url_name )
+                    logging.info( "Getting members         : '%s'", url_name )
                     self.processMembers( url_name )
                     
                 elif i == "attendees" :
-                    self._logger.info( "Getting attendees       : '%s'", url_name )
+                    logging.info( "Getting attendees       : '%s'", url_name )
                     self.processAttendees( url_name )
                 else:
-                    self._logger.warn( "%s is not a valid execution phase", i )
+                    logging.warn( "%s is not a valid execution phase", i )
     
         except HTTPError, e :
-            self._logger.fatal( "Stopped processing: %s", e )
+            logging.fatal( "Stopped processing: %s", e )
             raise
 
 

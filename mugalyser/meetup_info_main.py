@@ -33,7 +33,8 @@ if __name__ == '__main__':
     parser.add_argument( "-m", "--members", help="Get Info for MUG")
     parser.add_argument( "-l", "--listgroups", action="store_true", default=False, help = "List all groups")
     parser.add_argument( "-u", "--urlnames", action="store_true", default=False, help = "List all groups by URL name")
-    parser.add_argument( "--past", help="Get past events for MUG")
+    parser.add_argument( "--pastevents", nargs="+", default=[], help="Get past events for MUG")
+    parser.add_argument( "--upcomingevents", nargs="+", default=[], help="Get upcoming events for MUG")
     parser.add_argument( "-f", "--format", choices=[ "short", "summary", "full" ], default="short", help="Get Info for MUG")
     # Process arguments
     args = parser.parse_args()
@@ -63,9 +64,13 @@ if __name__ == '__main__':
                 
         print( "Total : %i" % count )
         
-    if args.past :
-        past_events = m.get_past_events( args.past )
+    if args.pastevents :
+        past_events = m.get_past_events( args.pastevents )
         printCount( past_events, Events.printEvent, args.format )
+        
+    if args.upcomingevents :
+        upcoming_events = m.get_upcoming_events( args.upcomingevents )
+        printCount( upcoming_events, Events.printEvent, args.format )
         
         
     if args.listgroups :

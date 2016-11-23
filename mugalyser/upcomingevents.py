@@ -4,11 +4,9 @@ Created on 11 Oct 2016
 @author: jdrumgoole
 '''
 
-from agg import Agg
+from .audit import Audit
 
-from audit import Audit
-
-class UpcomingEvents(object):
+class UpcomingEventsx(object):
     '''
     classdocs
     '''

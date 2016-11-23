@@ -29,7 +29,6 @@ class MUGAlyserMongoDB( object ):
         
         self._uri = uri
 
-        self._logger = logging.getLogger( __programName__ )
         self._client = None
         self._database_name   = databaseName
         self._members         = None
@@ -78,6 +77,9 @@ class MUGAlyserMongoDB( object ):
         
     def database(self) :
         return self._database
+    
+    def make_collection(self, collection_name ):
+        return self._database[ collection_name ]
     
     def pastEventsCollection(self):
         return self._pastEvents

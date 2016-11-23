@@ -29,10 +29,7 @@ def returnData( r ):
         return ( r.headers, r.json())
         
 def makeRequest( req, params=None ):
-    logger = logging.getLogger()
-    level = logger.getEffectiveLevel()
-    
-    logger.setLevel( logging.WARN ) # turn of info output for requests
+
     
     r = requests.get( req, params=params )
     #print( "url: '%s'" % r.url )

@@ -13,6 +13,8 @@ from apikey import get_meetup_key
 
 from pprint import pprint
 from version import __programName__
+from docutils.nodes import field_name
+from pydoc import Doc
 
 def convert( meetupObj ):
     
@@ -47,28 +49,49 @@ def makeRequest( req, params=None ):
         raise
     finally:
         logger.setLevel( level )
-        
-def reshapeGeospatial( doc ):
-    doc[ "location" ] = { "type" : "Point", "coordinates": [ doc["lon"], doc["lat" ]] }
-    del doc[ 'lat']
-    del doc[ 'lon']
-    return doc
+
+#embed      
+
 
 def epochToDatetime( ts ):
     return datetime.datetime.fromtimestamp( ts /1000 )
 
-def reshapeTime( doc, keys ):
-    for i in keys:
-        if i in doc :
-            doc[ i ] =epochToDatetime( doc[ i ])
-        
-    return doc
-        
-def reshapeMemberDoc( doc ):
-    return reshapeTime( reshapeGeospatial(doc), [ "joined", "visited" ])
+class Reshaper( object ):
     
-def noop( d ):
-    return d
+    def __init__(self ):
+        self._reshape = {}
+        
+    def add( self, key, value ):
+        self._reshape[ key] = value
+        
+    @staticmethod
+    def noop( d, arg=None):
+        return d
+ 
+    def reshape( self, doc ) :
+        newDoc = doc.copy()
+        newDoc.update( self._reshape )
+        return Doc
+
+    @staticmethod
+    def reshapeGeospatial( doc ):
+        doc[ "location" ] = { "type" : "Point", "coordinates": [ doc["lon"], doc["lat" ]] }
+        del doc[ 'lat']
+        del doc[ 'lon']
+        return doc
+
+    @staticmethod
+    def reshapeMemberDoc( doc, group ):
+        doc[ "groups"] = group
+        return Reshaper.reshapeTime( Reshaper.reshapeGeospatial(doc), [ "joined", "visited" ])
+
+    @staticmethod
+    def reshapeTime( doc, keys ):
+        for i in keys:
+            if i in doc :
+                doc[ i ] =epochToDatetime( doc[ i ])
+        
+        return doc
  
  
 def getHeaderLink( header ):
@@ -85,7 +108,7 @@ def getHeaderLink( header ):
     relVal = relVal[ 1:-1] # strip off quotes
     return ( link, relVal )
 
-def paginator( headers, body, params=None, func=None):
+def paginator( headers, body, params=None, func=None, arg=None ):
     '''
     Meetup API returns results as pages. The old API embeds the 
     page data in a meta data object in the response object. The new API
@@ -98,7 +121,7 @@ def paginator( headers, body, params=None, func=None):
     
     #print( "paginatorEntry( %s )" % headers )
     if func is None:
-        func = noop
+        func = Reshaper.noop
         
     data = body
     #pprint.pprint( data )
@@ -106,13 +129,13 @@ def paginator( headers, body, params=None, func=None):
     # old style format 
     if "meta" in body :
         for i in body[ "results"]:
-            yield func( i )
+            yield func( i, arg )
     
         while data[ 'meta' ][ "next" ] != "" :
             data = makeRequest( data['meta'][ 'next' ])[1]
         
             for i in data[ "results"]:
-                yield  func( i )
+                yield  func( i, arg )
     elif ( "Link" in headers ) : #new style pagination
         for i in data :
             yield func( i )
@@ -155,6 +178,8 @@ class MeetupAPI(object):
         self._params = {}
         self._params[ "key" ] = apikey
         self._params[ "sign"] = "true"
+        
+        self._reshaper = Reshaper()
             
     def get_group(self, url_name ):
         
@@ -173,7 +198,7 @@ class MeetupAPI(object):
         (header, body) = makeRequest( self._api + "2/events", params = params )
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
-        return paginator( header, body, params )
+        return paginator( header, body, params, Reshaper.reshapeTime, [ "time"] )
 
 
     def get_all_attendees(self, groups=None, items=50 ):
@@ -235,7 +260,7 @@ class MeetupAPI(object):
         ( header, body ) = makeRequest( self._api + "2/members", params = params )
         #r = requests.get( self._api + "2/members", params = params )
         
-        return paginator( header, body, params, reshapeMemberDoc )
+        return paginator( header, body, params, Reshaper.reshapeMemberDoc, url_name )
     
     def get_groups(self ):
         '''

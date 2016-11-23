@@ -5,7 +5,9 @@ Created on 7 Oct 2016
 '''
 from pprint import pprint
 
-from .mugdata import MUGData
+from mugdata import MUGData
+
+import itertools
 
 class Groups(MUGData):
     '''
@@ -26,10 +28,9 @@ class Groups(MUGData):
         for g in cursor :
             yield g
  
-    def get_meetup_groups(self, group_names ):
+    def get_groups(self, group_names ):
         
-        for i in group_names:
-            yield self.get_group( i )   
+        return itertools.chain( *[ self.get_group( i ) for i in group_names ] )
 
     @staticmethod
     def summary( g ):

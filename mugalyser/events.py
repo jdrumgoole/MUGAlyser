@@ -5,42 +5,30 @@ Created on 31 Oct 2016
 '''
 
 from audit import Audit
-import logging
-from mugs import MUGS
 from feedback import Feedback
 from pprint import pprint
+from mugdata import MUGData
+import itertools
 
-
-class Events(object):
+class Events(MUGData):
     '''
     classdocs
     '''
     
-    def __init__(self, auditor, eventCollection ):
+    def __init__(self, mdb, collection_name  ):
         '''
         Constructor
         '''
-        self._events = eventCollection
-        self._audit = auditor
-        self._eventCount = 0
-        self._feedback = Feedback()
+        super( Events, self ).__init__( mdb, collection_name ) 
     
-    def get_group_events(self, url_name ):
+    def get_all_group_events(self ):
         
-        validBatchID = self._audit.getValidBatchID()
-        #print( "Current Batch ID: %s" % validBatchID )
-        events = self._events.find( { "batchID" : validBatchID})
-            
-        for i in events:
-            yield i 
+        return self.find()
         
     def get_groups_events(self, groups=None ):
-        
-        if groups is None:
-            groups = MUGS
-            
-        for i in groups:
-            yield self._get_events( i )
+        # Groups should be an iterator
+        return itertools.chain( *[ self.find( { "event.group.urlname" : i } ) for i in groups ] )
+
             
     
     @staticmethod
@@ -48,9 +36,9 @@ class Events(object):
         return "name: {0}\ngroup: {1}\nrsvp:{2}\ntime: {3}\n".format(  e[ "name"], e[ "group"]["name"], e[ "yes_rsvp_count"], e[ "time" ])
 
     @staticmethod
-    def printEvent( event, summary = False ):
+    def printEvent( event, format = None ):
         if format == "short" :
-            print( event[ 'name'] )
+            print( event[ 'name' ] )
         elif format == "summary" :
             print( Events.summary( event ))
         else:
@@ -60,13 +48,11 @@ class PastEvents(Events):
     '''
     classdocs
     '''
-
-
-    def __init__(self, mdb, apikey ):
+    def __init__(self, mdb ):
         '''
         Constructor
         '''
-        super( PastEvents, self ).__init__( apikey, Audit( mdb ), mdb.pastEventsCollection())
+        super( PastEvents, self ).__init__( mdb, "past_events")
         
 class UpcomingEvents(Events):
     '''
@@ -74,8 +60,8 @@ class UpcomingEvents(Events):
     '''
 
 
-    def __init__(self, mdb, apikey ):
+    def __init__(self, mdb ):
         '''
         Constructor
         '''
-        super( UpcomingEvents, self ).__init__( apikey, Audit( mdb ), mdb.upcomingEventsCollection())
+        super( UpcomingEvents, self ).__init__( mdb, "upcoming_events")

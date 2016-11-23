@@ -9,17 +9,32 @@ from argparse import ArgumentParser
 import sys
 from pprint import pprint
 
-from mongodb import MUGAlyserMongoDB
 from audit import Audit
-from .events import Events
-from .members import Members
-from .events import UpcomingEvents, PastEvents, Events
-from .groups import Groups
+from mongodb import MUGAlyserMongoDB
+from members import Members
+from events import UpcomingEvents, PastEvents
+from groups import Groups
 
-def getCountryMugs( mugs, country ):
+def report_events( e, groups ):
+        
+    count = 0
+    rsvp = 0 
+    for i in e.get_groups_events( groups ):
+        count = count + 1
+        if args.summary:
+            print( e.summary( i[ "event" ]))
+        else:
+            pprint( i[ "event" ] )
+            
+        rsvp = rsvp + i["event"][ "yes_rsvp_count"]
+    print( "Total RSVP count: %i" % rsvp )
+    print( "Total Event count: %i" % count )
+    
+def getCountryMugs( mugs, countrycode ):
     for k,v in mugs.iteritems() :
-        if v[ "country"] == country :
+        if v[ "country"] == countrycode :
             yield (v[ "country"], k )
+            
             
 if __name__ == '__main__':
             
@@ -29,18 +44,18 @@ if __name__ == '__main__':
     
     parser.add_argument( "--hasgroup", nargs="+", default=[], help="Is this a MongoDB Group")
     
-    parser.add_argument( "--listgroups", action="store_true", default=False,  help="print out all the groups")
+    parser.add_argument( "-l", "--listgroups", action="store_true", default=False,  help="print out all the groups")
     
     parser.add_argument( "--groups", nargs="+", default=[], help="filter by this list of groups")
-    parser.add_argument( "--members", action="store_true", default=False,  help="list all users")
+    parser.add_argument( "--members", nargs="+", default=[],  help="list all members of list of groups")
 
-    parser.add_argument( "--memberid", help="get info for member id")
+    parser.add_argument( "-i", "--memberid", help="get info for member id")
     
     parser.add_argument( "--membername",  help="get info for member id")
     
-    parser.add_argument( "--upcomingevents", default=False, action="store_true",  help="List upcoming events")
+    parser.add_argument( "--upcomingevents", nargs="+", default=[],  help="List upcoming events")
     
-    parser.add_argument( "--pastevents", default=False, action="store_true",  help="List past events")
+    parser.add_argument( "--pastevents",  nargs="+", default=[],  help="List past events")
     
     parser.add_argument( "--country", nargs="+", default=[],  help="print groups by country")
     
@@ -54,20 +69,23 @@ if __name__ == '__main__':
     if args.host:
         mdb = MUGAlyserMongoDB( uri=args.host )
         
+        
+    members = Members( mdb )
+    
     if args.curbatch :
         audit = Audit( mdb )
         curbatch = audit.getCurrentBatchID()
         print ( "current batch ID = {'batchID': %i}" % curbatch )
         
     if args.memberid :
-        member = mdb.membersCollection().find_one( { "member.id" : args.memberid })
+        member = members.find_one( { "member.id" : args.memberid })
         if member :
             pprint( member )
         else:
             print( "No such member: %s" % args.memberid )
             
     if args.membername :
-        member = mdb.membersCollection().find_one( { "member.name" : args.membername })
+        member = members.find_one( { "member.name" : args.membername })
         if member :
             pprint( member )
         else:
@@ -94,7 +112,7 @@ if __name__ == '__main__':
         groups = Groups( mdb )
         country_groups = groups.find( { "group.country" : args.country })
         for g in country_groups :
-            count = count +1
+            count = count + 1
             print( "{:20} has MUG: {}".format( g[ "group"]["urlname"], args.country ))
             print( "total : %i " % count )
         
@@ -107,44 +125,31 @@ if __name__ == '__main__':
         for b in batchIDs :
             print( b )
             
+    count = 0
     if args.members:
-        
-        count = 0
-        collection = Members( mdb )
-
-        if args.group : 
-            members = collection.get_by_group(args.group )
+        members = Members( mdb )
+        if args.members == "all" : 
+            iter = members.get_members()
         else:
-            members = collection.get_members()
+            iter = members.get_many_group_members( args.members )
             
-        for i in members :
-            member = collection.get_by_ID( i[ "_id"] )
-            count = count + 1
-            #print( "member: %s" % member )
-            
-            country = member.pop( "country", "Undefined")
+        for i in iter :
 
-            print( u"{:30}, {:20}, {:20}".format( member[ "name"], country, member[ "id"]) )
+            count = count + 1
+            #print( "member: %s" % i  )
+            
+            country = i[ "member" ].pop( "country", "Undefined")
+
+            print( u"{:30}, {:20}, {:20}".format( i["member"][ "name"], country, i["member"][ "id"]) )
             
         print( "%i total" % count )
-        
-        n = collection.bruteCount()
-        print( "BruteCount :%i" % n)
+
         
     if args.upcomingevents:
         events = UpcomingEvents( mdb )
+        report_events( events, args.upcomingevents )
+
+    if args.pastevents:
+        events = PastEvents( mdb )
+        report_events( events, args.pastevents )
         
-        count = 0
-        rsvp = 0 
-        for i in events.get_groups_events( args.groups ):
-            count = count + 1
-            if args.summary:
-                print( events.summary( i[ "event" ]))
-            else:
-                pprint( i[ "event" ] )
-                
-            rsvp = rsvp + i["event"][ "yes_rsvp_count"]
-        print( "Total RSVP count: %i" % rsvp )
-        print( "Total Event count: %i" % count )
-        
-    
