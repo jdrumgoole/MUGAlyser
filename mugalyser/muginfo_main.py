@@ -9,12 +9,12 @@ from argparse import ArgumentParser
 import sys
 from pprint import pprint
 
-from mugs import MUGS
 from mongodb import MUGAlyserMongoDB
 from audit import Audit
-from events import Events
-from members import Members
-from events import UpcomingEvents, PastEvents, Events
+from .events import Events
+from .members import Members
+from .events import UpcomingEvents, PastEvents, Events
+from .groups import Groups
 
 def getCountryMugs( mugs, country ):
     for k,v in mugs.iteritems() :
@@ -74,23 +74,29 @@ if __name__ == '__main__':
             print( "No such member: %s" % args.membername )
               
     for i in args.hasgroup:
-        if i in MUGS:
+
+        groups = Groups( mdb )
+        if groups.get_group( i ) :
             print( "{:40} :is a MongoDB MUG".format( i ))
         else:
             print( "{:40} :is not a MongoDB MUG".format( i ))
         
     if args.listgroups:
-        for mug,location in MUGS.iteritems():
-            print( "{:40} (location: {})".format( mug, location["country"] ))
-        print( "%i total" % len( MUGS ))
+        groups = Groups( mdb )
+        count = 0 
+        for g in groups.get_all_groups() :
+            count = count + 1 
+            print( "{:40} (location: {})".format( g[ "group"][ "urlname" ], g["group"]["country"] ))
+        print( "total: %i" % count )
         
-    count = 0
-    for i in args.country:
-        byCountry = getCountryMugs( MUGS, i )
-        for mug, location  in byCountry :
+    if args.country: 
+        count = 0
+        groups = Groups( mdb )
+        country_groups = groups.find( { "group.country" : args.country })
+        for g in country_groups :
             count = count +1
-            print( "{:20} has MUG: {}".format( mug, location ))
-        print( "%i total" % count )
+            print( "{:20} has MUG: {}".format( g[ "group"]["urlname"], args.country ))
+            print( "total : %i " % count )
         
     if args.batches :
         if not args.host:

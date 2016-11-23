@@ -23,15 +23,6 @@ import time
 
 from meetup_api import MeetupAPI
 
-
-from requests import HTTPError
-
-from groups import Groups
-from events import PastEvents, UpcomingEvents
-from members import Members
-from attendees import Attendees
-from audit import Audit
-
 try:
     from apikey import get_meetup_key
 except ImportError,e :
@@ -42,7 +33,6 @@ from audit import Audit
 
 from mongodb import MUGAlyserMongoDB
 from meetup_writer import MeetupWriter
-from mugs import MUGS
 
 from version import __version__, __programName__
 '''
@@ -57,26 +47,6 @@ DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
-#
-# Not used
-#
-def getMugs( muglist, mugfile ):
-    
-    frontCommentRegex = re.compile( '^\s*#' )
-    
-    try:
-        with open( mugfile ) as inputFile :
-            for line in inputFile:
-                if not frontCommentRegex.match( line ):
-                    muglist.append( line.rstrip())
-        
-        return muglist 
-        
-    except IOError:
-        print( "Can't open file: '%s'" % mugfile )
-        sys.exit( 2 )
-    
-    return MUGS
                  
 class CLIError(Exception):
     '''Generic exception to raise and log different fatal errors.'''
@@ -86,13 +56,7 @@ class CLIError(Exception):
     def __str__(self):
         return self.msg
     def __unicode__(self):
-        return self.msg
-
-
-
-
-    
-        
+        return self.msg  
 
 def setLoggingLevel(  logger, level="WARN"):
 
@@ -145,17 +109,6 @@ USAGE
         parser.add_argument( '--database', default="MUGS", help='specify the database name [default: %(default)s]')
         parser.add_argument( '--url', default="mongodb://localhost:27017", help='URI to connect to : [default: %(default)s]')
 
-
-#         parser.add_argument( '--port', default="27017", help='port name [default: %(default)s]', type=int)
-#         parser.add_argument( '--username', default=None, help='username to login to database')
-#         parser.add_argument( '--password', default=None, help='password to login to database')
-#         parser.add_argument( '--replset', default="", help='replica set to use [default: %(default)s]' )
-#         parser.add_argument( '--admindb', default="admin", help="Admin database used for authentication [default: %(default)s]" )
-#         parser.add_argument( '--ssl', default=False, action="store_true", help='use SSL for connections')
-#         parser.add_argument( '--multi', default=False, action="store_true", help='use multi-processing')
-        #
-        # Program args
-        #
         parser.add_argument( "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         parser.add_argument( "-v", "--version", action='version', version="MeetupAPI " + __version__ )
         parser.add_argument( "--wait", default=5, type=int, help='How long to wait between processing the next parallel MUG request [default: %(default)s]')
@@ -185,7 +138,7 @@ USAGE
         logger = logging.getLogger( __programName__ )
         setLoggingLevel( logger, args.loglevel )
 
-        ch = logging.StreamHandler(sys.stdout)
+        ch = logging.StreamHandler()
         ch.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
@@ -197,43 +150,42 @@ USAGE
             
         mugList = []
 
+        mdb = MUGAlyserMongoDB( args.url )
+
+        audit = Audit( mdb )
         
-        if "all" in args.phases :
-            phases = [ "groups", "members", "attendees", "upcomingevents", "pastevents"]
-        else:
-            phases = args.phases
+        batchID = audit.startBatch( args.trialrun,
+                                    { "args"    : vars( args ), 
+                                      "version" : program_name + " " + __version__ },
+                                   apikey )
+
+        start = datetime.utcnow()
+        logger.info( "Started MUG processing for batch ID: %i", batchID )
+        reader = MeetupAPI( apikey )
+
             
-        reader = MeetupAPI()
-        if len( args.mugs ) > 0 :
-            if args.mugs[0]  == "all":
-                mugList = reader.get_groups()
+        writer = MeetupWriter( mdb, reader )
+        if "all" in args.mugs :
+            writer.capture_complete_snapshot()
+        else:
+            mugList.extend( args.mugs )
+            
+            if "all" in args.phases :
+                phases = [ "groups", "members", "attendees", "upcomingevents", "pastevents"]
             else:
-                mugList.extend( args.mugs )
-
-            mdb = MUGAlyserMongoDB( args.url )
-        
-
-            writer = MeetupWriter( mdb, reader )
-            audit = Audit( mdb )
-
-            batchID = audit.startBatch( args.trialrun,
-                                        { "args"    : vars( args ), 
-                                          "MUGS"    : mugList, 
-                                          "version" : program_name + " " + __version__ })
-    
-            start = datetime.utcnow()
-            logging.info( "Started MUG processing for batch ID: %i", batchID )
+                phases = args.phases
+            
             for i in mugList :
-                logging.info( "Getting data for: %s" % i )
+                logger.info( "Getting data for: %s", i )
                 writer.capture_snapshot( i, phases )
                 time.sleep( args.wait )
-            
-            audit.endBatch( batchID )
-            end = datetime.utcnow()
         
-            elapsed = end - start
-                
-            logging.info( "MUG processing took %s for BatchID : %i", batchID )
+        audit.endBatch( batchID )
+        end = datetime.utcnow()
+    
+        elapsed = end - start
+            
+        logger.info( "MUG processing took %s for BatchID : %i", elapsed, batchID )
 
     except KeyboardInterrupt:
         print("Keyboard interrupt : Exiting...")

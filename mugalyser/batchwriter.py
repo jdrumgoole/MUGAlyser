@@ -5,16 +5,8 @@ Created on 12 Oct 2016
 '''
 
 import pymongo
+from coroutine import coroutine
 
-
-def coroutine(func):
-    def start( *args,**kwargs):
-        cr = func(*args,**kwargs)
-        cr.next()
-        return cr
-
-    return start
- 
 class BatchWriter(object):
      
     def __init__(self, collection, auditCollection, transformFunc, newDocName, orderedWrites=False, writeLimit=200 ):

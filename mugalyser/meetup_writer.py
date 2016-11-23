@@ -4,11 +4,12 @@ Created on 21 Nov 2016
 @author: jdrumgoole
 '''
 
-from audit import Audit
-from batchwriter import BatchWriter
+from .audit import Audit
+from .batchwriter import BatchWriter
 from requests import HTTPError
-from version import __programName__
+from .version import __programName__
 import logging
+
 
 def mergeEvents( writer ):
     for attendee, event in writer:
@@ -35,6 +36,7 @@ class MeetupWriter(object):
         self._attendees = self._mdb.attendeesCollection()
         self._pastEvents = self._mdb.pastEventsCollection()
         self._upcomingEvents = self._mdb.upcomingEventsCollection()
+        self._mugs = []
         
     def process(self, collection, retrievalGenerator, processFunc, newFieldName ):
         '''
@@ -43,12 +45,13 @@ class MeetupWriter(object):
         document into a new doc (it should take a doc and return a doc).
         Write the new doc using the newFieldName.
         '''
-        
         bw = BatchWriter( collection, self._audit, processFunc, newFieldName )
         writer = bw.bulkWrite()
+        
         for i in retrievalGenerator :
             writer.send( i )
-        
+
+    
     def processAttendees( self, group ):
         
         writer = self._meetup_api.get_attendees( group, items=100)
@@ -56,14 +59,22 @@ class MeetupWriter(object):
         newWriter = mergeEvents( writer )
         self.process( self._attendees, newWriter, self._audit.addTimestamp, "info"  )
         
-    def processGroup(self, url_name ):
+    def processGroup(self, url_name, groupName="group"):
         group = self._meetup_api.get_group( url_name )
-        newDoc = self._audit.addTimestamp( "group", group )
+        newDoc = self._audit.addTimestamp( groupName, group )
         self._groups.insert_one( newDoc )
+        return newDoc
+        
+
+
+    def updateGroup(self, groupName, doc ):
+        self._mugs.append( doc[ "urlname" ])
+        return self._audit.addTimestamp( groupName, doc )
         
     def processGroups(self ):
-        groups = self._meetup_api.get_groups()
-        self._process( self._groups,  groups, self._audit.addTimeSTamp, "group" )
+        groups = self._meetup_api.get_pro_groups()
+        self.process( self._groups,  groups, self.updateGroup, "group" )
+        
 
     def processPastEvents(self, url_name ):
         pastEvents = self._meetup_api.get_past_events( url_name )
@@ -79,6 +90,23 @@ class MeetupWriter(object):
         self.process( self._members, members, self._audit.addTimestamp, "member" )
         
         
+    def capture_complete_snapshot(self ):
+        
+        self._logger.info( "groups")
+        self.processGroups()
+        for url_name in self._mugs :
+            self._logger.info( "process past events for      : %s", url_name )
+            self.processPastEvents( url_name )
+            self._logger.info( "process upcoming events for  : %s", url_name )
+            self.processUpcomingEvents( url_name )
+            self._logger.info( "process members for          : %s", url_name )
+            self.processMembers( url_name )
+            self._logger.info( "process attendees for        : %s", url_name )
+            self.processAttendees( url_name )
+            
+    def mug_list(self):
+        return self._mugs
+    
     def capture_snapshot(self, url_name, phases ):
             
         try :
@@ -88,19 +116,19 @@ class MeetupWriter(object):
                     self.processGroup( url_name )
                 
                 elif i == "pastevents" :
-                    self._logger.info( "Getting past events     : '%s'"  % url_name )
+                    self._logger.info( "Getting past events     : '%s'", url_name )
                     self.processPastEvents( url_name )
                 
                 elif i == "upcomingevents" :
-                    self._logger.info( "Getting upcoming events : '%s'"  % url_name )
+                    self._logger.info( "Getting upcoming events : '%s'", url_name )
                     self.processUpcomingEvents( url_name )
                 
                 elif  i == "members" :
-                    self._logger.info( "Getting members         : '%s'"  % url_name )
+                    self._logger.info( "Getting members         : '%s'", url_name )
                     self.processMembers( url_name )
                     
                 elif i == "attendees" :
-                    self._logger.info( "Getting attendees       : '%s'"  % url_name )
+                    self._logger.info( "Getting attendees       : '%s'", url_name )
                     self.processAttendees( url_name )
                 else:
                     self._logger.warn( "%s is not a valid execution phase", i )

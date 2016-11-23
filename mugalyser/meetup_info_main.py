@@ -69,7 +69,7 @@ if __name__ == '__main__':
         
         
     if args.listgroups :
-        printCount( m.get_groups(), Groups.printGroup, args.format )
+        printCount( m.get_pro_groups(), Groups.printGroup, args.format )
         
     def printer( i ):
         print( i )

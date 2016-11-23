@@ -3,41 +3,33 @@ Created on 7 Oct 2016
 
 @author: jdrumgoole
 '''
-from audit import Audit
-import logging
-from mugs import MUGS
-from feedback import Feedback
 from pprint import pprint
-class Groups(object):
+
+from .mugdata import MUGData
+
+class Groups(MUGData):
     '''
     classdocs
     '''
 
-    def __init__(self, mdb, apikey ):
-        '''
-        Constructor
-        '''
-        self._mdb = mdb
-        self._groups = self._mdb.groupsCollection()
-        self._audit = Audit( mdb )
-        self._groupCount = 0
-        self._feedback = Feedback()
+    def __init__(self, mdb ):
         
-    def get_meetup_group(self, url_name ):
+        super( Groups, self ).__init__( mdb, "groups")  
+
+        
+    def get_group(self, url_name ):
+        return self.find_one( { "group.urlname": url_name })
     
-        batchID = self._audit.getCurrentBatchID()
-        return self._groups.find_one( { "batchID" : batchID, "group.urlname" : url_name })
+    def get_all_groups(self):
+        cursor = self.find()
+        
+        for g in cursor :
+            yield g
  
-    def get_meetup_groups(self, group_names=None ):
-        self._groupCount = 0
+    def get_meetup_groups(self, group_names ):
         
-        if group_names is None:
-            self._group_names = MUGS
-        else:
-            self._group_names = group_names
-        
-        for i in self._group_names:
-            yield self.get_meetup_group( i )   
+        for i in group_names:
+            yield self.get_group( i )   
 
     @staticmethod
     def summary( g ):
@@ -47,11 +39,11 @@ class Groups(object):
     
     
     @staticmethod
-    def printGroup( group, format="short" ):
+    def printGroup( group, output="short" ):
         
-        if format == "short" :
+        if output == "short" :
             print( group[ 'name' ] )
-        elif format == "summary" :
+        elif output == "summary" :
             print( Groups.summary( group ))
         else:
             pprint( group )

@@ -8,7 +8,6 @@ import requests
 import logging
 import datetime
 from copy import deepcopy
-from mugs import MUGS
 
 from apikey import get_meetup_key
 
@@ -249,8 +248,19 @@ class MeetupAPI(object):
 
         return paginator( header, body, params )
     
+    def get_pro_groups(self ):
+        '''
+        Get all groups associated with this API key.
+        '''
+        
+        params = deepcopy( self._params )
+        logging.debug( "get_groups")
+        ( header, body ) = makeRequest( self._api + "pro/MongoDB/groups", params = params )
+
+        return paginator( header, body, params )
+    
     def get_group_names( self ):
-        for i in self.get_groups() :
+        for i in self.get_pro_groups() :
             yield i[ "urlname" ]
     
 
