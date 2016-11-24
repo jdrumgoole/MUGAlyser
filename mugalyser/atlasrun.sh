@@ -1,1 +1,0 @@
-python mugalyser_main.py --url "mongodb://jdrumgoole:jdjkdr775@mugalyser-shard-00-00-ffp4c.mongodb.net:27017,mugalyser-shard-00-01-ffp4c.mongodb.net:27017,mugalyser-shard-00-02-ffp4c.mongodb.net:27017/admin?ssl=true&replicaSet=MUGAlyser-shard-0&authSource=admin" 
