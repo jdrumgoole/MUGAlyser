@@ -5,11 +5,11 @@ Created on 12 Oct 2016
 '''
 
 import pymongo
-from coroutine import coroutine
+from utils import coroutine
 
 class BatchWriter(object):
      
-    def __init__(self, collection, auditCollection, transformFunc, newDocName, orderedWrites=False, writeLimit=200 ):
+    def __init__(self, collection, transformFunc, newDocName, orderedWrites=False, writeLimit=200 ):
          
         self._collection = collection
         self._orderedWrites = orderedWrites

@@ -12,8 +12,8 @@ import logging
 
 def mergeEvents( writer ):
     for attendee, event in writer:
-        doc = { "attendee" : attendee,
-                "event" : event }
+        doc = { u"attendee" : attendee,
+                u"event" : event }
         yield doc 
         
 class MeetupWriter(object):
@@ -44,7 +44,7 @@ class MeetupWriter(object):
         document into a new doc (it should take a doc and return a doc).
         Write the new doc using the newFieldName.
         '''
-        bw = BatchWriter( collection, self._audit, processFunc, newFieldName )
+        bw = BatchWriter( collection, processFunc, newFieldName )
         writer = bw.bulkWrite()
         
         for i in retrievalGenerator :
@@ -83,23 +83,23 @@ class MeetupWriter(object):
         upcomingEvents = self._meetup_api.get_upcoming_events( url_name )
         self.process( self._upcomingEvents, upcomingEvents, self._audit.addTimestamp, "event" )
         
-    def processMembers( self, url_name ):
+    def processMembers( self ):
         
-        members = self._meetup_api.get_members( url_name )
+        members = self._meetup_api.get_pro_members()
         self.process( self._members, members, self._audit.addTimestamp, "member" )
         
         
     def capture_complete_snapshot(self ):
         
-        logging.info( "groups")
+        logging.info( "processing groups")
         self.processGroups()
+        logging.info( "processing members")
+        self.processMembers()
         for url_name in self._mugs :
             logging.info( "process past events for      : %s", url_name )
             self.processPastEvents( url_name )
             logging.info( "process upcoming events for  : %s", url_name )
             self.processUpcomingEvents( url_name )
-            logging.info( "process members for          : %s", url_name )
-            self.processMembers( url_name )
             logging.info( "process attendees for        : %s", url_name )
             self.processAttendees( url_name )
             
@@ -124,7 +124,7 @@ class MeetupWriter(object):
                 
                 elif  i == "members" :
                     logging.info( "Getting members         : '%s'", url_name )
-                    self.processMembers( url_name )
+                    self.processMembers()
                     
                 elif i == "attendees" :
                     logging.info( "Getting attendees       : '%s'", url_name )

@@ -12,14 +12,16 @@ from pprint import pprint
 from audit import Audit
 from mongodb import MUGAlyserMongoDB
 from members import Members
-from events import UpcomingEvents, PastEvents
+from events import UpcomingEvents, PastEvents, Events
 from groups import Groups
+from utils import printCount
 
 def report_events( e, groups ):
         
     count = 0
     rsvp = 0 
-    for i in e.get_groups_events( groups ):
+    printCount( e.get_groups_events( groups ))
+    for i in e.get_groups_events( groups, pprint, ):
         count = count + 1
         if args.summary:
             print( e.summary( i[ "event" ]))
@@ -47,7 +49,10 @@ if __name__ == '__main__':
     parser.add_argument( "-l", "--listgroups", action="store_true", default=False,  help="print out all the groups")
     
     parser.add_argument( "--groups", nargs="+", default=[], help="filter by this list of groups")
-    parser.add_argument( "--members", nargs="+", default=[],  help="list all members of list of groups")
+    
+    parser.add_argument( "--members", nargs="+", default=[],  help="list all members of a list of groups")
+    
+    parser.add_argument( "--distinct" , action="store_true", default=False, help="List all distinct members")
 
     parser.add_argument( "-i", "--memberid", help="get info for member id")
     
@@ -63,7 +68,8 @@ if __name__ == '__main__':
     
     parser.add_argument( "--curbatch", action="store_true", default=False, help="Report current batch ID")
     
-    parser.add_argument( "--summary", default=False, action="store_true",  help="print a summary")
+    parser.add_argument( "-f", "--format_type", choices=[ "short", "summary", "full" ], default="short", help="type of output")
+    # Process arguments
     args = parser.parse_args()
     
     if args.host:
@@ -144,12 +150,16 @@ if __name__ == '__main__':
             
         print( "%i total" % count )
 
+    if args.distinct:
+        members = Members( mdb )
+        distinct = members.distinct_members()
+        printCount( distinct )
         
     if args.upcomingevents:
         events = UpcomingEvents( mdb )
-        report_events( events, args.upcomingevents )
+        printCount( events.get_groups_events( args.upcomingevents ), args.format_type, Events.printEvent )
 
     if args.pastevents:
         events = PastEvents( mdb )
-        report_events( events, args.pastevents )
+        printCount( events.get_groups_events( args.pastevents ), args.format_type, Events.printEvent )
         

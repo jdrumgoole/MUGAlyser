@@ -33,13 +33,18 @@ class Events(MUGData):
     
     @staticmethod
     def summary( e ):
-        return "name: {0}\ngroup: {1}\nrsvp:{2}\ntime: {3}\n".format(  e[ "name"], e[ "group"]["name"], e[ "yes_rsvp_count"], e[ "time" ])
+        event  = e[ "event"]
+        group  = event[ "group" ]
+        return u"name: {0}\ngroup: {1}\nrsvp:{2}\ntime: {3}\n".format(  event[ "name"], 
+                                                                       group[ "urlname" ], 
+                                                                       event[ "yes_rsvp_count"], 
+                                                                       event[ "time" ] )
 
     @staticmethod
-    def printEvent( event, format = None ):
-        if format == "short" :
-            print( event[ 'name' ] )
-        elif format == "summary" :
+    def printEvent( event, format_type = None ):
+        if format_type == "short" :
+            print( event["event"][ 'name' ] )
+        elif format_type == "summary" :
             print( Events.summary( event ))
         else:
             pprint( event )

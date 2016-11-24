@@ -15,6 +15,7 @@ from pprint import pprint
 from version import __programName__
 from docutils.nodes import field_name
 from pydoc import Doc
+from docutils.utils.math.math2html import Link
 
 def convert( meetupObj ):
     
@@ -81,9 +82,8 @@ class Reshaper( object ):
         return doc
 
     @staticmethod
-    def reshapeMemberDoc( doc, group ):
-        doc[ "groups"] = group
-        return Reshaper.reshapeTime( Reshaper.reshapeGeospatial(doc), [ "joined", "visited" ])
+    def reshapeMemberDoc( doc ):
+        return Reshaper.reshapeTime( Reshaper.reshapeGeospatial(doc), [ "join_time", "last_access_time" ])
 
     @staticmethod
     def reshapeTime( doc, keys ):
@@ -93,7 +93,38 @@ class Reshaper( object ):
         
         return doc
  
- 
+import json
+
+def getHref( s ):
+    ( link, direction ) = s.split( ";", 2 )
+    link = link[ 1:-1]
+    ( _, direction ) = direction.split( "=", 2 )
+    direction = direction[ 1:-1 ]
+    return ( link, direction )
+    
+    
+def getNextPrev( header ):
+    
+    #headerDict = json.loads( header )
+    link = header[ "Link" ]
+    
+    if "," in link : # has prev  and next fields
+        ( nxt, prev ) = link.split( ",", 2 )
+        ( nextLink, _ ) = getHref( nxt )
+        ( prevLink, _ )  = getHref( prev )
+    else:
+        ( link, direction ) = getHref( link )
+        #print( "direction: '%s'" % direction )
+        if direction == "next" :
+            nextLink = link
+            prevLink = None
+        else:
+            prevLink = link
+            nextLink = None
+    
+    return ( nextLink, prevLink )
+        
+    
 def getHeaderLink( header ):
     #print( "getHeaderLink( %s)" % header )
 
@@ -107,6 +138,10 @@ def getHeaderLink( header ):
     link = link[1:-1] # strip angle brackets off link
     relVal = relVal[ 1:-1] # strip off quotes
     return ( link, relVal )
+
+
+def pro_paginator( headers, body, params=None, func=None, arg=None ):
+    pass
 
 def paginator( headers, body, params=None, func=None, arg=None ):
     '''
@@ -140,15 +175,24 @@ def paginator( headers, body, params=None, func=None, arg=None ):
         for i in data :
             yield func( i )
             
-        ( link, rel ) = getHeaderLink( headers[ "Link"] )
-        while ( rel != "prev") : # no next link in last page
+        #( link, rel ) = getHeaderLink( headers[ "Link"] )
+        ( nxt, _) = getNextPrev(headers)
+#         print( "next: %s" % nxt )
+#         print( "prev: %s" % prev )
+#         import time
+#         time.sleep( 2 )
+        while ( nxt is not None ) : # no next link in last page
             #print( "rel : %s" % rel )
             #print( "link: %s" % link )
-            ( headers, body ) = makeRequest( link, params=params )
+            ( headers, body ) = makeRequest( nxt, params=params )
             #print( "paginatorLoop( %s )" % headers )
-            ( link, rel ) = getHeaderLink( headers[ "Link"] )
+            #( link, rel ) = getHeaderLink( headers[ "Link"] )
+            ( nxt, prev ) = getNextPrev(headers)
+#             print( "next: %s" % nxt )
+#             print( "prev: %s" % prev )
+#             time.sleep( 2 )
             #print( "rel: '%s'" % rel )
-            for i in data :
+            for i in body :
                 yield  func( i )
 
 
@@ -178,8 +222,6 @@ class MeetupAPI(object):
         self._params = {}
         self._params[ "key" ] = apikey
         self._params[ "sign"] = "true"
-        
-        self._reshaper = Reshaper()
             
     def get_group(self, url_name ):
         
@@ -246,7 +288,7 @@ class MeetupAPI(object):
     def get_member_by_id(self, member_id ):
         params = deepcopy( self._params )
 
-        ( header, body ) = makeRequest( self._api + "2/member/" + str( member_id ), params = params )
+        ( _, body ) = makeRequest( self._api + "2/member/" + str( member_id ), params = params )
         
         return body
     
@@ -260,29 +302,40 @@ class MeetupAPI(object):
         ( header, body ) = makeRequest( self._api + "2/members", params = params )
         #r = requests.get( self._api + "2/members", params = params )
         
-        return paginator( header, body, params, Reshaper.reshapeMemberDoc, url_name )
+        return paginator( header, body, params )
     
-    def get_groups(self ):
+    def get_groups(self, items=200 ):
         '''
         Get all groups associated with this API key.
         '''
         
         params = deepcopy( self._params )
+        params[ "page" ]         = str( items )
         logging.debug( "get_groups")
         ( header, body ) = makeRequest( self._api + "self/groups", params = params )
 
         return paginator( header, body, params )
     
-    def get_pro_groups(self ):
+    def get_pro_groups(self, items=20 ):
         '''
         Get all groups associated with this API key.
         '''
         
         params = deepcopy( self._params )
-        logging.debug( "get_groups")
+        params[ "page" ]         = str( items )
+        logging.debug( "get_pro_groups")
         ( header, body ) = makeRequest( self._api + "pro/MongoDB/groups", params = params )
 
         return paginator( header, body, params )
+    
+    def get_pro_members(self, items=200 ):
+        params = deepcopy( self._params )
+        params[ "page" ] = str( items )
+        logging.debug( "get_pro_members")
+        ( header, body ) = makeRequest( self._api + "pro/MongoDB/members", 
+                                        params = params )
+
+        return paginator( header, body, params, Reshaper.reshapeMemberDoc  )
     
     def get_group_names( self ):
         for i in self.get_pro_groups() :
