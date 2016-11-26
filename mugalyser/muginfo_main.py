@@ -48,8 +48,6 @@ if __name__ == '__main__':
     
     parser.add_argument( "-l", "--listgroups", action="store_true", default=False,  help="print out all the groups")
     
-    parser.add_argument( "--groups", nargs="+", default=[], help="filter by this list of groups")
-    
     parser.add_argument( "--members", nargs="+", default=[],  help="list all members of a list of groups")
     
     parser.add_argument( "--distinct" , action="store_true", default=False, help="List all distinct members")
@@ -133,20 +131,24 @@ if __name__ == '__main__':
             
     count = 0
     if args.members:
+        print( "args.members : %s" % args.members )
         members = Members( mdb )
-        if args.members == "all" : 
-            iter = members.get_members()
+        if "all" in args.members : 
+            iter = members.get_all_members()
         else:
             iter = members.get_many_group_members( args.members )
             
         for i in iter :
-
             count = count + 1
-            #print( "member: %s" % i  )
-            
+            #
+            # sometimes country is not defined.
+            #
             country = i[ "member" ].pop( "country", "Undefined")
-
-            print( u"{:30}, {:20}, {:20}".format( i["member"][ "name"], country, i["member"][ "id"]) )
+            
+            if "member_id" in i["member"] : # PRO API member format
+                print( u"{:30}, {:20}, {:20}".format( i["member"][ "member_name"], country, i["member"][ "member_id"]) )
+            else:
+                print( u"{:30}, {:20}, {:20}".format( i["member"][ "name"], country, i["member"][ "id"]) )
             
         print( "%i total" % count )
 
