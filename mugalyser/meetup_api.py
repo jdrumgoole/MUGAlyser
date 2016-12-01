@@ -92,6 +92,10 @@ class Reshaper( object ):
                 doc[ i ] =epochToDatetime( doc[ i ])
         
         return doc
+    
+    @staticmethod
+    def reshapeGroupDoc( doc ):
+        return Reshaper.reshapeTime( Reshaper.reshapeGeospatial(doc), [ "created" ])
  
 import json
 
@@ -139,10 +143,6 @@ def getHeaderLink( header ):
     relVal = relVal[ 1:-1] # strip off quotes
     return ( link, relVal )
 
-
-def pro_paginator( headers, body, params=None, func=None, arg=None ):
-    pass
-
 def paginator( headers, body, params=None, func=None, arg=None ):
     '''
     Meetup API returns results as pages. The old API embeds the 
@@ -175,26 +175,14 @@ def paginator( headers, body, params=None, func=None, arg=None ):
         for i in data :
             yield func( i )
             
-        #( link, rel ) = getHeaderLink( headers[ "Link"] )
         ( nxt, _) = getNextPrev(headers)
-#         print( "next: %s" % nxt )
-#         print( "prev: %s" % prev )
-#         import time
-#         time.sleep( 2 )
+
         while ( nxt is not None ) : # no next link in last page
-            #print( "rel : %s" % rel )
-            #print( "link: %s" % link )
+
             ( headers, body ) = makeRequest( nxt, params=params )
-            #print( "paginatorLoop( %s )" % headers )
-            #( link, rel ) = getHeaderLink( headers[ "Link"] )
             ( nxt, prev ) = getNextPrev(headers)
-#             print( "next: %s" % nxt )
-#             print( "prev: %s" % prev )
-#             time.sleep( 2 )
-            #print( "rel: '%s'" % rel )
             for i in body :
                 yield  func( i )
-
 
     else: # new style but we have all the data
         for i in data:
@@ -227,7 +215,7 @@ class MeetupAPI(object):
         
         params = deepcopy( self._params )
         
-        return makeRequest( self._api + url_name, params = params )[1]  
+        return Reshaper.reshapeGroupDoc( makeRequest( self._api + url_name, params = params )[1] ) 
 
     def get_past_events(self, url_name, items=20 ) :
         
@@ -237,7 +225,7 @@ class MeetupAPI(object):
         params[ "page" ]         = str( items )
         params[ "group_urlname"] = url_name
         
-        (header, body) = makeRequest( self._api + "2/events", params = params )
+        (header, body) = makeRequest( self._api + "2/events", params )
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
         return paginator( header, body, params, Reshaper.reshapeTime, [ "time"] )
@@ -312,7 +300,7 @@ class MeetupAPI(object):
         params = deepcopy( self._params )
         params[ "page" ]         = str( items )
         logging.debug( "get_groups")
-        ( header, body ) = makeRequest( self._api + "self/groups", params = params )
+        ( header, body ) = makeRequest( self._api + "self/groups", params )
 
         return paginator( header, body, params )
     
@@ -324,16 +312,15 @@ class MeetupAPI(object):
         params = deepcopy( self._params )
         params[ "page" ]         = str( items )
         logging.debug( "get_pro_groups")
-        ( header, body ) = makeRequest( self._api + "pro/MongoDB/groups", params = params )
+        ( header, body ) = makeRequest( self._api + "pro/MongoDB/groups", params )
 
-        return paginator( header, body, params )
+        return paginator( header, body, params, Reshaper.reshapeGroupDoc  )
     
     def get_pro_members(self, items=200 ):
         params = deepcopy( self._params )
         params[ "page" ] = str( items )
         logging.debug( "get_pro_members")
-        ( header, body ) = makeRequest( self._api + "pro/MongoDB/members", 
-                                        params = params )
+        ( header, body ) = makeRequest( self._api + "pro/MongoDB/members", params )
 
         return paginator( header, body, params, Reshaper.reshapeMemberDoc  )
     

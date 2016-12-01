@@ -6,6 +6,7 @@ Created on 23 Nov 2016
 
 from audit import Audit
 from feedback import Feedback
+import pprint
 
 class MUGData( object ):
     
@@ -32,3 +33,27 @@ class MUGData( object ):
         cursor = self._collection.find( batch_query )
         for i in cursor :
             yield i
+    
+    def summary(self, doc ):
+        pass 
+    
+    def one_line(self, doc ):
+        pass
+    
+    def full(self, doc ):
+        pass
+    
+    def doc_print(self, doc, format_type = None  ):
+        if format_type == "summary" :
+            print( self.summary( doc ))
+        elif format_type == "oneline" :
+            print( self.one_line( doc ))
+        else:
+            pprint.pprint( doc )
+            
+    def count_print( self, iterator, format_type=None ):
+        count = 0
+        for i in iterator :
+            count = count + 1
+            self.doc_print( i, format_type  )
+        print( "Total: %i" % count )

@@ -83,7 +83,41 @@ class Members(MUGData):
     
     def get_members(self):
         return self._membersAgg.aggregate()
+    
 
             
+    def summary(self, doc ):
+        return " name: %s, id: %s, country: %s" % ( doc[ "member" ][ "member_name"],
+                                                    doc[ "member" ][ "member_id"],
+                                                    doc[ "member" ][ "country" ] )
+    
+    def one_line(self, doc ):
+        return "name : %s, id: %s" % ( doc[ "member"][ "member_name"],
+                                       doc[ "member" ][ "member_id"] )
+
     
         
+class Organizers( Members ):
+    
+    def get_organizers(self):
+        return self.find( { "member.is_organizer" : True })
+    
+    def get_mugs(self, organizer_name  ):
+        
+        doc = self.find_one( { "member.is_organizer" : True, 
+                               "member.member_name"  : organizer_name } )
+        
+        return doc["member"][ "chapters" ]
+        
+    def summary(self, doc ):
+        m = doc[ "member"]
+        
+        header = " name: %s, id: %s, country: %s\n" % ( m[ "member_name"],
+                                                        m[ "member_id"],
+                                                        m[ "country" ] )
+        
+        for i in m[ "chapters" ]  :
+            header = "%s \t%s\n" % ( header, i[ "urlname" ] ) 
+            
+        return header
+            

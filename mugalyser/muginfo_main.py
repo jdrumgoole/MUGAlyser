@@ -11,7 +11,7 @@ from pprint import pprint
 
 from audit import Audit
 from mongodb import MUGAlyserMongoDB
-from members import Members
+from members import Members, Organizers
 from events import UpcomingEvents, PastEvents, Events
 from groups import Groups
 from utils import printCount
@@ -66,7 +66,9 @@ if __name__ == '__main__':
     
     parser.add_argument( "--curbatch", action="store_true", default=False, help="Report current batch ID")
     
-    parser.add_argument( "-f", "--format_type", choices=[ "short", "summary", "full" ], default="short", help="type of output")
+    parser.add_argument( "--organizer", nargs="+", default=[], help="List organizers for a specific set of MUGS" )
+    
+    parser.add_argument( "-f", "--format_type", choices=[ "oneline", "summary", "full" ], default="oneline", help="type of output")
     # Process arguments
     args = parser.parse_args()
     
@@ -155,13 +157,27 @@ if __name__ == '__main__':
     if args.distinct:
         members = Members( mdb )
         distinct = members.distinct_members()
-        printCount( distinct )
+        printCount( distinct  )
         
     if args.upcomingevents:
         events = UpcomingEvents( mdb )
-        printCount( events.get_groups_events( args.upcomingevents ), args.format_type, Events.printEvent )
+        events.count_print( events.get_groups_events( args.upcomingevents ), args.format_type )
 
     if args.pastevents:
         events = PastEvents( mdb )
-        printCount( events.get_groups_events( args.pastevents ), args.format_type, Events.printEvent )
+        events.count_print( events.get_groups_events( args.pastevents ), args.format_type )
+        
+    if "all" in args.organizer  :
+        organizers = Organizers( mdb )
+        members = organizers.get_organizers()
+        organizers.count_print( members, args.format_type )
+    else:
+        organizers = Organizers( mdb )
+        for i in args.organizer :
+            print( "Organizer: '%s'" % i )
+            mugs = organizers.get_mugs( i )
+            for m in mugs:
+                print( "\t%s" % m[ "urlname" ])
+        
+        
         

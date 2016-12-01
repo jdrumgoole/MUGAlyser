@@ -29,25 +29,20 @@ class Events(MUGData):
         # Groups should be an iterator
         return itertools.chain( *[ self.find( { "event.group.urlname" : i } ) for i in groups ] )
 
-            
-    
-    @staticmethod
-    def summary( e ):
-        event  = e[ "event"]
+    def summary( self, doc ):
+        event  = doc[ "event"]
         group  = event[ "group" ]
         return u"name: {0}\ngroup: {1}\nrsvp:{2}\ntime: {3}\n".format(  event[ "name"], 
                                                                        group[ "urlname" ], 
                                                                        event[ "yes_rsvp_count"], 
                                                                        event[ "time" ] )
+    
+    def one_line(self, doc ):
+        event  = doc[ "event"]
+        group  = event[ "group" ]
+        return u"name: {0}\ngroup: {1}\n".format(  event[ "name"], 
+                                                   group[ "urlname" ],)
 
-    @staticmethod
-    def printEvent( event, format_type = None ):
-        if format_type == "short" :
-            print( event["event"][ 'name' ] )
-        elif format_type == "summary" :
-            print( Events.summary( event ))
-        else:
-            pprint( event )
         
 class PastEvents(Events):
     '''
