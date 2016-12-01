@@ -86,6 +86,10 @@ class Reshaper( object ):
         return Reshaper.reshapeTime( Reshaper.reshapeGeospatial(doc), [ "join_time", "last_access_time" ])
 
     @staticmethod
+    def reshapeEventDoc( doc ):
+        return Reshaper.reshapeTime( doc, [ "created", "updated", "time" ])
+    
+    @staticmethod
     def reshapeTime( doc, keys ):
         for i in keys:
             if i in doc :
@@ -96,8 +100,7 @@ class Reshaper( object ):
     @staticmethod
     def reshapeGroupDoc( doc ):
         return Reshaper.reshapeTime( Reshaper.reshapeGeospatial(doc), [ "created" ])
- 
-import json
+
 
 def getHref( s ):
     ( link, direction ) = s.split( ";", 2 )
@@ -164,13 +167,13 @@ def paginator( headers, body, params=None, func=None, arg=None ):
     # old style format 
     if "meta" in body :
         for i in body[ "results"]:
-            yield func( i, arg )
+            yield func( i )
     
         while data[ 'meta' ][ "next" ] != "" :
             data = makeRequest( data['meta'][ 'next' ])[1]
         
             for i in data[ "results"]:
-                yield  func( i, arg )
+                yield  func( i )
     elif ( "Link" in headers ) : #new style pagination
         for i in data :
             yield func( i )
@@ -228,7 +231,7 @@ class MeetupAPI(object):
         (header, body) = makeRequest( self._api + "2/events", params )
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
-        return paginator( header, body, params, Reshaper.reshapeTime, [ "time"] )
+        return paginator( header, body, params, Reshaper.reshapeEventDoc )
 
 
     def get_all_attendees(self, groups=None, items=50 ):
@@ -270,7 +273,7 @@ class MeetupAPI(object):
         ( header, body ) = makeRequest( self._api + "2/events", params = params )
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
-        return paginator(  header, body, params )
+        return paginator(  header, body, params, Reshaper.reshapeEventDoc )
     
     
     def get_member_by_id(self, member_id ):

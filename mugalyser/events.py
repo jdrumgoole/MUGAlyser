@@ -40,8 +40,9 @@ class Events(MUGData):
     def one_line(self, doc ):
         event  = doc[ "event"]
         group  = event[ "group" ]
-        return u"name: {0}\ngroup: {1}\n".format(  event[ "name"], 
-                                                   group[ "urlname" ],)
+        return u"name: {0}, date: {1}, group: {2}".format(  event[ "name"], 
+                                                            event[ "time" ],
+                                                            group[ "urlname" ],)
 
         
 class PastEvents(Events):

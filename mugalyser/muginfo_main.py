@@ -161,7 +161,10 @@ if __name__ == '__main__':
         
     if args.upcomingevents:
         events = UpcomingEvents( mdb )
-        events.count_print( events.get_groups_events( args.upcomingevents ), args.format_type )
+        if "all" in args.upcomingevents :
+            events.count_print( events.get_all_group_events(), args.format_type )
+        else:
+            events.count_print( events.get_groups_events( args.upcomingevents ), args.format_type )
 
     if args.pastevents:
         events = PastEvents( mdb )
