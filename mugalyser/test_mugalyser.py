@@ -4,12 +4,9 @@ Created on 12 Oct 2016
 @author: jdrumgoole
 '''
 import unittest
-from mugalyser.meetup_api import MeetupAPI
 
 from apikey import MEETUP_API_KEY
 from pprint import pprint
-
-from mugs import MUGS
 
 class Test(unittest.TestCase):
 
