@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Created on 10 Oct 2016
 
@@ -12,31 +13,10 @@ from pprint import pprint
 from audit import Audit
 from mongodb import MUGAlyserMongoDB
 from members import Members, Organizers
-from events import UpcomingEvents, PastEvents, Events
+from events import UpcomingEvents, PastEvents
 from groups import Groups
 from utils import printCount
 
-def report_events( e, groups ):
-        
-    count = 0
-    rsvp = 0 
-    printCount( e.get_groups_events( groups ))
-    for i in e.get_groups_events( groups, pprint, ):
-        count = count + 1
-        if args.summary:
-            print( e.summary( i[ "event" ]))
-        else:
-            pprint( i[ "event" ] )
-            
-        rsvp = rsvp + i["event"][ "yes_rsvp_count"]
-    print( "Total RSVP count: %i" % rsvp )
-    print( "Total Event count: %i" % count )
-    
-def getCountryMugs( mugs, countrycode ):
-    for k,v in mugs.iteritems() :
-        if v[ "country"] == countrycode :
-            yield (v[ "country"], k )
-            
             
 if __name__ == '__main__':
             
@@ -52,7 +32,7 @@ if __name__ == '__main__':
     
     parser.add_argument( "--distinct" , action="store_true", default=False, help="List all distinct members")
 
-    parser.add_argument( "-i", "--memberid", help="get info for member id")
+    parser.add_argument( "-i", "--memberid", type=int, help="get info for member id")
     
     parser.add_argument( "--membername",  help="get info for member id")
     
@@ -84,9 +64,10 @@ if __name__ == '__main__':
         print ( "current batch ID = {'batchID': %i}" % curbatch )
         
     if args.memberid :
-        member = members.find_one( { "member.id" : args.memberid })
+        member = members.get_by_ID( args.memberid )
         if member :
             pprint( member )
+            print( member[ "member_name" ])
         else:
             print( "No such member: %s" % args.memberid )
             
@@ -136,17 +117,17 @@ if __name__ == '__main__':
         print( "args.members : %s" % args.members )
         members = Members( mdb )
         if "all" in args.members : 
-            iter = members.get_all_members()
+            it = members.get_all_members()
         else:
             iter = members.get_many_group_members( args.members )
             
-        for i in iter :
+        for i in it :
             count = count + 1
             #
             # sometimes country is not defined.
             #
             country = i[ "member" ].pop( "country", "Undefined")
-            
+
             if "member_id" in i["member"] : # PRO API member format
                 print( u"{:30}, {:20}, {:20}".format( i["member"][ "member_name"], country, i["member"][ "member_id"]) )
             else:

@@ -29,8 +29,6 @@ def index():
 
 @app.route('/groups')
 def groups():
-    
-    #db.audit.find( { "batchID" : { "$exists" : 1  }}, { "end" : 1 }).sort( { "end" : -1 } ).pretty()
 
     curBatch = auditdb.currentBatch()
     curGroups = groupCollection.find( { "batchID" : curBatch["ID"]}, 

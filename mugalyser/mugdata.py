@@ -18,22 +18,33 @@ class MUGData( object ):
 
     def collection(self):
         return self._collection
-    
+        
     def find_one(self, query=None ):
         batch_query = { "batchID" : self._audit.getCurrentBatchID() }
         if query is not None:
             batch_query.update( query )
         
+        pprint.pprint( batch_query )
         return self._collection.find_one( batch_query )
         
     def find(self, query = None ):
         batch_query = { "batchID" : self._audit.getCurrentBatchID() }
         if query is not None:
             batch_query.update( query )
-        cursor = self._collection.find( batch_query )
-        for i in cursor :
-            yield i
+        return self._collection.find( batch_query )
+
     
+    def count(self, g ):
+        count = 0
+        for _ in g:
+            count = count + 1
+        return count
+    
+    def generator(self, cursor ):
+        
+        for i in cursor:
+            yield i
+            
     def summary(self, doc ):
         pass 
     

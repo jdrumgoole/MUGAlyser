@@ -24,7 +24,7 @@ def convert( meetupObj ):
     return retVal
 
 
-def returnData( r ):
+def checkStatus( r ):
     if r.raise_for_status() is None:
         return ( r.headers, r.json())
         
@@ -36,7 +36,7 @@ def makeRequest( req, params=None ):
     #print( "text: %s" % r.text )
     #print( "headers: %s" % r.headers )
     try:
-        return returnData( r )
+        return checkStatus( r )
     except requests.HTTPError, e :
 
         logger.error( "HTTP Error  : %s:", e )

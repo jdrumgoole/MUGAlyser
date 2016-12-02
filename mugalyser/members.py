@@ -28,15 +28,17 @@ class Members(MUGData):
         self._memberCount = 0
         self._feedback = Feedback()
         
-        
     def get_group_members(self, url_name ):
         '''
-        Query meetup API directly and update database.
+        returns a MongoDB cursor.
         '''
         
-        return self.find( { "member.groups" : url_name })
+        return self.find( { "member.chapters" : { "$elemMatch" : { "urlname" : url_name }}})
         
     def get_many_group_members(self, groups ):
+        '''
+        returns a generator
+        '''
         
         return itertools.chain( *[ self.get_group_members( i ) for i in groups ] )
 
@@ -58,12 +60,12 @@ class Members(MUGData):
             return member[ "member" ]
         
     def get_by_ID(self, member_id):
-        val = self.find_one( { "member.id" : member_id })
+        val = self.find_one( { "member.member_id" : member_id })
         
         if val is None:
             return val
         else:
-            return val[ "member"]
+            return val[ "member" ]
         
         
     def bruteCount(self ):

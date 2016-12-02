@@ -23,10 +23,7 @@ class UpcomingEventsx(object):
         
         lastBatchID = self._audit.getLastBatchID()
         print( "Current Batch ID: %s" % lastBatchID )
-        events = self._events.find( { "batchID" : lastBatchID})
-            
-        for i in events:
-            yield i 
+        return self._events.find( { "batchID" : lastBatchID})
             
     def summary(self, e ):
         

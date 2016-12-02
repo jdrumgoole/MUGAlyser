@@ -17,16 +17,6 @@ from docutils.nodes import field_name
 from pydoc import Doc
 from docutils.utils.math.math2html import Link
 
-def convert( meetupObj ):
-    
-    retVal = {}
-    for i in dir( meetupObj  ) :
-        if not i.startswith( "__"):
-            obj = getattr( meetupObj, i, None )
-            retVal[ i ] = obj
-            
-    return retVal
-
 
 def returnData( r ):
     if r.raise_for_status() is None:

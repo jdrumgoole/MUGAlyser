@@ -23,10 +23,7 @@ class Groups(MUGData):
         return self.find_one( { "group.urlname": url_name })
     
     def get_all_groups(self):
-        cursor = self.find()
-        
-        for g in cursor :
-            yield g
+        return self.find()
  
     def get_groups(self, group_names ):
         
