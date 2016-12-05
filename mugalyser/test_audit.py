@@ -14,26 +14,26 @@ class Test(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB()
+        self._mdb = MUGAlyserMongoDB( databaseName="TEST_MUGS" )
         self._audit = Audit( self._mdb )
     
 
     def tearDown(self):
-        pass
-
+        self._mdb.client().drop_database( "TEST_MUGS" )
+    
     def test_incrementID(self):
+        id = self._audit.incrementBatchID()
         curID = self._audit.getCurrentBatchID()
+
+        self.assertEqual( id, curID )
         newID = self._audit.incrementBatchID()
-        self.assertEqual( curID + 1, newID )
-        newID = self._audit.incrementBatchID()
-        self.assertEqual( curID + 2, newID )
-        
+        self.assertEqual( id + 1, newID )
         
     def test_batch(self):
         
         batchIDs = [ x for x in self._audit.getBatchIDs()]
         
-        thisBatchID = self._audit.startBatch( trial=False, doc={ "test" : "doc"})
+        thisBatchID = self._audit.startBatch( doc={ "test" : "doc"}, trial=False)
         
         newBatchIDs = [ x for x in self._audit.getBatchIDs()]
         
@@ -43,6 +43,27 @@ class Test(unittest.TestCase):
         
         self._audit.endBatch( thisBatchID )
         
+        
+    def test_IDs(self):
+        self.assertRaises( ValueError,self._audit.getCurrentBatchID )
+        self.assertRaises( ValueError, self._audit.getLastBatchID )
+        id = self._audit.startBatch( {} )
+        self.assertEquals( 1, self._audit.getCurrentBatchID())
+        self._audit.endBatch( id )
+        batch = self._audit.getBatch( id  )
+        print( batch )
+        self.assertTrue( "start" in batch )
+        self.assertTrue( "end" in batch )
+        self.assertTrue( "info" in batch )
+        self.assertTrue( "batchID" in batch )
+        self.assertFalse( self._audit.incomplete( id ))
+        
+    def test_start_end_batch(self):
+        
+        batchID = self._audit.startBatch({})
+        self.assertTrue( self._audit.incomplete( batchID ))
+        self._audit.endBatch( batchID )
+        self.assertFalse( self._audit.incomplete( batchID ))
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

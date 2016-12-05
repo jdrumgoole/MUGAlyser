@@ -34,8 +34,13 @@ class TestMembers(unittest.TestCase):
         
     def test_distinct(self):
         unique_members = self._members.distinct_members()
-        self.assertGreaterEqual( len( unique_members ),  46126 )
+        self.assertGreaterEqual( len( unique_members ),  46122 )
         print( len( unique_members ))
+        
+    def test_get_by_name(self):
+        
+        jdrumgoole = self._members.get_by_name( "Joe Drumgoole")
+        print( jdrumgoole )
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

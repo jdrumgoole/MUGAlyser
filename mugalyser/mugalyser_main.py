@@ -152,10 +152,10 @@ USAGE
 
         audit = Audit( mdb )
         
-        batchID = audit.startBatch( args.trialrun,
-                                    { "args"    : vars( args ), 
+        batchID = audit.startBatch( { "args"    : vars( args ), 
                                       "version" : program_name + " " + __version__ },
-                                   apikey )
+                                      args.trialrun,
+                                      apikey )
 
         start = datetime.utcnow()
         logging.info( "Started MUG processing for batch ID: %i", batchID )

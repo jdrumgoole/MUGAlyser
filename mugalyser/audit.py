@@ -55,6 +55,7 @@ from datetime import datetime
 from version import __version__
 
 from apikey import get_meetup_key
+
 class Audit( object ):
     
     name="audit"
@@ -68,6 +69,7 @@ class Audit( object ):
             self._currentBatch[ "name"] = "Current Batch"
             self._currentBatch[ "currentID" ] = 0
             self._currentBatch[ "batchID" ] = 0
+            self._currentBatch[ 'valid'] = False
             self._currentBatch[ "schemaVersion" ] = __version__
             self._auditCollection.insert_one( self._currentBatch )
         else:
@@ -144,7 +146,7 @@ class Audit( object ):
 #                                       { "$set" : { "currentID" : self._currentBatch[ "currentID"],
 #                                                    "timestamp" : self._currentBatch[ "timestamp" ] }} )
         
-    def startBatch(self, trial, doc, apikey = get_meetup_key()):
+    def startBatch(self, doc, trial=False, apikey = get_meetup_key()):
         thisBatchID = self.incrementBatchID()
         self._auditCollection.insert_one( { "batchID" : thisBatchID,
                                             "start"   : datetime.now(),
@@ -155,9 +157,16 @@ class Audit( object ):
         
         return thisBatchID
         
+    def getBatch(self, batchID ):
+        return self._auditCollection.find_one( { "batchID" : batchID })
+    
+    def incomplete(self, batchID ):
+        return self.getBatch( batchID )[ "end" ] == None
+        
     def endBatch(self, batchID ):
         self._auditCollection.update( { "batchID" : batchID },
-                                      { "$set" : { "end" : datetime.now() }})
+                                      { "$set" : { "end"  : datetime.now(), 
+                                                  "valid" : True }})
         
         
     def auditCollection(self):
@@ -165,9 +174,18 @@ class Audit( object ):
     
     def getLastBatchID(self):
         curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
-        return curBatch[ "currentID"] - 1
+        if curBatch[ "currentID" ] < 2 :
+            raise ValueError( "No valid last batch")
+        else:
+            return curBatch[ "currentID"] - 1
+    
+    def getCurrentValidBatchID( self ):
+        pass
     
     def getCurrentBatchID(self ):
         curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
-        return curBatch[ "currentID"]
+        if curBatch[ "currentID" ] == 0 :
+            raise ValueError( "No batches in database" )
+        else:
+            return curBatch[ "currentID"]
     

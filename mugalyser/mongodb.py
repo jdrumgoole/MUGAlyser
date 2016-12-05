@@ -75,6 +75,9 @@ class MUGAlyserMongoDB( object ):
         self._upcomingEvents.create_index([( "batchID", pymongo.ASCENDING )])
         self._attendees.create_index([( "batchID", pymongo.ASCENDING )])
         
+    def client(self):
+        return self._client
+    
     def database(self) :
         return self._database
     
