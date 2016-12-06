@@ -9,24 +9,21 @@ from utils import coroutine
 
 class BatchWriter(object):
      
-    def __init__(self, collection, transformFunc, newDocName, orderedWrites=False, writeLimit=200 ):
+    def __init__(self, collection, transformFunc, newDocName, orderedWrites=False ):
          
         self._collection = collection
         self._orderedWrites = orderedWrites
-        self._writeLimit = writeLimit
         self._processFunc = transformFunc
         self._newDocName = newDocName
          
 
 
     '''
-    Intialise corountine by calling next
+    Intialise coroutine automatically
     '''
     @coroutine 
-    def bulkWrite(self ):
+    def bulkWrite(self, writeLimit=1000 ):
         bulker = None
-        result = None
-        inserted = 0
         try : 
             if self._orderedWrites :
                 bulker = self._collection.initialize_ordered_bulk_op()
@@ -42,7 +39,7 @@ class BatchWriter(object):
                     #print( "dict: %s" % dictEntry ) 
                     bulker.insert( self._processFunc(  self._newDocName, doc  ))
                     bulkerCount = bulkerCount + 1 
-                    if ( bulkerCount == self._writeLimit ):
+                    if ( bulkerCount == writeLimit ):
                         bulker.execute()
                         if self._orderedWrites :
                             bulker = self._collection.initialize_ordered_bulk_op()

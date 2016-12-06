@@ -65,6 +65,7 @@ class MUGAlyserMongoDB( object ):
         self._audit           = self._database[ "audit" ]
         self._attendees       = self._database[ "attendees"]
         
+        self._audit.create_index( [("name", pymongo.ASCENDING )] )
         self._members.create_index([("member.location", pymongo.GEOSPHERE)])
         self._members.create_index([("member.name", pymongo.ASCENDING )])
         self._members.create_index([("member.id", pymongo.ASCENDING )])

@@ -49,10 +49,10 @@ class Members(MUGData):
         return self.find()
         
     def distinct_members(self ):
-        return self._collection.distinct( "member.name")
+        return self._collection.distinct( "member.member_name")
     
     def get_by_name(self, name ):
-        member = self.find_one( { "member.name" : name })
+        member = self.find_one( { "member.member_name" : name })
         
         if member is None:
             return None

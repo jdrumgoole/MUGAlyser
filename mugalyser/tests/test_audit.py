@@ -46,16 +46,24 @@ class Test_audit(unittest.TestCase):
     def test_IDs(self):
         self.assertRaises( ValueError,self._audit.getCurrentBatchID )
         self.assertRaises( ValueError, self._audit.getLastBatchID )
-        id = self._audit.startBatch( {} )
+        self.assertFalse( self._audit.inBatch())
+        batchID = self._audit.startBatch( {} )
+        self.assertTrue( self._audit.inBatch())
         self.assertEquals( 1, self._audit.getCurrentBatchID())
-        self._audit.endBatch( id )
-        batch = self._audit.getBatch( id  )
-        print( batch )
+        self._audit.endBatch( batchID )
+
+        batch = self._audit.getBatch( batchID )
         self.assertTrue( "start" in batch )
         self.assertTrue( "end" in batch )
         self.assertTrue( "info" in batch )
         self.assertTrue( "batchID" in batch )
-        self.assertFalse( self._audit.incomplete( id ))
+        self.assertFalse( self._audit.incomplete( batchID ))
+        
+        batchID = self._audit.startBatch( {} )
+        self.assertTrue( self._audit.inBatch())
+        self.assertEquals( 2, self._audit.getCurrentBatchID())
+        self._audit.endBatch( batchID )
+        self.assertFalse( self._audit.inBatch())
         
     def test_start_end_batch(self):
         

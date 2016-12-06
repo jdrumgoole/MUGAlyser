@@ -21,9 +21,9 @@ class UpcomingEventsx(object):
         
     def upcoming( self ):
         
-        lastBatchID = self._audit.getLastBatchID()
-        print( "Current Batch ID: %s" % lastBatchID )
-        return self._events.find( { "batchID" : lastBatchID})
+        batchID = self._audit.getCurrentBatchID()
+        #print( "Current Batch ID: %s" % lastBatchID )
+        return self._events.find( { "batchID" : batchID})
             
     def summary(self, e ):
         

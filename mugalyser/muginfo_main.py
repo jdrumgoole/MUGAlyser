@@ -119,7 +119,7 @@ if __name__ == '__main__':
         if "all" in args.members : 
             it = members.get_all_members()
         else:
-            iter = members.get_many_group_members( args.members )
+            it = members.get_many_group_members( args.members )
             
         for i in it :
             count = count + 1

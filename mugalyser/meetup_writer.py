@@ -8,6 +8,8 @@ from audit import Audit
 from batchwriter import BatchWriter
 from requests import HTTPError
 import logging
+from apikey import get_meetup_key
+from mugalyser.meetup_api import MeetupAPI
 
 
 def mergeEvents( writer ):
@@ -20,16 +22,14 @@ class MeetupWriter(object):
     '''
     classdocs
     '''
-
-
-    def __init__(self, mdb, meetup_api, unordered=True ):
+    def __init__(self, audit, apikey= get_meetup_key(), unordered=True ):
         '''
         Write contents of meetup API to MongoDB
         '''
 
-        self._mdb = mdb
-        self._meetup_api = meetup_api
-        self._audit = Audit( mdb )
+        self._mdb = audit.mdb()
+        self._meetup_api = MeetupAPI( apikey )
+        self._audit = audit
         self._groups = self._mdb.groupsCollection()
         self._members = self._mdb.membersCollection()
         self._attendees = self._mdb.attendeesCollection()
@@ -41,7 +41,7 @@ class MeetupWriter(object):
         
     def process(self, collection, retrievalGenerator, processFunc, newFieldName ):
         '''
-        Call batchWriter with a collection. Use retrievalFunc to get a single
+        Call batchWriter with a collection. Use retrievalGenerator to get a single
         document (this should be a generator function). Use processFunc to tranform the 
         document into a new doc (it should take a doc and return a doc).
         Write the new doc using the newFieldName.
@@ -93,6 +93,7 @@ class MeetupWriter(object):
         
     def capture_complete_snapshot(self ):
         
+        logging.info( "Capturing complete snapshot" )
         logging.info( "processing groups")
         self.processGroups()
         logging.info( "processing members")
@@ -108,7 +109,17 @@ class MeetupWriter(object):
     def mug_list(self):
         return self._mugs
     
-    def capture_snapshot(self, url_name, phases ):
+    
+    def capture_snapshot(self, url_name ):
+
+        logging.info( "Capturing snapshot for: '%s'"  % url_name )
+        self.processGroup( url_name )
+        self.processMembers()
+        self.processPastEvents( url_name )
+        self.processUpcomingEvents( url_name )
+        self.processAttendees( url_name )
+  
+    def capture_snapshot_by_phases(self, url_name, phases ):
             
         try :
         

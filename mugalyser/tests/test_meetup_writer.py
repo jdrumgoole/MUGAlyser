@@ -12,40 +12,26 @@ from mugalyser.apikey import get_meetup_key
 from mugalyser.audit import Audit
 from mugalyser.version import __version__, __programName__
 
-
+def setup_database( name ):
+    mdb = MUGAlyserMongoDB( databaseName=name )
+    audit = Audit( mdb )
+    batchID = audit.startBatch( { "args"    : None, 
+                                  "version" : __programName__ + " " + __version__ },
+                                  trial = False,
+                                  apikey=get_meetup_key())
+        
+    writer = MeetupWriter( audit )
+    writer.capture_snapshot( "DublinMUG" )
+        
+    audit.endBatch( batchID )
+    return mdb
+     
 class Test_meetup_writer(unittest.TestCase):
 
-
-    def setUp(self):
-        self._mdb = MUGAlyserMongoDB( databaseName="TEST_DATA_MUGS")
-
-        self._audit = Audit( self._mdb )
-
-    def tearDown(self):
-        # we don't remove the database because this test data is reused across
-        # test runs.
-        pass
-
-    def _get_data(self, writer ):
-        batchID = self._audit.startBatch( { "args"    : None, 
-                                           "version" : __programName__ + " " + __version__ },
-                                           trial = False,
-                                           apikey=get_meetup_key())
-        
-        writer.capture_complete_snapshot()
-        
-        self._audit.endBatch( batchID )
-        
-    def test_get_data_unordered(self):
-        self._writer = MeetupWriter( self._mdb, MeetupAPI(), unordered = True )
-        self._get_data( self._writer)
-        
-    def xtest_get_data_ordered(self):
-        self._writer = MeetupWriter( self._mdb, MeetupAPI(), unordered = False )
-        self._get_data( self._writer )
-
-
+    def test_get_one(self):
+        setup_database( "TEST_DATA_MUGS")
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
+    
     unittest.main()

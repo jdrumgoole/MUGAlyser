@@ -52,7 +52,7 @@ have an end date field.
 '''
 
 from datetime import datetime
-from version import __version__
+from version import __version__, __schemaVersion__
 
 from apikey import get_meetup_key
 
@@ -61,6 +61,8 @@ class Audit( object ):
     name="audit"
     
     def __init__(self, mdb ):
+        
+        self._mdb = mdb
         self._auditCollection = mdb.auditCollection()
         self._currentBatch = self._auditCollection.find_one( { "name" : "Current Batch"})
         
@@ -89,12 +91,19 @@ class Audit( object ):
                 self._currentBatch[ "batchID" ] = 0
             
             self._auditCollection.update( { "_id" : self._currentBatch[ "_id"]},
-                                          { "$set" : { "schemaVersion" : __version__  }})
+                                          { "$set" : { "schemaVersion" : __schemaVersion__  }})
 
-
+        self._currentBatchID = None
+        
     def collection(self):
         return self._auditCollection
         
+    def mdb( self ):
+        return self._mdb
+    
+    def inBatch(self):
+        return self._currentBatchID
+    
     def insertTimestamp( self, doc, ts=None ):
         if ts :
             doc[ "timestamp" ] = ts
@@ -146,14 +155,21 @@ class Audit( object ):
 #                                       { "$set" : { "currentID" : self._currentBatch[ "currentID"],
 #                                                    "timestamp" : self._currentBatch[ "timestamp" ] }} )
         
-    def startBatch(self, doc, trial=False, apikey = get_meetup_key()):
+    def startBatch(self, doc, name=None, trial=False, apikey = get_meetup_key()):
         thisBatchID = self.incrementBatchID()
+        
+        if name is None :
+            name = "Standard Batch: %i" % thisBatchID
+            
         self._auditCollection.insert_one( { "batchID" : thisBatchID,
                                             "start"   : datetime.now(),
                                             "trial"   : trial,
                                             "end"     : None,
+                                            "name"    : name,
                                             "apikey"  : apikey,
                                             "info"    : doc })
+        
+        self._currentBatchID = thisBatchID
         
         return thisBatchID
         
@@ -168,6 +184,7 @@ class Audit( object ):
                                       { "$set" : { "end"  : datetime.now(), 
                                                   "valid" : True }})
         
+        self._currentBatchID = None
         
     def auditCollection(self):
         return self._auditCollection
@@ -183,9 +200,13 @@ class Audit( object ):
         pass
     
     def getCurrentBatchID(self ):
-        curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
-        if curBatch[ "currentID" ] == 0 :
-            raise ValueError( "No batches in database" )
+        if self._currentBatchID :
+            return self._currentBatchID
         else:
-            return curBatch[ "currentID"]
+            curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
+            
+            if curBatch[ "currentID" ] == 0 :
+                raise ValueError( "No batches in database" )
+            else:
+                return curBatch[ "currentID" ]
     
