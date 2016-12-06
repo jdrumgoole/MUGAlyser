@@ -22,7 +22,7 @@ class MeetupWriter(object):
     '''
 
 
-    def __init__(self, mdb, meetup_api ):
+    def __init__(self, mdb, meetup_api, unordered=True ):
         '''
         Write contents of meetup API to MongoDB
         '''
@@ -36,6 +36,8 @@ class MeetupWriter(object):
         self._pastEvents = self._mdb.pastEventsCollection()
         self._upcomingEvents = self._mdb.upcomingEventsCollection()
         self._mugs = []
+        self._unordered = unordered
+        
         
     def process(self, collection, retrievalGenerator, processFunc, newFieldName ):
         '''
@@ -44,7 +46,7 @@ class MeetupWriter(object):
         document into a new doc (it should take a doc and return a doc).
         Write the new doc using the newFieldName.
         '''
-        bw = BatchWriter( collection, processFunc, newFieldName )
+        bw = BatchWriter( collection, processFunc, newFieldName, orderedWrites=self._unordered )
         writer = bw.bulkWrite()
         
         for i in retrievalGenerator :

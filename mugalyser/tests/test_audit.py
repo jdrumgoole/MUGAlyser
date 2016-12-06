@@ -4,13 +4,12 @@ Created on 16 Oct 2016
 @author: jdrumgoole
 '''
 
-from mongodb import MUGAlyserMongoDB
-from audit import Audit
+from mugalyser.mongodb import MUGAlyserMongoDB
+from mugalyser.audit import Audit
 
 import unittest
 
-
-class Test(unittest.TestCase):
+class Test_audit(unittest.TestCase):
 
 
     def setUp(self):

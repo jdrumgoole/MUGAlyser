@@ -4,19 +4,19 @@ Created on 26 Nov 2016
 @author: jdrumgoole
 '''
 import unittest
-from mongodb import MUGAlyserMongoDB
-from members import Members
-class TestMembers(unittest.TestCase):
+from mugalyser.mongodb import MUGAlyserMongoDB
+from mugalyser.members import Members
+
+class Test_members(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB()
+        self._mdb = MUGAlyserMongoDB( databaseName="TEST_MUGS")
         self._members = Members( self._mdb )
 
 
     def tearDown(self):
-        pass
-
+        self._mdb.client().drop_database( "TEST_MUGS" )
 
     def test_get_group_size(self):
         

@@ -5,10 +5,10 @@ Created on 26 Nov 2016
 @author: jdrumgoole
 '''
 import unittest
-from meetup_api import MeetupAPI
+from mugalyser.meetup_api import MeetupAPI
 import types
 
-class MeetupAPI_Test(unittest.TestCase):
+class Test_meetup_api(unittest.TestCase):
 
     def setUp(self):
         self._api = MeetupAPI()
