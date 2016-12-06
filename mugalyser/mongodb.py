@@ -66,11 +66,14 @@ class MUGAlyserMongoDB( object ):
         self._attendees       = self._database[ "attendees"]
         
         self._audit.create_index( [("name", pymongo.ASCENDING )] )
+        
         self._members.create_index([("member.location", pymongo.GEOSPHERE)])
         self._members.create_index([("member.name", pymongo.ASCENDING )])
         self._members.create_index([("member.id", pymongo.ASCENDING )])
-        
         self._members.create_index([( "batchID", pymongo.ASCENDING )])
+        self._members.create_index([( "member.join_time", pymongo.ASCENDING )])
+        self._members.create_index([( "member.last_access_time", pymongo.ASCENDING )])
+                
         self._groups.create_index([( "batchID", pymongo.ASCENDING )])
         self._pastEvents.create_index([( "batchID", pymongo.ASCENDING )])
         self._upcomingEvents.create_index([( "batchID", pymongo.ASCENDING )])
