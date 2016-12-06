@@ -9,7 +9,7 @@ from batchwriter import BatchWriter
 from requests import HTTPError
 import logging
 from apikey import get_meetup_key
-from mugalyser.meetup_api import MeetupAPI
+from meetup_api import MeetupAPI
 
 
 def mergeEvents( writer ):
