@@ -1,3 +1,6 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
 '''
 Created on 17 Nov 2016
 
@@ -11,6 +14,8 @@ from argparse import ArgumentParser
 from meetup_api import MeetupAPI
 from events import Events
 from groups import Groups
+
+
 from utils import printCount
     
 if __name__ == '__main__':

@@ -27,7 +27,7 @@ class Test_members(unittest.TestCase):
 
     def test_get_all_members( self ):
         cursor = self._members.get_all_members()
-        print( cursor.count())
+        #print( cursor.count())
         self.assertGreaterEqual( cursor.count(), 826 )
         
     def test_get_many_group_members(self ):
@@ -38,7 +38,7 @@ class Test_members(unittest.TestCase):
     def test_distinct(self):
         unique_members = self._members.distinct_members()
         self.assertGreaterEqual( len( unique_members ),  46095 )
-        print( len( unique_members ))
+        #print( len( unique_members ))
         
     def test_get_by_name(self):
         

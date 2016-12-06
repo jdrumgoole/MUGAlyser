@@ -160,9 +160,7 @@ USAGE
         start = datetime.utcnow()
         logging.info( "Started MUG processing for batch ID: %i", batchID )
 
-
-            
-        writer = MeetupWriter( audit, args.apikey )
+        writer = MeetupWriter( audit, apikey )
         if "all" in args.mugs :
             writer.capture_complete_snapshot()
         else:
