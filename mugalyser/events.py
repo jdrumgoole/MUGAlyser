@@ -9,6 +9,7 @@ from feedback import Feedback
 from pprint import pprint
 from mugdata import MUGData
 import itertools
+from utils.query import Query
 
 class Events(MUGData):
     '''
@@ -25,9 +26,12 @@ class Events(MUGData):
         
         return self.find()
         
+    def get_group_events(self, url_name ):
+        return self.find( Query( { "event.group.urlname" : url_name } ))
+    
     def get_groups_events(self, groups=None ):
         # Groups should be an iterator
-        return itertools.chain( *[ self.find( { "event.group.urlname" : i } ) for i in groups ] )
+        return itertools.chain( *[ self.get_group_events( i )  for i in groups ] )
 
     def summary( self, doc ):
         event  = doc[ "event"]

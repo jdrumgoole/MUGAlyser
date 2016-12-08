@@ -8,6 +8,7 @@ from audit import Audit
 from feedback import Feedback
 import pprint
 from utils.query import Query
+
 from enum import Enum
 
 class Format( Enum ):
