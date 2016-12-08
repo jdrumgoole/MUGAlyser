@@ -5,10 +5,12 @@ Created on 11 Oct 2016
 '''
 
 from agg import Agg
-import logging
 from feedback import Feedback
 from mugdata import MUGData
 import itertools
+
+from audit import Audit
+from utils.query import Query
 
 class Members(MUGData):
     '''
@@ -27,13 +29,14 @@ class Members(MUGData):
         self._membersAgg.addSort( { "occurences" : -1 }) # largest first
         self._memberCount = 0
         self._feedback = Feedback()
+        self._audit = Audit( mdb )
         
     def get_group_members(self, url_name ):
         '''
         returns a MongoDB cursor.
         '''
         
-        return self.find( { "member.chapters" : { "$elemMatch" : { "urlname" : url_name }}})
+        return self.find( Query( { "member.chapters" : { "$elemMatch" : { "urlname" : url_name }}}))
         
     def get_many_group_members(self, groups ):
         '''
@@ -42,11 +45,11 @@ class Members(MUGData):
         
         return itertools.chain( *[ self.get_group_members( i ) for i in groups ] )
 
-    def get_all_members(self ):
+    def get_all_members(self, query=None ):
         '''
         Query meetup API for multiple groups.
         '''
-        return self.find()
+        return self.find( query )
         
     def distinct_members(self ):
         return self._collection.distinct( "member.member_name")
@@ -67,29 +70,30 @@ class Members(MUGData):
         else:
             return val[ "member" ]
         
+    def get_by_join_date(self, start, end ):
+
         
-    def bruteCount(self ):
-        count = 0
-        members = self._collection.find({ "member.name": { "$exists" : 1 }}, { "_id" : 0, "member.name" : 1 }).sort( "member.name", 1 )
-        seenName = None
+        return self.find( Query().add_range( "member.join_time", start, end ))
         
-        for i in members:
-            name = i[ "member"]["name"]
-            if seenName == name:
-                continue
-            else:
-                count = count + 1 
-                seenName = name
- 
-        return count
-    
+    def joined_by_year(self):
+        
+        agg_pipe = Agg( self._collection )    
+        agg_pipe.addMatch( { "batchID" : self._audit.getCurrentBatchID() } )
+        agg_pipe.addProject( { "_id" : 0, 
+                               "member_id" : "$member.member_id",
+                               "member_name" : "$member.member_name",
+                               "year" : { "$year" : "$member.join_time" },
+                              })
+        agg_pipe.addGroup( { "_id" : "$year","total_registered" : { "$sum" : 1 }})
+        
+        return agg_pipe.aggregate()
+        
+        
     def get_members(self):
         return self._membersAgg.aggregate()
-    
-
-            
+      
     def summary(self, doc ):
-        return " name: %s, id: %s, country: %s" % ( doc[ "member" ][ "member_name"],
+        return "name: %s, id: %s, country: %s" % ( doc[ "member" ][ "member_name"],
                                                     doc[ "member" ][ "member_id"],
                                                     doc[ "member" ][ "country" ] )
     

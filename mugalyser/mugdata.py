@@ -7,7 +7,15 @@ Created on 23 Nov 2016
 from audit import Audit
 from feedback import Feedback
 import pprint
+from utils.query import Query
+from enum import Enum
 
+class Format( Enum ):
+    oneline = 1
+    summary = 2
+    full = 3
+    
+    
 class MUGData( object ):
     
     def __init__( self, mdb, collection_name ):
@@ -27,11 +35,22 @@ class MUGData( object ):
         pprint.pprint( batch_query )
         return self._collection.find_one( batch_query )
         
-    def find(self, query = None ):
-        batch_query = { "batchID" : self._audit.getCurrentBatchID() }
-        if query is not None:
-            batch_query.update( query )
-        return self._collection.find( batch_query )
+    def find(self, q=None, *args, **kwargs ):
+        
+        batch_query = Query( { "batchID" : self._audit.getCurrentBatchID() } )
+        if q is None:
+            query = batch_query
+        else:
+            query = batch_query.update( q )
+            
+        if args and kwargs :
+            return self._collection.find( query.query(), args, kwargs )
+        elif args :
+            return self._collection.find( query.query(), args )
+        elif kwargs:
+            return self._collection.find( query.query(), kwargs )
+        else:
+            return self._collection.find( query.query())
 
     
     def count(self, g ):

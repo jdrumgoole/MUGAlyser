@@ -11,15 +11,16 @@ Simple program to Dump group data..
 from argparse import ArgumentParser
 import sys
 from pprint import pprint
-
+from dateutil.parser import parse
 from audit import Audit
 from mongodb import MUGAlyserMongoDB
 from members import Members, Organizers
 from events import UpcomingEvents, PastEvents
 from groups import Groups
-from utils import printCount
+from mugalyser.generator_utils import printCount
+from datetime import datetime
+from utils.query import Query
 
-            
 if __name__ == '__main__':
             
     parser = ArgumentParser()
@@ -48,8 +49,13 @@ if __name__ == '__main__':
     
     parser.add_argument( "--curbatch", action="store_true", default=False, help="Report current batch ID")
     
-    parser.add_argument( "--organizer", nargs="+", default=[], help="List organizers for a specific set of MUGS" )
+    parser.add_argument( "--joined", action="store_true", default=False, help="Report people who joined by year")
     
+    parser.add_argument( "--organizer", nargs="+", default=[], help="List organizers for a specific set of MUGS" )
+        
+    parser.add_argument( "--start", help="Range used for fields in which ranges relevant" )
+    parser.add_argument( "--finish", help="Range used for fields in which ranges relevant" )
+     
     parser.add_argument( "-f", "--format_type", choices=[ "oneline", "summary", "full" ], default="oneline", help="type of output")
     # Process arguments
     args = parser.parse_args()
@@ -118,10 +124,19 @@ if __name__ == '__main__':
     if args.members:
         print( "args.members : %s" % args.members )
         members = Members( mdb )
+        
+        q = Query()
+        if args.start and not args.finish :
+            q.add_range( "member.join_time", parse( args.start), datetime.now())
+        elif not args.start and args.finish:
+            q.add_range( "member.join_time", datetime.now(), parse( args.finish ))
+        elif args.start and args.finish :
+            q.add_range( "member.join_time", parse( args.start ), parse( args.finish )) 
+            
         if "all" in args.members : 
-            it = members.get_all_members()
+            it = members.get_all_members( q )
         else:
-            it = members.get_many_group_members( args.members )
+            it = members.get_many_group_members( args.members, q )
             
         for i in it :
             count = count + 1
@@ -137,6 +152,12 @@ if __name__ == '__main__':
             
         print( "%i total" % count )
 
+    if args.joined :
+        members = Members( mdb )
+        joined = members.joined_by_year()
+        for i in joined :
+            print( i )
+            
     if args.distinct:
         members = Members( mdb )
         distinct = members.distinct_members()

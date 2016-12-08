@@ -197,7 +197,7 @@ class Audit( object ):
             return curBatch[ "currentID"] - 1
     
     def getCurrentValidBatchID( self ):
-        pass
+        raise ValueError( "not implemented")
     
     def getCurrentBatchID(self ):
         if self._currentBatchID :

@@ -7,6 +7,8 @@ import unittest
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.members import Members
 from mugalyser.meetup_writer import MeetupWriter
+from dateutil.parser import parse
+from utils.query import Query
 
 class Test_members(unittest.TestCase):
 
@@ -30,6 +32,10 @@ class Test_members(unittest.TestCase):
         #print( cursor.count())
         self.assertGreaterEqual( cursor.count(), 826 )
         
+        cursor = self._members.get_all_members(Query())
+        #print( cursor.count())
+        self.assertGreaterEqual( cursor.count(), 826 )
+        
     def test_get_many_group_members(self ):
         
         members  = self._members.get_many_group_members( [ "DublinMUG", "London-MongoDB-User-Group"] )
@@ -44,6 +50,24 @@ class Test_members(unittest.TestCase):
         
         jdrumgoole = self._members.get_by_name( "Joe Drumgoole")
         self.assertNotEqual( jdrumgoole, None )
+        
+    def test_get_by_date_range(self ):
+        
+        start = parse( "1-Jan-2009, 00:01" )
+        end = parse( "31-Dec-2009 11:59" )
+        members = self._members.get_by_join_date( start , end )
+        all_members = list( members )
+        self.assertEqual( len( all_members), 59 )
+
+
+    def test_joined_by_year(self):
+        joined = self._members.joined_by_year()
+        total = 0
+        for i in joined :
+            total = total + i[ "total_registered"]
+            
+        members = self._members.get_all_members()
+        self.assertEqual( len( list( members )), total )
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

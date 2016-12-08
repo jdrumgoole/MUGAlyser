@@ -5,7 +5,7 @@ Created on 12 Oct 2016
 '''
 
 import pymongo
-from utils import coroutine
+from mugalyser.generator_utils import coroutine
 
 class BatchWriter(object):
      

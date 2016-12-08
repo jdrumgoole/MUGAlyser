@@ -18,15 +18,17 @@ class Test_audit(unittest.TestCase):
     
 
     def tearDown(self):
-        self._mdb.client().drop_database( "TEST_MUGS" )
+        #self._mdb.client().drop_database( "TEST_MUGS" )
+        pass
     
+    #@unittest.skip
     def test_incrementID(self):
-        id = self._audit.incrementBatchID()
+        batchID = self._audit.incrementBatchID()
         curID = self._audit.getCurrentBatchID()
 
-        self.assertEqual( id, curID )
+        self.assertEqual( batchID, curID )
         newID = self._audit.incrementBatchID()
-        self.assertEqual( id + 1, newID )
+        self.assertEqual( batchID + 1, newID )
         
     def test_batch(self):
         
@@ -42,7 +44,7 @@ class Test_audit(unittest.TestCase):
         
         self._audit.endBatch( thisBatchID )
         
-        
+    #@unittest.skip
     def test_IDs(self):
         self.assertRaises( ValueError,self._audit.getCurrentBatchID )
         self.assertRaises( ValueError, self._audit.getLastBatchID )
@@ -65,12 +67,14 @@ class Test_audit(unittest.TestCase):
         self._audit.endBatch( batchID )
         self.assertFalse( self._audit.inBatch())
         
+    #@unittest.skip
     def test_start_end_batch(self):
         
         batchID = self._audit.startBatch({})
         self.assertTrue( self._audit.incomplete( batchID ))
         self._audit.endBatch( batchID )
         self.assertFalse( self._audit.incomplete( batchID ))
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

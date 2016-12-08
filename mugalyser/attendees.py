@@ -16,13 +16,36 @@ class Attendees( MUGData ):
     
     def get_attendees(self, event_url):
         
-        attendees = self.find( { "info.event.event_url" : event_url })
-        for i in attendees :
-            yield i
+        return self.find( { "info.event.event_url" : event_url })
 
         
-    def get_all_attendees(self ):
+    def get_all_attendees(self , q=None):
         
-        attendees = self.find()
-        for i in attendees:
-            yield i
+        return self.find( q )
+    
+    def summary( self, doc ):
+
+        event = doc[ "info"][ "event" ]
+        address = ""
+        city = ""
+        country = ""
+        
+        headline = self.oneline( doc )
+        if "venue" in event:
+            address = event[ "venue" ][ "address_1" ]
+            city = event[ "venue"][ "city"]
+            country = event[ "venue" ][ "country"]
+            
+        return "%s\n\taddress:%s\n\tcity:%s\n\tcountry: %s" % ( headline,
+                                                                address,
+                                                                city,
+                                                                country )
+        
+    def oneline(self, doc ):
+        member = doc[ "info" ][ "attendee"][ "member" ]
+        event = doc[ "info"][ "event" ]
+        
+        return "name: %s, event:%s, date: %s, rsvp: %i" % ( member[ "name" ], 
+                                                            event[ "name"], 
+                                                            event[ "time" ],
+                                                            event[ "yes_rsvp_count"])

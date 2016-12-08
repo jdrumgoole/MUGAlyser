@@ -16,7 +16,7 @@ from events import Events
 from groups import Groups
 
 
-from utils import printCount
+from mugalyser.generator_utils import printCount
     
 if __name__ == '__main__':
     
