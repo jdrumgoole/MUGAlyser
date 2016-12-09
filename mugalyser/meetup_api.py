@@ -11,12 +11,7 @@ from copy import deepcopy
 
 from apikey import get_meetup_key
 
-from pprint import pprint
 from version import __programName__
-from docutils.nodes import field_name
-from pydoc import Doc
-from docutils.utils.math.math2html import Link
-
 
 def returnData( r ):
     if r.raise_for_status() is None:

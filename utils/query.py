@@ -3,6 +3,8 @@ Created on 7 Dec 2016
 
 @author: jdrumgoole
 '''
+def to_minutes( milliseconds ):
+    return milliseconds / 1000 /60
 
 class Query(object):
     '''
