@@ -26,7 +26,7 @@ from meetup_api import MeetupAPI
 try:
     from apikey import get_meetup_key
 except ImportError,e :
-    print( "Failed to import apikey: have you run makeapikeyfile_main.py <APIKEY> : %s" % e )
+    print( "Failed to import apikey: have you run makeapikeyfile_main.py --apikey <APIKEY> : %s" % e )
     sys.exit( 2 )
 
 from audit import Audit
