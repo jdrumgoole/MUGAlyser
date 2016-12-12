@@ -21,8 +21,9 @@ from mugalyser.generator_utils import printCount
 from datetime import datetime
 from utils.query import Query
 
-if __name__ == '__main__':
-            
+
+    
+def main() :       
     parser = ArgumentParser()
         
     parser.add_argument( "--host", default="mongodb://localhost:27017", help="URI for connecting to MongoDB [default: %(default)s]" )
@@ -187,4 +188,6 @@ if __name__ == '__main__':
                 print( "\t%s" % m[ "urlname" ])
         
         
-        
+if __name__ == '__main__':
+    main()
+    

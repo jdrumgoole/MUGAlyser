@@ -57,7 +57,7 @@ class Reshaper( object ):
     def reshape( self, doc ) :
         newDoc = doc.copy()
         newDoc.update( self._reshape )
-        return Doc
+        return newDoc
 
     @staticmethod
     def reshapeGeospatial( doc ):

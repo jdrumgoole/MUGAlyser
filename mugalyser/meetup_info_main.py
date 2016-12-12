@@ -18,8 +18,8 @@ from groups import Groups
 
 from mugalyser.generator_utils import printCount
     
-if __name__ == '__main__':
-    
+
+def main() :
     parser = ArgumentParser()
     
     parser.add_argument( "--apikey", default="", help="API Key to use for Calls")
@@ -88,7 +88,8 @@ if __name__ == '__main__':
         printCount( m.get_group_names(), args.format_type, printer )
         
         
-
+if __name__ == '__main__':
+    main()
 
         
     
