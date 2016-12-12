@@ -12,11 +12,11 @@ from argparse import ArgumentParser
 import sys
 from pprint import pprint
 from dateutil.parser import parse
-from audit import Audit
-from mongodb import MUGAlyserMongoDB
-from members import Members, Organizers
-from events import UpcomingEvents, PastEvents
-from groups import Groups
+from mugalyser.audit import Audit
+from mugalyser.mongodb import MUGAlyserMongoDB
+from mugalyser.members import Members, Organizers
+from mugalyser.events import UpcomingEvents, PastEvents
+from mugalyser.groups import Groups
 from mugalyser.generator_utils import printCount
 from datetime import datetime
 from utils.query import Query

@@ -10,7 +10,6 @@ from mugalyser.batchwriter import BatchWriter
 
 class Test(unittest.TestCase):
 
-
     def setUp(self):
         self._mdb = MUGAlyserMongoDB( databaseName="TEST_BATCHWRITER")
 
