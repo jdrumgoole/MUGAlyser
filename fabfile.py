@@ -7,7 +7,7 @@ import json
 
 from mugalyser.apikey import get_meetup_key, get_mugalyer_passwd
 
- # ["ec2-52-31-4-148.eu-west-1.compute.amazonaws.com"]
+# ["ec2-52-31-4-148.eu-west-1.compute.amazonaws.com"]
 env.user = 'ec2-user'
 home = os.getenv( "HOME" )
 env.key_filename = os.path.join( home, "Documents", "jdrumgoole-vosa-eu.pem" )
