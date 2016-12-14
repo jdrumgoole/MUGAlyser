@@ -29,10 +29,9 @@ __program_name__ = "muginfo_main"
 
 def main( argv=None ) : 
 
-    if argv is None:
-        argv = sys.argv
-    else:
-        sys.argv.extend(argv)
+    if argv:
+        sys.argv = argv
+        
     try:
               
         parser = ArgumentParser()
@@ -90,7 +89,7 @@ def main( argv=None ) :
                 print( "No such member: %s" % args.memberid )
                 
         if args.membername :
-            member = members.find_one( { "member.name" : args.membername })
+            member = members.find_one( { "member.member_name" : args.membername })
             if member :
                 pprint( member )
             else:
