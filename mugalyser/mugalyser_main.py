@@ -82,28 +82,13 @@ def cleanUp( procs ) :
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
 
-    if argv is None:
-        argv = sys.argv
-    else:
-        sys.argv.extend(argv)
-
-    program_name = os.path.basename(sys.argv[0])
-    program_shortdesc = "A program to read data from the Meetup API into MongoDB"
-    program_license = '''%s
-
-  Licensed under the AGPL
-  https://www.gnu.org/licenses/agpl-3.0.en.html
-
-  Distributed on an "AS IS" basis without warranties
-  or conditions of any kind, either express or implied.
-
-USAGE
-''' % (program_shortdesc )
+    if argv:
+        sys.argv.extend( argv )
 
     try:
         # Setup argument parser
         
-        parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
+        parser = ArgumentParser()
         
         #
         # MongoDB Args
@@ -153,7 +138,7 @@ USAGE
         audit = Audit( mdb )
         
         batchID = audit.startBatch( { "args"    : vars( args ), 
-                                      "version" : program_name + " " + __version__ },
+                                      "version" : __programName__ + " " + __version__ },
                                       args.trialrun,
                                       apikey )
 
@@ -193,8 +178,8 @@ USAGE
     except Exception, e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print_exception( exc_type, exc_value, exc_traceback )
-        indent = len(program_name) * " "
-        sys.stderr.write(program_name + ": " + repr(e) + "\n")
+        indent = len( __programName__ ) * " "
+        sys.stderr.write( __programName__ + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help\n")
         return 2
 

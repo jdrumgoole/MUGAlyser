@@ -30,7 +30,7 @@ __program_name__ = "muginfo_main"
 def main( argv=None ) : 
 
     if argv:
-        sys.argv = argv
+        sys.argv.extend( argv )
         
     try:
               
