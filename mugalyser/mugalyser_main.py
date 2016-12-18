@@ -11,7 +11,6 @@ mugalyser_main -- Grab MUG Stats and stuff them into a MongoDB Database
 
 import sys
 import os
-import re
 from datetime import datetime
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -21,20 +20,18 @@ from traceback import print_exception
 import pymongo
 import time
 
-from meetup_api import MeetupAPI
-
 try:
-    from apikey import get_meetup_key
+    from mugalyser.apikey import get_meetup_key
 except ImportError,e :
     print( "Failed to import apikey: have you run makeapikeyfile_main.py --apikey <APIKEY> : %s" % e )
     sys.exit( 2 )
 
-from audit import Audit
+from mugalyser.audit import Audit
 
-from mongodb import MUGAlyserMongoDB
-from meetup_writer import MeetupWriter
+from mugalyser.mongodb import MUGAlyserMongoDB
+from mugalyser.meetup_writer import MeetupWriter
 
-from version import __version__, __programName__
+from mugalyser.version import __version__, __programName__
 '''
     11-Oct-2016, 0.8 beta: Bumped version. Changed format of master record in Audit Collection. Changed
     name of groupinfo script to muginfo. Added support for URI format arguments. Added replica set argument.
@@ -111,7 +108,7 @@ USAGE
         parser.add_argument( '--url', default="mongodb://localhost:27017", help='URI to connect to : [default: %(default)s]')
 
         parser.add_argument( "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
-        parser.add_argument( "-v", "--version", action='version', version="MeetupAPI " + __version__ )
+        parser.add_argument( "-v", "--version", action='version', version= __programName__ + " " + __version__ )
         parser.add_argument( "--wait", default=5, type=int, help='How long to wait between processing the next parallel MUG request [default: %(default)s]')
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
      
@@ -173,7 +170,7 @@ USAGE
             
             for i in mugList :
                 logging.info( "Getting data for: %s", i )
-                writer.capture_snapshot( i, phases )
+                writer.capture_snapshot_by_phases( i, phases)
                 time.sleep( args.wait )
         
         audit.endBatch( batchID )
@@ -196,7 +193,7 @@ USAGE
         indent = len(program_name) * " "
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help\n")
-        return 2
+        raise
 
         
 

@@ -7,21 +7,21 @@ Created on 17 Nov 2016
 @author: jdrumgoole
 '''
 
-import sys
 import pprint
 
 from argparse import ArgumentParser
-from meetup_api import MeetupAPI
-from events import Events
-from groups import Groups
+from mugalyser.meetup_api import MeetupAPI
+from mugalyser.events import Events
+from mugalyser.groups import Groups
 
+from mugalyser.version import __version__
 
-from mugalyser.generator_utils import printCount
-    
+from mugalyser.mugdata import printCount
 
 def main() :
     parser = ArgumentParser()
-    
+
+    parser.add_argument( "-v", "--version", action='version', version= "meetupinfo" + __version__ )
     parser.add_argument( "--apikey", default="", help="API Key to use for Calls")
     parser.add_argument( "-i", "--member_id", type=int, help="Retrieve information for a specific ID")
     parser.add_argument( "-g", "--mug", help="Get Info for MUG")
@@ -70,22 +70,23 @@ def main() :
         
     if args.pastevents :
         past_events = m.get_past_events( args.pastevents )
-        printCount( past_events, args.format_type, Events.doc_print )
+        printCount( past_events, Events.doc_print )
         
     if args.upcomingevents :
         upcoming_events = m.get_upcoming_events( args.upcomingevents )
-        printCount( upcoming_events, args.format_type, Events.doc_print )
+        printCount( upcoming_events, Events.doc_print )
         
         
     if args.listgroups :
-        printCount( m.get_pro_groups(), args.format_type, Groups.printGroup )
+        printCount( m.get_pro_groups(), Groups.printGroup )
         
     #hack
-    def printer( i, formatter ):
+    def printer( i, ftype=None ):
+        ftype = ftype
         print( i )
         
     if args.urlnames :
-        printCount( m.get_group_names(), args.format_type, printer )
+        printCount( m.get_group_names(), printer )
         
         
 if __name__ == '__main__':

@@ -4,10 +4,7 @@ Created on 31 Oct 2016
 @author: jdrumgoole
 '''
 
-from audit import Audit
-from feedback import Feedback
-from pprint import pprint
-from mugdata import MUGData
+from mugalyser.mugdata import MUGData
 import itertools
 from utils.query import Query
 

@@ -4,19 +4,11 @@ Created on 14 Oct 2016
 @author: jdrumgoole
 '''
 
-import pymongo
 import csv
-import sys
 from argparse import ArgumentParser
-from mongodb import MUGAlyserMongoDB
-from members import Members
-from audit import Audit
-import pprint
-try:
-    from apikey import get_meetup_key
-except ImportError,e :
-    print( "Failed to import apikey: have you run makeapikeyfile_main.py <APIKEY> : %s" % e )
-    sys.exit( 2 )
+from mugalyser.mongodb import MUGAlyserMongoDB
+from mugalyser.members import Members
+from mugalyser.audit import Audit
 
 if __name__ == '__main__': 
         
@@ -28,7 +20,7 @@ if __name__ == '__main__':
     
     mdb = MUGAlyserMongoDB( "mongodb://localhost" )
     
-    members = Members( mdb, get_meetup_key()).collection()
+    members = Members( mdb ).collection()
     audit = Audit( mdb ).collection() 
     
     count = 0

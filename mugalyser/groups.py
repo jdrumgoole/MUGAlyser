@@ -5,7 +5,7 @@ Created on 7 Oct 2016
 '''
 from pprint import pprint
 
-from mugdata import MUGData
+from mugalyser.mugdata import MUGData
 
 import itertools
 

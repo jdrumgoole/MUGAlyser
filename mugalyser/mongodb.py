@@ -5,9 +5,6 @@ Created on 22 Jun 2016
 '''
 
 import pymongo
-import logging
-from version import __programName__
-
 
 class MUGAlyserMongoDB( object ):
     

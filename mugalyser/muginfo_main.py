@@ -17,13 +17,13 @@ from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.members import Members, Organizers
 from mugalyser.events import UpcomingEvents, PastEvents
 from mugalyser.groups import Groups
-from mugalyser.generator_utils import printCount
+from mugalyser.mugdata import printCount
 from datetime import datetime
 from utils.query import Query
 import pymongo
 from traceback import print_exception
 
-from version import __version__
+from mugalyser.version import __version__, __programName__
 
 __program_name__ = "muginfo_main"
 
@@ -36,7 +36,9 @@ def main( argv=None ) :
     try:
               
         parser = ArgumentParser()
-            
+        
+        parser.add_argument( "-v", "--version", action='version', version= "muginfo" + __version__ )
+        
         parser.add_argument( "--host", default="mongodb://localhost:27017", help="URI for connecting to MongoDB [default: %(default)s]" )
         
         parser.add_argument( "--hasgroup", nargs="+", default=[], help="Is this a MongoDB Group")
@@ -67,10 +69,14 @@ def main( argv=None ) :
             
         parser.add_argument( "--start", help="Range used for fields in which ranges relevant" )
         parser.add_argument( "--finish", help="Range used for fields in which ranges relevant" )
-         
+       
         parser.add_argument( "-f", "--format_type", choices=[ "oneline", "summary", "full" ], default="oneline", help="type of output")
         # Process arguments
+        
+
+            
         args = parser.parse_args()
+        
 
         mdb = MUGAlyserMongoDB( uri=args.host )
              
@@ -209,7 +215,7 @@ def main( argv=None ) :
         indent = len(__program_name__ ) * " "
         sys.stderr.write(__program_name__ + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help\n")
-        return 2
+        raise
     
     return 0
 

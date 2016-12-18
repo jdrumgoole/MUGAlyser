@@ -17,13 +17,12 @@ class Test(unittest.TestCase):
     def tearDown(self):
         #self._mdb.client().drop_database( "TEST_BATCHWRITER" )
         pass 
-    @unittest.skip
+    
     def test_batchwriter(self):
         collection = self._mdb.database()[ "TEST_WRITE"]
         bwriter = BatchWriter( collection, lambda x,y: y, "test" )
         writer = bwriter.bulkWrite()
-        for i in range( 1000000 ) :
-            print( "Writing: %i"  % i)
+        for i in range( 5000 ) :
             writer.send( { "value" : i })
             
 if __name__ == "__main__":

@@ -4,8 +4,8 @@ Created on 23 Nov 2016
 @author: jdrumgoole
 '''
 
-from audit import Audit
-from feedback import Feedback
+from mugalyser.audit import Audit
+from mugalyser.feedback import Feedback
 import pprint
 from utils.query import Query
 
@@ -15,7 +15,17 @@ class Format( Enum ):
     oneline = 1
     summary = 2
     full = 3
-    
+
+def printCount( iterator, printfunc=None ):
+    count = 0
+    for i in iterator :
+        count = count + 1
+        if printfunc is None:
+            pprint.pprint( i )
+        else:
+            printfunc( i )
+    print( "Total: %i" % count )
+       
     
 class MUGData( object ):
     

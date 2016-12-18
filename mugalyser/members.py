@@ -4,12 +4,12 @@ Created on 11 Oct 2016
 @author: jdrumgoole
 '''
 
-from agg import Agg
-from feedback import Feedback
-from mugdata import MUGData
+from mugalyser.agg import Agg
+from mugalyser.feedback import Feedback
+from mugalyser.mugdata import MUGData
 import itertools
 
-from audit import Audit
+from mugalyser.audit import Audit
 from utils.query import Query
 
 class Members(MUGData):

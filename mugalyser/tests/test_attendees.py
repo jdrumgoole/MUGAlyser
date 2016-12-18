@@ -24,9 +24,6 @@ class Test(unittest.TestCase):
     def test_get_attendees(self):
         
         attendees = self._attendees.find()
-        self._attendees.count_print( attendees, "summary" )
-        
-        attendees = self._attendees.find()
         self.assertGreaterEqual( len( list( attendees )), 1306 )
         
 
