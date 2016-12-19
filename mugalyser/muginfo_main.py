@@ -29,10 +29,9 @@ __program_name__ = "muginfo_main"
 
 def main( argv=None ) : 
 
-    if argv is None:
-        argv = sys.argv
-    else:
-        sys.argv.extend(argv)
+    if argv:
+        sys.argv.extend( argv )
+        
     try:
               
         parser = ArgumentParser()
@@ -72,11 +71,8 @@ def main( argv=None ) :
        
         parser.add_argument( "-f", "--format_type", choices=[ "oneline", "summary", "full" ], default="oneline", help="type of output")
         # Process arguments
-        
-
             
         args = parser.parse_args()
-        
 
         mdb = MUGAlyserMongoDB( uri=args.host )
              
@@ -96,7 +92,7 @@ def main( argv=None ) :
                 print( "No such member: %s" % args.memberid )
                 
         if args.membername :
-            member = members.find_one( { "member.name" : args.membername })
+            member = members.find_one( { "member.member_name" : args.membername })
             if member :
                 pprint( member )
             else:
@@ -139,7 +135,6 @@ def main( argv=None ) :
         count = 0
         if args.members:
             print( "args.members : %s" % args.members )
-            members = Members( mdb )
             
             q = Query()
             if args.start and not args.finish :
@@ -154,17 +149,17 @@ def main( argv=None ) :
             else:
                 it = members.get_many_group_members( args.members, q )
                 
-            for i in it :
-                count = count + 1
-                #
-                # sometimes country is not defined.
-                #
-                country = i[ "member" ].pop( "country", "Undefined")
-    
-                if "member_id" in i["member"] : # PRO API member format
-                    print( u"{:30}, {:20}, {:20}".format( i["member"][ "member_name"], country, i["member"][ "member_id"]) )
-                else:
-                    print( u"{:30}, {:20}, {:20}".format( i["member"][ "name"], country, i["member"][ "id"]) )
+                for i in it :
+                    count = count + 1
+                    #
+                    # sometimes country is not defined.
+                    #
+                    country = i[ "member" ].pop( "country", "Undefined")
+        
+                    if "member_id" in i["member"] : # PRO API member format
+                        print( u"{:30}, {:20}, {:20}".format( i["member"][ "member_name"], country, i["member"][ "member_id"]) )
+                    else:
+                        print( u"{:30}, {:20}, {:20}".format( i["member"][ "name"], country, i["member"][ "id"]) )
                 
             print( "%i total" % count )
     
