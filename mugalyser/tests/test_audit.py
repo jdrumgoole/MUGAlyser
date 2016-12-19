@@ -13,12 +13,12 @@ class Test_audit(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB( databaseName="TEST_MUGS" )
+        self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TEST_AUDIT" )
         self._audit = Audit( self._mdb )
     
 
     def tearDown(self):
-        #self._mdb.client().drop_database( "TEST_MUGS" )
+        self._mdb.client().drop_database( "TEST_AUDIT" )
         pass
     
     #@unittest.skip

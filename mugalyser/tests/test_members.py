@@ -14,7 +14,7 @@ class Test_members(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB( databaseName="TEST_DATA_MUGS")
+        self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TEST_DATA_MUGS")
         self._members = Members( self._mdb )
 
 

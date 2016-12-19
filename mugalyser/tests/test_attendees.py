@@ -12,7 +12,7 @@ class Test(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB( databaseName="TEST_DATA_MUGS")
+        self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TEST_DATA_MUGS")
         self._attendees = Attendees( self._mdb )
 
 
@@ -22,9 +22,6 @@ class Test(unittest.TestCase):
 
 
     def test_get_attendees(self):
-        
-        attendees = self._attendees.find()
-        self._attendees.count_print( attendees, "summary" )
         
         attendees = self._attendees.find()
         self.assertGreaterEqual( len( list( attendees )), 1306 )

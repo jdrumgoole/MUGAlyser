@@ -149,16 +149,20 @@ def paginator( headers, body, params=None, func=None, arg=None ):
     data = body
     #pprint.pprint( data )
     
+    pageCount = 0
     # old style format 
     if "meta" in body :
         for i in body[ "results"]:
             yield func( i )
     
-        while data[ 'meta' ][ "next" ] != "" :
+        while ( data[ 'meta' ][ "next" ] != ""  ) :
             data = makeRequest( data['meta'][ 'next' ])[1]
+
         
             for i in data[ "results"]:
                 yield  func( i )
+
+                
     elif ( "Link" in headers ) : #new style pagination
         for i in data :
             yield func( i )

@@ -69,10 +69,7 @@ def main( argv=None ) :
          
         parser.add_argument( "-f", "--format_type", choices=[ "oneline", "summary", "full" ], default="oneline", help="type of output")
         # Process arguments
-<<<<<<< HEAD
-            
-=======
->>>>>>> parent of 8fc37f7... WIP
+
         args = parser.parse_args()
 
         mdb = MUGAlyserMongoDB( uri=args.host )
@@ -148,7 +145,7 @@ def main( argv=None ) :
             if "all" in args.members : 
                 it = members.get_all_members( q )
             else:
-                it = members.get_many_group_members( args.members, q )
+                it = members.get_many_group_members( args.members )
                 
                 for i in it :
                     count = count + 1

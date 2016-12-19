@@ -7,13 +7,12 @@ import unittest
 
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.meetup_writer import MeetupWriter
-from mugalyser.meetup_api import MeetupAPI
 from mugalyser.apikey import get_meetup_key
 from mugalyser.audit import Audit
 from mugalyser.version import __version__, __programName__
 
 def setup_database( name ):
-    mdb = MUGAlyserMongoDB( databaseName=name )
+    mdb = MUGAlyserMongoDB( uri = "mongodb://localhost/" + name )
     audit = Audit( mdb )
     batchID = audit.startBatch( { "args"    : None, 
                                   "version" : __programName__ + " " + __version__ },

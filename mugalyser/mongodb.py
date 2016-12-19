@@ -11,7 +11,7 @@ from version import __programName__
 
 class MUGAlyserMongoDB( object ):
     
-    def __init__(self, uri="mongodb://localhost:27017", databaseName="MUGS", connect=True):
+    def __init__(self, uri="mongodb://localhost:27017", connect=True):
 
     #def __init__(self, host="localhost", port=27017, databaseName="MUGS", replset="",
     #            username=None, password=None, ssl=False, admin="admin", connect=True):
@@ -30,7 +30,6 @@ class MUGAlyserMongoDB( object ):
         self._uri = uri
 
         self._client = None
-        self._database_name   = databaseName
         self._members         = None
         self._groups          = None
         self._pastEvents      = None
@@ -48,7 +47,7 @@ class MUGAlyserMongoDB( object ):
         else:
             raise ValueError( "Invalid URL: %s" % self._uri )
         
-        self._database = self._client[ self._database_name]
+        self._database = self._client.get_default_database()
         
 #         if self._username :
 #             #self._admindb = self._client[ self._admin ]

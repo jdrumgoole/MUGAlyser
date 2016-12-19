@@ -12,7 +12,7 @@ class Test_groups(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB( databaseName="TEST_MUGS")
+        self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TEST_DATA_MUGS" )
         self._groups = Groups( self._mdb)
 
 

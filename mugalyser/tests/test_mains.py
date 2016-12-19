@@ -7,29 +7,32 @@ import unittest
 from mugalyser import muginfo_main, meetup_info_main, mugalyser_main
 import sys
 import subprocess
-import StringIO
+import os
 
 class TestMains(unittest.TestCase):
 
 
     def setUp(self):
-        self._buffer = StringIO.StringIO()
+        self._output_filename = "junk"
 
     def tearDown(self):
-        pass
+        os.unlink( self._output_filename )
 
+    def redirect_cmd(self, programArgs, output_filename ):
+
+        with open( output_filename, 'w') as f:
+            return subprocess.check_call( programArgs, stdout=f)
 
     def test_main_help(self):
-#         retVal = mugalyser_main.main( [ "-h" ] )
-#         self.assertEqual( retVal, 0 )
-        result = subprocess.check_call( [ "/usr/local/bin/python", "../muginfo_main.py", "-h" ], 
-                                          stdin=None, stdout=self._buffer )
-        
+        result = self.redirect_cmd( [ "/usr/local/bin/python", "../muginfo_main.py", "-h" ], "junk" )
         self.assertEqual( result, 0 )
-#         retVal = muginfo_main.main( [ "-h" ] )
-#         self.assertEqual( retVal, 0 )
-#         retVal = meetup_info_main.main( [ "-h" ] )
-#         self.assertEqual( retVal, 0 )
+        
+        result = self.redirect_cmd( [ "/usr/local/bin/python", "../meetup_info_main.py", "-h" ], "junk" )
+        self.assertEqual( result, 0 )
+        
+        result = self.redirect_cmd( [ "/usr/local/bin/python", "../mugalyser_main.py", "-h" ], "junk" )
+        self.assertEqual( result, 0 )
+
 
 
 if __name__ == "__main__":
