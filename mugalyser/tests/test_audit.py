@@ -46,9 +46,6 @@ class Test_audit(unittest.TestCase):
         
     #@unittest.skip
     def test_IDs(self):
-
-        self._id = MUGAlyserMongoDB( databaseName="TEST_IDS" )
-        self._audit = Audit( self._id )
         self.assertRaises( ValueError,self._audit.getCurrentBatchID )
         self.assertRaises( ValueError, self._audit.getLastBatchID )
         self.assertFalse( self._audit.inBatch())
@@ -69,7 +66,6 @@ class Test_audit(unittest.TestCase):
         self.assertEquals( 2, self._audit.getCurrentBatchID())
         self._audit.endBatch( batchID )
         self.assertFalse( self._audit.inBatch())
-        self._mdb.client().drop_database( "TEST_IDS" )
         
     #@unittest.skip
     def test_start_end_batch(self):

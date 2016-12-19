@@ -52,9 +52,9 @@ have an end date field.
 '''
 
 from datetime import datetime
-from mugalyser.version import __version__, __schemaVersion__
+from version import __version__, __schemaVersion__
 
-from mugalyser.apikey import get_meetup_key
+from apikey import get_meetup_key
 
 class Audit( object ):
     

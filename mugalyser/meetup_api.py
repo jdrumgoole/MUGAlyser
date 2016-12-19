@@ -9,9 +9,9 @@ import logging
 import datetime
 from copy import deepcopy
 
-from mugalyser.apikey import get_meetup_key
+from apikey import get_meetup_key
 
-from mugalyser.version import __programName__
+from version import __programName__
 
 def returnData( r ):
     if r.raise_for_status() is None:
@@ -52,7 +52,6 @@ class Reshaper( object ):
         
     @staticmethod
     def noop( d, arg=None):
-        arg=arg
         return d
  
     def reshape( self, doc ) :
@@ -132,7 +131,7 @@ def getHeaderLink( header ):
     relVal = relVal[ 1:-1] # strip off quotes
     return ( link, relVal )
 
-def paginator( headers, body, params=None, func=None ):
+def paginator( headers, body, params=None, func=None, arg=None ):
     '''
     Meetup API returns results as pages. The old API embeds the 
     page data in a meta data object in the response object. The new API
@@ -169,7 +168,7 @@ def paginator( headers, body, params=None, func=None ):
         while ( nxt is not None ) : # no next link in last page
 
             ( headers, body ) = makeRequest( nxt, params=params )
-            ( nxt, _ ) = getNextPrev(headers)
+            ( nxt, prev ) = getNextPrev(headers)
             for i in body :
                 yield  func( i )
 

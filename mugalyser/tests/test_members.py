@@ -6,6 +6,7 @@ Created on 26 Nov 2016
 import unittest
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.members import Members
+from mugalyser.meetup_writer import MeetupWriter
 from dateutil.parser import parse
 from utils.query import Query
 

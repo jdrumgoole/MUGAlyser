@@ -4,6 +4,7 @@ Created on 1 Nov 2016
 @author: jdrumgoole
 '''
 import logging
+from version import __programName__
             
 class Feedback(object):
     '''
