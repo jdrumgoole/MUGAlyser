@@ -272,7 +272,7 @@ class MeetupAPI(object):
         
         return body
     
-    def get_members(self, url_name, items=100 ):
+    def get_members(self, url_name, items=1000 ):
         
         params = deepcopy( self._params )
         params[ "group_urlname" ] = url_name

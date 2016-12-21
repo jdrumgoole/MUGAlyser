@@ -10,7 +10,7 @@ from bson import CodecOptions
 
 class MUGAlyserMongoDB( object ):
     
-    def __init__(self, uri="mongodb://localhost:27017", connect=True):
+    def __init__(self, uri="mongodb://localhost:27017/MUGS", connect=True):
 
     #def __init__(self, host="localhost", port=27017, databaseName="MUGS", replset="",
     #            username=None, password=None, ssl=False, admin="admin", connect=True):
@@ -26,7 +26,7 @@ class MUGAlyserMongoDB( object ):
         
         '''
         
-        self._uri = uri
+        self._uri = uri 
         #self._uri = self._uri + "?tz_aware=true"
         self._client = None
         self._members         = None
