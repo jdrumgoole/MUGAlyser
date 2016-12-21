@@ -5,9 +5,8 @@ Created on 22 Jun 2016
 '''
 
 import pymongo
-import logging
-from version import __programName__
-
+from pytz import utc
+from bson import CodecOptions
 
 class MUGAlyserMongoDB( object ):
     
@@ -28,7 +27,7 @@ class MUGAlyserMongoDB( object ):
         '''
         
         self._uri = uri
-
+        #self._uri = self._uri + "?tz_aware=true"
         self._client = None
         self._members         = None
         self._groups          = None
@@ -43,7 +42,7 @@ class MUGAlyserMongoDB( object ):
     def connect(self ):
 
         if self._uri.startswith( "mongodb://" ) :
-            self._client = pymongo.MongoClient( host=self._uri )
+            self._client = pymongo.MongoClient( host=self._uri, tz_aware=True )
         else:
             raise ValueError( "Invalid URL: %s" % self._uri )
         

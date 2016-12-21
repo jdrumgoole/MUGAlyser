@@ -31,19 +31,22 @@ class Members(MUGData):
         self._feedback = Feedback()
         self._audit = Audit( mdb )
         
-    def get_group_members(self, url_name ):
+    def get_group_members(self, url_name, query=None ):
         '''
         returns a MongoDB cursor.
         '''
         
-        return self.find( Query( { "member.chapters" : { "$elemMatch" : { "urlname" : url_name }}}))
+        groups = Query( { "member.chapters" : { "$elemMatch" : { "urlname" : url_name }}})
+        if query != None :
+            groups.And( query )
+        return self.find( groups )
         
-    def get_many_group_members(self, groups ):
+    def get_many_group_members(self, groups, query=None):
         '''
         returns a generator
         '''
         
-        return itertools.chain( *[ self.get_group_members( i ) for i in groups ] )
+        return itertools.chain( *[ self.get_group_members( i, query ) for i in groups ] )
 
     def get_all_members(self, query=None ):
         '''

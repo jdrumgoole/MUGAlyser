@@ -33,7 +33,7 @@ class MUGData( object ):
         if query is not None:
             batch_query.update( query )
         
-        pprint.pprint( batch_query )
+        #pprint.pprint( batch_query )
         return self._collection.find_one( batch_query )
         
     def find(self, q=None, *args, **kwargs ):

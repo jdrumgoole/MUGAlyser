@@ -6,7 +6,6 @@ Created on 26 Nov 2016
 import unittest
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.members import Members
-from mugalyser.meetup_writer import MeetupWriter
 from dateutil.parser import parse
 from utils.query import Query
 
@@ -40,6 +39,12 @@ class Test_members(unittest.TestCase):
         
         members  = self._members.get_many_group_members( [ "DublinMUG", "London-MongoDB-User-Group"] )
         self.assertGreaterEqual( self._members.count( members ), 2357 )
+        
+    def test_get_group_members(self ):
+        members  = self._members.get_group_members( "DublinMUG" )
+        self.assertGreaterEqual( len( list( members)), 830 )
+        #self._members.count_print( members )
+
         
     def test_distinct(self):
         unique_members = self._members.distinct_members()
