@@ -6,8 +6,9 @@ Created on 16 Oct 2016
 
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
-
 import unittest
+from mugalyser.version import __programName__, __version__
+from mugalyser.apikey import get_meetup_key
 
 class Test_audit(unittest.TestCase):
 
@@ -30,11 +31,28 @@ class Test_audit(unittest.TestCase):
         newID = self._audit.incrementBatchID()
         self.assertEqual( batchID + 1, newID )
         
+    def test_getCurrentValidBatchID(self):
+        batchID1 = self._audit.startBatch( doc={ "test" : "doc"}, trial=True)
+        self._audit.endBatch(batchID1 )
+        self.assertRaises( ValueError, self._audit.getCurrentValidBatchID )
+        
+        batchID2 = self._audit.startBatch( {  "args" : "arg list",
+                                              "version" : __programName__ + " " + __version__ },
+                                              trial=False,
+                                              apikey=get_meetup_key())
+        
+        self._audit.endBatch( batchID2 )
+        self.assertEqual( batchID2, self._audit.getCurrentValidBatchID())
+        
+        batchID3 = self._audit.startBatch( doc={ "test" : "doc"}, trial=True)
+        self._audit.endBatch(batchID3 )
+        self.assertEqual( batchID2, self._audit.getCurrentValidBatchID())
+        
     def test_batch(self):
         
         batchIDs = [ x for x in self._audit.getBatchIDs()]
         
-        thisBatchID = self._audit.startBatch( doc={ "test" : "doc"}, trial=False)
+        thisBatchID = self._audit.startBatch( doc={ "test" : "doc"}, trial=True)
         
         newBatchIDs = [ x for x in self._audit.getBatchIDs()]
         

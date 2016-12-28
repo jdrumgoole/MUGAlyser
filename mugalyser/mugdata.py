@@ -38,7 +38,7 @@ class MUGData( object ):
         
     def find(self, q=None, *args, **kwargs ):
         
-        batch_query = Query( { "batchID" : self._audit.getCurrentBatchID() } )
+        batch_query = Query( { "batchID" : self._audit.getCurrentValidBatchID() } )
         if q is None:
             query = batch_query
         else:

@@ -36,7 +36,7 @@ def main( argv=None ) :
               
         parser = ArgumentParser()
             
-        parser.add_argument( "--host", default="mongodb://localhost:27017", help="URI for connecting to MongoDB [default: %(default)s]" )
+        parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", help="URI for connecting to MongoDB [default: %(default)s]" )
         
         parser.add_argument( "--hasgroup", nargs="+", default=[], help="Is this a MongoDB Group")
         
@@ -78,7 +78,7 @@ def main( argv=None ) :
         
         if args.curbatch :
             audit = Audit( mdb )
-            curbatch = audit.getCurrentBatchID()
+            curbatch = audit.getCurrentValidBatchID()
             print ( "current batch ID = {'batchID': %i}" % curbatch )
             
         if args.memberid :

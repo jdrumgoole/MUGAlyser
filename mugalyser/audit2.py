@@ -1,6 +1,8 @@
 '''
 Created on 30 Sep 2016
 
+This is an attempt at a singleton. 
+
 The Audit collection keeps track of all the runs of the MUGALyser tool.
 There is a master document which tracks the current batch. Here is an
 example.

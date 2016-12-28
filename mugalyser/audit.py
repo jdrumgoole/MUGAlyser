@@ -51,10 +51,11 @@ have an end date field.
 @author: jdrumgoole
 '''
 
+import pymongo
 from datetime import datetime
-from version import __version__, __schemaVersion__
+from mugalyser.version import __programName__, __version__, __schemaVersion__
 
-from apikey import get_meetup_key
+from mugalyser.apikey import get_meetup_key
 
 class Audit( object ):
     
@@ -197,7 +198,14 @@ class Audit( object ):
             return curBatch[ "currentID"] - 1
     
     def getCurrentValidBatchID( self ):
-        raise ValueError( "not implemented")
+        curBatch = self._auditCollection.find( { "apikey" : get_meetup_key(),
+                                                 "end"    : { "$ne" : None },
+                                                 "trial"  : False } ).sort( "batchID", pymongo.DESCENDING ).limit( 1 )
+        
+        if curBatch is None :
+            raise ValueError( "No current valid batch ID" )
+        else:
+            return curBatch.next()[ "batchID"]
     
     def getCurrentBatchID(self ):
         if self._currentBatchID :
