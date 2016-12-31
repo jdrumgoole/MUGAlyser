@@ -23,6 +23,7 @@ class Query(object):
     def add(self, field, value ):
         
         self._query.update( { field : value })
+        
         return self
     
     def add_range(self, field, start, finish ):
@@ -32,6 +33,18 @@ class Query(object):
     def query(self):
         return self._query
     
+    def __str__(self ):
+        return self.__repr__() 
+    
+    def __repr_(self):
+        return self._query
+    
     def update(self, q ):
         self._query.update( q._query )
+        return self
+    
+    def And(self, q2 ):
+        
+        self._query = { "$and" : [ self._query, q2 ]}
+        
         return self

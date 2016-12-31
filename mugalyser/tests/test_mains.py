@@ -14,7 +14,9 @@ class TestMains(unittest.TestCase):
 
     def setUp(self):
         self._output_filename = "junk"
-
+        self._home = os.getenv( "HOME" )
+        self._root = os.getenv( "MROOT", os.path.join( self._home, "GIT", "MUGAlyser"))
+        self._binPath = os.path.join( self._root, "mugalyser" )
     def tearDown(self):
         os.unlink( self._output_filename )
 
@@ -24,13 +26,13 @@ class TestMains(unittest.TestCase):
             return subprocess.check_call( programArgs, stdout=f)
 
     def test_main_help(self):
-        result = self.redirect_cmd( [ "/usr/local/bin/python", "../muginfo_main.py", "-h" ], "junk" )
+        result = self.redirect_cmd( [ "python", os.path.join( self._binPath, "muginfo_main.py" ), "-h" ], "junk" )
         self.assertEqual( result, 0 )
         
-        result = self.redirect_cmd( [ "/usr/local/bin/python", "../meetup_info_main.py", "-h" ], "junk" )
+        result = self.redirect_cmd( [ "python", os.path.join( self._binPath, "meetup_info_main.py" ), "-h" ], "junk" )
         self.assertEqual( result, 0 )
         
-        result = self.redirect_cmd( [ "/usr/local/bin/python", "../mugalyser_main.py", "-h" ], "junk" )
+        result = self.redirect_cmd( [ "python", os.path.join( self._binPath, "mugalyser_main.py" ), "-h" ], "junk" )
         self.assertEqual( result, 0 )
 
 
