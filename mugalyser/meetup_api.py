@@ -9,9 +9,9 @@ import logging
 import datetime
 from copy import deepcopy
 
-from apikey import get_meetup_key
+from mugalyser.apikey import get_meetup_key
 
-from version import __programName__
+from mugalyser.version import __programName__
 
 def returnData( r ):
     if r.raise_for_status() is None:
@@ -84,7 +84,8 @@ class Reshaper( object ):
     
     @staticmethod
     def reshapeGroupDoc( doc ):
-        return Reshaper.reshapeTime( Reshaper.reshapeGeospatial(doc), [ "created" ])
+        return Reshaper.reshapeTime( Reshaper.reshapeGeospatial(doc), 
+                                     [ "created", "pro_join_date", "founded_date", "last_event" ])
 
 
 def getHref( s ):

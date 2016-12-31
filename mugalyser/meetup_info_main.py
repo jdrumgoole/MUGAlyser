@@ -10,12 +10,12 @@ Created on 17 Nov 2016
 import sys
 import pprint
 from argparse import ArgumentParser
-from meetup_api import MeetupAPI
+from mugalyser.meetup_api import MeetupAPI
 from traceback import print_exception
 from mugalyser.version import __programName__
 from mugalyser.generator_utils import printCount
-from events import Events
-from groups import Groups
+from mugalyser.events import Events
+from mugalyser.groups import Groups
     
 program_name = "meetup_info_main"
     

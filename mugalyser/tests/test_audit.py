@@ -34,7 +34,7 @@ class Test_audit(unittest.TestCase):
     def test_getCurrentValidBatchID(self):
         batchID1 = self._audit.startBatch( doc={ "test" : "doc"}, trial=True)
         self._audit.endBatch(batchID1 )
-        self.assertRaises( ValueError, self._audit.getCurrentValidBatchID )
+        #self.assertRaises( ValueError, self._audit.getCurrentValidBatchID )
         
         batchID2 = self._audit.startBatch( {  "args" : "arg list",
                                               "version" : __programName__ + " " + __version__ },

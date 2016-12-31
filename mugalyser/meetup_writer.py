@@ -4,12 +4,11 @@ Created on 21 Nov 2016
 @author: jdrumgoole
 '''
 
-from audit import Audit
-from batchwriter import BatchWriter
+from mugalyser.batchwriter import BatchWriter
 from requests import HTTPError
 import logging
-from apikey import get_meetup_key
-from meetup_api import MeetupAPI
+from mugalyser.apikey import get_meetup_key
+from mugalyser.meetup_api import MeetupAPI
 
 
 def mergeEvents( writer ):

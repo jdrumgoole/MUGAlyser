@@ -21,9 +21,8 @@ class Test(unittest.TestCase):
 
 
     def test_get_group_events(self):
-        events = self._past.get_groups_events( [ "DublinMUG" ] )
+        events = self._past.get_group_events( "DublinMUG"  )
         self.assertGreaterEqual( len( list( events )), 29 )
-        pass
 
 
 if __name__ == "__main__":

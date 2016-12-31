@@ -23,7 +23,7 @@ from utils.query import Query
 import pymongo
 from traceback import print_exception
 
-from version import __version__
+from mugalyser.version import __programName__, __version__
 
 __program_name__ = "muginfo_main"
 
@@ -41,6 +41,8 @@ def main( argv=None ) :
         parser.add_argument( "--hasgroup", nargs="+", default=[], help="Is this a MongoDB Group")
         
         parser.add_argument( "-l", "--listgroups", action="store_true", default=False,  help="print out all the groups")
+        
+        parser.add_argument( "-v", "--version", action="store_true", default=False,  help="print version")
         
         parser.add_argument( "--members", nargs="+", default=[],  help="list all members of a list of groups")
         
@@ -76,6 +78,10 @@ def main( argv=None ) :
              
         members = Members( mdb )
         
+        if args.version :
+            print( "%s muginfo %s" % ( __programName__, __version__ ))
+            sys.exit( 2 )
+            
         if args.curbatch :
             audit = Audit( mdb )
             curbatch = audit.getCurrentValidBatchID()
@@ -174,14 +180,11 @@ def main( argv=None ) :
             
         if args.upcomingevents:
             events = UpcomingEvents( mdb )
-            if "all" in args.upcomingevents :
-                events.count_print( events.get_all_group_events(), args.format_type )
-            else:
-                events.count_print( events.get_groups_events( args.upcomingevents ), args.format_type )
-    
+            events.count_print( events.get_all_group_events(args.upcomingevents ), args.format_type )
+
         if args.pastevents:
             events = PastEvents( mdb )
-            events.count_print( events.get_groups_events( args.pastevents ), args.format_type )
+            events.count_print( events.get_all_group_events( args.pastevents ), args.format_type)
             
         if "all" in args.organizer  :
             organizers = Organizers( mdb )

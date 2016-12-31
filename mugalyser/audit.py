@@ -207,6 +207,18 @@ class Audit( object ):
         else:
             return curBatch.next()[ "batchID"]
     
+    def getCurrentValidBatches( self ):
+        cursor = self._auditCollection.find( { "apikey" : get_meetup_key(),
+                                               "end"    : { "$ne" : None },
+                                               "trial"  : False } ).sort( "batchID", pymongo.DESCENDING )
+                                         
+        for i in cursor :
+            yield i
+            
+    def getCurrentValidBatchIDs( self ):
+        for i in self.getCurrentValidBatches():
+            yield i[ "batchID" ]
+            
     def getCurrentBatchID(self ):
         if self._currentBatchID :
             return self._currentBatchID
