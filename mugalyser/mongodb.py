@@ -5,8 +5,6 @@ Created on 22 Jun 2016
 '''
 
 import pymongo
-from pytz import utc
-from bson import CodecOptions
 
 class MUGAlyserMongoDB( object ):
     

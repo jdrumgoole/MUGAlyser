@@ -4,8 +4,6 @@ Created on 12 Dec 2016
 @author: jdrumgoole
 '''
 import unittest
-from mugalyser import muginfo_main, meetup_info_main, mugalyser_main
-import sys
 import subprocess
 import os
 

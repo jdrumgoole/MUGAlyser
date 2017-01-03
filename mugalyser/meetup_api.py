@@ -150,7 +150,6 @@ def paginator( headers, body, params=None, func=None, arg=None ):
     data = body
     #pprint.pprint( data )
     
-    pageCount = 0
     # old style format 
     if "meta" in body :
         for i in body[ "results"]:
@@ -173,7 +172,7 @@ def paginator( headers, body, params=None, func=None, arg=None ):
         while ( nxt is not None ) : # no next link in last page
 
             ( headers, body ) = makeRequest( nxt, params=params )
-            ( nxt, prev ) = getNextPrev(headers)
+            ( nxt, _ ) = getNextPrev(headers)
             for i in body :
                 yield  func( i )
 
