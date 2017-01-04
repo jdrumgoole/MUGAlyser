@@ -50,7 +50,7 @@ finding the current batch.
 >
 ```
 
-It is identifed by the **name** __"Current Batch"__ and a**batchID**
+It is identifed by the **name** __"Current Batch"__ and a **batchID**
 of 0. The **currentID** field defines the batch that was run.
 
 ## members collection
@@ -76,5 +76,20 @@ can be inserted in a way that MongoDB prefers and collecting lat/long
 coordinates into a point object which MongoDB also prefers. 
 
 
+## groups collection
+
+A list of all the meetup groups associated with the pro account.
+
+## attendees collection
+
+This is a list of attendees and the events they have attended.
+
+## past_events collection
+
+All events that have happened at the time when the batch was collected.
+
+## upcoming_events collection
+
+All events that were pending at the time when the batch was collected.
 
 
