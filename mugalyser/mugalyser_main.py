@@ -139,8 +139,8 @@ def main(argv=None): # IGNORE:C0111
         
         batchID = audit.startBatch( { "args"    : vars( args ), 
                                       "version" : __programName__ + " " + __version__ },
-                                      args.trialrun,
-                                      apikey )
+                                      trial=args.trialrun,
+                                      apikey=apikey )
 
         start = datetime.utcnow()
         logging.info( "Started MUG processing for batch ID: %i", batchID )
