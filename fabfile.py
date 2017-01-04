@@ -1,11 +1,11 @@
 # -*-python-*-
 
-from fabric.api import run, env, local,cd, sudo
+from fabric.api import run, env, local, cd, sudo
 
 import os
 import json
 
-from mugalyser.apikey import get_meetup_key, get_mugalyer_passwd
+from mugalyser.apikey import get_meetup_key
 
 # ["ec2-52-31-4-148.eu-west-1.compute.amazonaws.com"]
 env.user = 'ec2-user'

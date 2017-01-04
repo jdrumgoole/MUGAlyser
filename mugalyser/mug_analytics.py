@@ -10,6 +10,36 @@ from mugalyser.audit import Audit
 import pprint
 import pymongo
 import json
+from datetime import datetime
+
+EU_COUNTRIES = [ "Austria", 
+                 "Belgium", 
+                 "Bulgaria", 
+                 "Croatia", 
+                 "Cyprus", 
+                 "Czech Republic", 
+                 "Denmark", 
+                 "Estonia", 
+                 "Finland", 
+                 "France", 
+                 "Germany", 
+                 "Greece", 
+                 "Hungary", 
+                 "Ireland", 
+                 "Italy", 
+                 "Latvia", 
+                 "Lithuania", 
+                 "Luxembourg", 
+                 "Malta", 
+                 "Netherlands", 
+                 "Poland", 
+                 "Portugal", 
+                 "Romania", 
+                 "Slovakia", 
+                 "Slovenia", 
+                 "Spain", 
+                 "Sweden", 
+                 "United Kingdom" ]
 
 def printCursor( c ):
     count = 0 
@@ -87,6 +117,23 @@ def groupTotals( mdb, batchID  ):
         
     print( "Total: %i"  % count )
 
+def get_eu_mugs( mdb, batchID ):
+    agg = batchMatch(mdb.groupsCollection(), batchID )
+    agg.addMatch( {  "group.country" : { "$in" : EU_COUNTRIES }})
+    agg.addProject( { "_id": 0, "group" : "$group.urlname", "country" : "$group.country", "member_count" : "$group.member_count" })
+    cursor = agg.aggregate()
+    printCursor( cursor )
+    
+def get_eu_events( mdb, batchID, startDate=None, endDate=None ):
+    agg = batchMatch(mdb.pastEventsCollection(), batchID )
+    
+    if startDate is not None and type( startDate ) == datetime :
+        agg.addMatch( { "group.time" : { "$ge" : startDate }})
+        
+    agg.addProject( { "_id": 0, "group" : "$group.urlname", "country" : "$group.country", "member_count" : "$group.member_count" })
+    cursor = agg.aggregate()
+    printCursor( cursor )
+    
 if __name__ == '__main__':
     
     parser = ArgumentParser()
@@ -111,6 +158,14 @@ if __name__ == '__main__':
     print( "" )
     
     getMembers( mdb, batchID )
+    
+    print( "" )
+    
+    get_eu_mugs(mdb, batchID)
+    
+    print( "" )
+    
+    #get_eu_events(mdb, batchID, datetime( 2016, 1, 1 ))
     
         
         

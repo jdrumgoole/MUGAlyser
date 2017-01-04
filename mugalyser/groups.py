@@ -9,6 +9,36 @@ from mugalyser.mugdata import MUGData
 
 import itertools
 
+EU_COUNTRIES = [ "Austria", 
+                 "Belgium", 
+                 "Bulgaria", 
+                 "Croatia", 
+                 "Cyprus", 
+                 "Czech Republic", 
+                 "Denmark", 
+                 "Estonia", 
+                 "Finland", 
+                 "France", 
+                 "Germany", 
+                 "Greece", 
+                 "Hungary", 
+                 "Ireland", 
+                 "Italy", 
+                 "Latvia", 
+                 "Lithuania", 
+                 "Luxembourg", 
+                 "Malta", 
+                 "Netherlands", 
+                 "Poland", 
+                 "Portugal", 
+                 "Romania", 
+                 "Slovakia", 
+                 "Slovenia", 
+                 "Spain", 
+                 "Sweden", 
+                 "United Kingdom" ]
+
+
 class Groups(MUGData):
     '''
     classdocs
@@ -22,12 +52,15 @@ class Groups(MUGData):
     def get_group(self, url_name ):
         return self.find_one( { "group.urlname": url_name })
     
-    def get_all_groups(self):
+    def get_all_groups(self ):
         return self.find()
  
     def get_groups(self, group_names ):
         
         return itertools.chain( *[ self.get_group( i ) for i in group_names ] )
+    
+    def get_eu_groups(self ):
+        return self.find({  "group.country" : { "$in" : EU_COUNTRIES }})
 
     @staticmethod
     def summary( g ):

@@ -199,14 +199,17 @@ class Audit( object ):
     
     def getCurrentValidBatchID( self ):
         curBatch = self._auditCollection.find( { "apikey" : get_meetup_key(),
-                                                 "end"    : { "$ne" : None },
+                                                 "end"    : { "$exists" : True },
                                                  "trial"  : False } ).sort( "batchID", pymongo.DESCENDING ).limit( 1 )
         
         if curBatch is None :
             raise ValueError( "No current valid batch ID" )
         else:
-            return curBatch.next()[ "batchID"]
-    
+            try :
+                return curBatch.next()[ "batchID"]
+            except StopIteration :
+                raise ValueError( "Have you set a valid API key? (APIKEY='%s')" % get_meetup_key())
+            
     def getCurrentValidBatches( self ):
         cursor = self._auditCollection.find( { "apikey" : get_meetup_key(),
                                                "end"    : { "$ne" : None },

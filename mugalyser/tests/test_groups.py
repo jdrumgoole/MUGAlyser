@@ -20,8 +20,9 @@ class Test_groups(unittest.TestCase):
         self._mdb.client().drop_database( "TEST_MUGS" )
 
 
-    def testName(self):
-        pass
+    def testGroups(self):
+        groups = self._groups.get_all_groups()
+        print( len( list( groups )))
 
 
 if __name__ == "__main__":
