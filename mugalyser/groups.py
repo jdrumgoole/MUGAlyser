@@ -6,7 +6,7 @@ Created on 7 Oct 2016
 from pprint import pprint
 
 from mugalyser.mugdata import MUGData
-
+from utils.query import Query
 import itertools
 
 EU_COUNTRIES = [ "Austria", 
@@ -52,15 +52,25 @@ class Groups(MUGData):
     def get_group(self, url_name ):
         return self.find_one( { "group.urlname": url_name })
     
-    def get_all_groups(self ):
-        return self.find()
+    def get_all_groups(self, region=None):
+        if region:
+            if type( region ) is list:
+                return self.find( { "group.country" : { "$in" : region }})
+            else:
+                raise ValueError( "region parameter is not a list (type = %s)" % type( region ))
+        else:
+            return self.find()
  
     def get_groups(self, group_names ):
         
         return itertools.chain( *[ self.get_group( i ) for i in group_names ] )
     
-    def get_eu_groups(self ):
-        return self.find({  "group.country" : { "$in" : EU_COUNTRIES }})
+    def get_country_group_urlnames(self, country="USA"):
+        return self.get_region_group_urlnames( [ country ])
+    
+    def get_region_group_urlnames(self, countries = EU_COUNTRIES ):
+        return [ x[ "group"]["urlname" ] for x in self.find( {  "group.country" : { "$in" : countries }}) ]
+            
 
     @staticmethod
     def summary( g ):

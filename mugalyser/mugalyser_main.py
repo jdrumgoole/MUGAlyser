@@ -10,24 +10,14 @@ mugalyser_main -- Grab MUG Stats and stuff them into a MongoDB Database
 '''
 
 import sys
-import os
-import re
 from datetime import datetime
 from argparse import ArgumentParser
-from argparse import RawDescriptionHelpFormatter
 import logging
 from traceback import print_exception
 
 import pymongo
 import time
-
-from meetup_api import MeetupAPI
-
-try:
-    from apikey import get_meetup_key
-except ImportError,e :
-    print( "Failed to import apikey: have you run makeapikeyfile_main.py --apikey <APIKEY> : %s" % e )
-    sys.exit( 2 )
+from mugalyser.apikey import get_meetup_key
 
 from audit import Audit
 
@@ -93,7 +83,7 @@ def main(argv=None): # IGNORE:C0111
         #
         # MongoDB Args
 
-        parser.add_argument( '--url', default="mongodb://localhost:27017/MUGS", help='URI to connect to : [default: %(default)s]')
+        parser.add_argument( '--host', default="mongodb://localhost:27017/MUGS", help='URI to connect to : [default: %(default)s]')
 
         parser.add_argument( "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         parser.add_argument( "-v", "--version", action='version', version="MeetupAPI " + __version__ )
@@ -133,7 +123,7 @@ def main(argv=None): # IGNORE:C0111
             
         mugList = []
 
-        mdb = MUGAlyserMongoDB( args.url )
+        mdb = MUGAlyserMongoDB( args.host )
 
         audit = Audit( mdb )
         

@@ -27,6 +27,12 @@ class MUGData( object ):
 
     def collection(self):
         return self._collection
+    
+    @staticmethod
+    def filter( cursor, selector, values ):
+        for i in cursor:
+            if i[ selector ] in values:
+                yield i
         
     def find_one(self, query=None ):
         batch_query = { "batchID" : self._audit.getCurrentBatchID() }
@@ -38,20 +44,20 @@ class MUGData( object ):
         
     def find(self, q=None, *args, **kwargs ):
         
-        batch_query = Query( { "batchID" : self._audit.getCurrentValidBatchID() } )
+        batch_query = { "batchID" : self._audit.getCurrentValidBatchID() } 
         if q is None:
             query = batch_query
         else:
             query = batch_query.update( q )
             
         if args and kwargs :
-            return self._collection.find( query.query(), args, kwargs )
+            return self._collection.find( query, args, kwargs )
         elif args :
-            return self._collection.find( query.query(), args )
+            return self._collection.find( query, args )
         elif kwargs:
-            return self._collection.find( query.query(), kwargs )
+            return self._collection.find( query, kwargs )
         else:
-            return self._collection.find( query.query())
+            return self._collection.find( query )
 
     
     def count(self, g ):

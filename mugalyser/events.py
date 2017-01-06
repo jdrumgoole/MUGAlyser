@@ -30,7 +30,7 @@ class Events(MUGData):
             return itertools.chain( *[ self.get_group_events( i )  for i in groups ] )
         
     def get_group_events(self, url_name ):
-        return self.find( Query( { "event.group.urlname" : url_name } ))
+        return self.find( { "event.group.urlname" : url_name } )
     
 #     def get_groups_events(self, groups=[] ):
 #         # Groups should be an iterator
@@ -65,13 +65,13 @@ class PastEvents(Events):
     def get_all_group_events(self, groups=[ "all" ] ):
         
         if "all" in groups:
-            return self.find( Query( { "event.status" : "past"}))
+            return self.find({ "event.status" : "past"})
         else:
             return itertools.chain( *[ self.get_group_events( i )  for i in groups ] )
         
     def get_group_events(self, url_name ):
-        return self.find( Query( { "event.group.urlname" : url_name,
-                                   "event.status" : "past" } ))
+        return self.find( { "event.group.urlname" : url_name,
+                            "event.status" : "past" } )
     
 class UpcomingEvents(Events):
     '''
@@ -88,10 +88,10 @@ class UpcomingEvents(Events):
     def get_all_group_events(self, groups=[ "all" ] ):
         
         if "all" in groups:
-            return self.find( Query( { "event.status" : "ucpoming"}))
+            return self.find( { "event.status" : "ucpoming"})
         else:
             return itertools.chain( *[ self.get_group_events( i )  for i in groups ] )
         
     def get_group_events(self, url_name ):
-        return self.find( Query( { "event.group.urlname" : url_name,
-                                   "event.status" : "upcoming" } ))
+        return self.find({ "event.group.urlname" : url_name,
+                           "event.status"        : "upcoming" } )

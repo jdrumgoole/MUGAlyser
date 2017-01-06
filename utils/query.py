@@ -36,6 +36,9 @@ class Query(object):
     def __str__(self ):
         return self.__repr__() 
     
+    def __call__(self):
+        return self.__repr__()
+    
     def __repr_(self):
         return self._query
     
