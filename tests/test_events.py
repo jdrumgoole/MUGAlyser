@@ -12,7 +12,7 @@ class Test(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TEST_DATA_MUGS" )
+        self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TESTMUGS" )
         self._past = PastEvents( self._mdb )
         self._upcoming = UpcomingEvents( self._mdb )
 

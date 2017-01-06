@@ -6,14 +6,14 @@ Created on 5 Dec 2016
 import unittest
 
 from mugalyser.mongodb import MUGAlyserMongoDB
-from mugalyser.groups import Groups
+from mugalyser.groups import Groups, EU_COUNTRIES
 import pprint
 
 class Test_groups(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/MUGS" )
+        self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TESTMUGS" )
         self._groups = Groups( self._mdb)
 
 
@@ -39,8 +39,12 @@ class Test_groups(unittest.TestCase):
     def test_get_region_urlnames(self):
         pass
         eu_groups = self._groups.get_region_group_urlnames()
+        self.assertEqual( len( eu_groups ), 114 )
+        
+        eu_groups = self._groups.get_region_group_urlnames( regions=EU_COUNTRIES )
         self.assertEqual( len( eu_groups ), 40 )
-
+        
+        self.assertRaises(ValueError, self._groups.get_region_group_urlnames, 27 )
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

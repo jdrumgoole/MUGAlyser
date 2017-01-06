@@ -15,8 +15,8 @@ class Test(unittest.TestCase):
 
 
     def tearDown(self):
-        #self._mdb.client().drop_database( "TEST_BATCHWRITER" )
-        pass 
+        self._mdb.client().drop_database( "TEST_BATCHWRITER" )
+
     #@unittest.skip
     def test_batchwriter(self):
         collection = self._mdb.database()[ "TEST_WRITE"]

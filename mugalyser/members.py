@@ -31,15 +31,15 @@ class Members(MUGData):
         self._feedback = Feedback()
         self._audit = Audit( mdb )
         
-    def get_group_members(self, url_name, query=None ):
+    def get_group_members(self, url_name, q=None ):
         '''
         returns a MongoDB cursor.
         '''
-        
-        groups = Query( { "member.chapters" : { "$elemMatch" : { "urlname" : url_name }}})
-        if query != None :
-            groups.And( query )
-        return self.find( groups )
+        query = { "member.chapters" : { "$elemMatch" : { "urlname" : url_name }}}
+        if q :
+            query.update( q )
+
+        return self.find( query )
         
     def get_many_group_members(self, groups, query=None):
         '''
@@ -75,8 +75,7 @@ class Members(MUGData):
         
     def get_by_join_date(self, start, end ):
 
-        
-        return self.find( Query().add_range( "member.join_time", start, end ))
+        return self.find( { "member.join_time" : { "$gte" : start, "$lte" : end  }})
         
     def joined_by_year(self):
         

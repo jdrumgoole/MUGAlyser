@@ -7,13 +7,12 @@ import unittest
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.members import Members
 from dateutil.parser import parse
-from utils.query import Query
 
 class Test_members(unittest.TestCase):
 
 
     def setUp(self):
-        self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TEST_DATA_MUGS")
+        self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TESTMUGS")
         self._members = Members( self._mdb )
 
 
@@ -31,7 +30,7 @@ class Test_members(unittest.TestCase):
         #print( cursor.count())
         self.assertGreaterEqual( cursor.count(), 826 )
         
-        cursor = self._members.get_all_members(Query())
+        cursor = self._members.get_all_members()
         #print( cursor.count())
         self.assertGreaterEqual( cursor.count(), 826 )
         

@@ -7,7 +7,6 @@ Created on 23 Nov 2016
 from audit import Audit
 from feedback import Feedback
 import pprint
-from utils.query import Query
 
 from enum import Enum
 
@@ -16,6 +15,16 @@ class Format( Enum ):
     summary = 2
     full = 3
     
+def printCursor( c, filterField=None, filterList=None ):
+    count = 0 
+    for i in c :
+        if filterField and filterList :
+            if i[ filterField ]  in filterList:
+                pprint.pprint( i )
+        else:
+            pprint.pprint( i )
+        count = count + 1
+    print( "Total records: %i" % count )
     
 class MUGData( object ):
     
@@ -44,11 +53,9 @@ class MUGData( object ):
         
     def find(self, q=None, *args, **kwargs ):
         
-        batch_query = { "batchID" : self._audit.getCurrentValidBatchID() } 
-        if q is None:
-            query = batch_query
-        else:
-            query = batch_query.update( q )
+        query = { "batchID" : self._audit.getCurrentValidBatchID() } 
+        if q :
+            query.update( q )
             
         if args and kwargs :
             return self._collection.find( query, args, kwargs )
