@@ -4,7 +4,33 @@
 '''
 import pprint
 from datetime import datetime
-       
+from _ordereddict import ordereddict
+import pymongo
+
+class Sorter( object ):
+    '''
+    Required for ordered sorting of fields as python dictionaries do not 
+    guarantee to maintain insertion order
+    '''
+    
+    def __init__(self, field=None, sortOrder = pymongo.ASCENDING ):
+        self._sorted = {}
+        self._sorted[ "$sort"] = ordereddict()
+        if field:
+            self.add( field, sortOrder )
+        
+    def add(self, field, sortOrder = pymongo.ASCENDING ):
+        self._sorted[ "$sort" ][ field ] = sortOrder
+    
+    def __call__(self):
+        return self._sorted
+        
+    def __str__(self):
+        return str( self._sorted )
+    
+    def __repr__(self):
+        return self.__ster()
+    
 class Agg(object):
     '''
     A wrapper class for the MongoDB Aggregation framework (MongoDB 3.2)
@@ -46,7 +72,7 @@ class Agg(object):
     
     @staticmethod
     def sort( sorter ):
-        Agg._typeCheckDict( sorter )
+        # we typecheck higher up the stack
         return { "$sort" : sorter }
     
     @staticmethod
@@ -103,10 +129,16 @@ class Agg(object):
         return self
     
     def addSort(self, sorter ):
+        '''
+        Sorter can be a single dict or a list of dicts.
+        '''
         
         self._hasDollarOutCheck( "$sort: %s" % sorter )
-        self._agg.append( Agg.sort( sorter ))
         
+        if type( sorter) is Sorter:
+            self._agg.append( sorter())
+        else:
+            raise ValueError( "Parameter to addSort must of of type Sorter (type is '%s'" % type( sorter ))
         return self
 
     def addOut(self, output=None ):

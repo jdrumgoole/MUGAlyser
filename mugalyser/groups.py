@@ -65,7 +65,7 @@ class Groups(MUGData):
         
         return itertools.chain( *[ self.get_group( i ) for i in group_names ] )
     
-    def get_country_group_urlnames(self, country="USA"):
+    def get_country_group_urlnames(self, country ):
         return self.get_region_group_urlnames( [ country ])
     
     def get_region_group_urlnames(self, regions = None ):

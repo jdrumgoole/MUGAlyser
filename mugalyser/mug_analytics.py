@@ -4,13 +4,12 @@ Created on 28 Dec 2016
 @author: jdrumgoole
 '''
 from argparse import ArgumentParser
-from mugalyser.agg import Agg
+from mugalyser.agg import Agg, Sorter
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, Groups
 import pprint
 import pymongo
-import json
 from datetime import datetime
 
 def printCursor( c, filterField=None, filterList=None ):
@@ -18,18 +17,20 @@ def printCursor( c, filterField=None, filterList=None ):
     for i in c :
         if filterField and filterList :
             if i[ filterField ]  in filterList:
-                pprint.pprint( i )
+                pprint.pprint( i, width=120)
+                count = count + 1
         else:
-            print( json.dumps( i ))
-        count = count + 1
+            pprint.pprint(i, width=120 )
+            count = count + 1
     print( "Total records: %i" % count )
 
         
-def getMembers( mdb, batchID ):
+def getMembers( mdb, batchID, region ):
      
     agg = batchMatch( mdb.groupsCollection(), batchID )
+    agg.addMatch( { "group.country" : { "$in" : region }})
     agg.addProject(  { "_id" : 0, "urlname" : "$group.urlname", "member_count" : "$group.member_count" })
-    agg.addSort( { "member_count" : pymongo.DESCENDING } )
+    agg.addSort( Sorter("member_count", pymongo.DESCENDING ))
     cursor = agg.aggregate()
     printCursor( cursor )
     
@@ -60,7 +61,7 @@ def meetupTotals( mdb, batchID, region=None ):
                     "total_rsvp"   : { "$sum" : "$rsvp"},
                     "total_events" : { "$sum" : 1 }})
     
-    agg.addSort( { "_id" : pymongo.ASCENDING })
+    agg.addSort( Sorter( "_id" ))
     
     cursor = agg.aggregate()
     
@@ -79,24 +80,32 @@ def matchGroup( mdb, batchID, urlname ):
                    "event.group.urlname" : urlname } )
     return agg
 
-def groupTotals( mdb, batchID  ):
+def groupTotals( mdb, batchID, region  ):
     
     agg = batchMatch(mdb.pastEventsCollection(), batchID )
+    
     agg.addGroup( { "_id" : { "urlname" : "$event.group.urlname", 
                               "year"    : { "$year" : "$event.time"}},
                     "event_count" : { "$sum" : 1 }})
-    agg.addSort( { "_id.year" : pymongo.ASCENDING })
-    agg.addSort( { "_id.urlname" : pymongo.ASCENDING })
-    agg.addSort( { "year" : pymongo.ASCENDING })
+    agg.addProject( { "_id" : 0,
+                      "group" : "$_id.urlname",
+                      "year"  : "$_id.year",
+                      "event_count" : 1 } )
+
+    sorter = Sorter()
+    sorter.add( "year" )
+    #sorter.add( "group" )
+    sorter.add( "event_count")
+    
+    agg.addSort( sorter )
+
+    print( agg )
     cursor = agg.aggregate()
+
+    groups = Groups( mdb )
+    urls = groups.get_region_group_urlnames( region )
     
-    
-    count = 0
-    for i in cursor:
-        print( json.dumps( i ))
-        count = count + 1
-        
-    print( "Total: %i"  % count )
+    printCursor( cursor, "group", urls )
 
     
 def get_eu_mugs( mdb, batchID ):
@@ -123,7 +132,7 @@ def get_events(mdb, batchID, startDate=None, endDate=None, rsvpbound=0):
                       "rsvp_count"   : "$event.yes_rsvp_count",
                       "time"         : "$event.time" })
         
-    agg.addSort( { "time" : 1 })
+    agg.addSort(  Sorter( "time"))
     return agg.aggregate()
     
 def get_country_events( mdb, batchID, country, startDate=None, endDate=None, rsvpbound=0 ):
@@ -166,11 +175,14 @@ if __name__ == '__main__':
     
     print( "EU Meetup Totals")
     meetupTotals( mdb, batchID, region = EU_COUNTRIES )
-    
     print( "" )
     
-    groupTotals(mdb, batchID )
+    print( "USA Group Totals")
+    groupTotals(mdb, batchID, [ "USA" ] )
+    print( "" )
     
+    print( "EU Groups")
+    groupTotals(mdb, batchID, EU_COUNTRIES )
     print( "" )
     
     getMembers( mdb, batchID )
