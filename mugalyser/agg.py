@@ -4,7 +4,7 @@
 '''
 import pprint
 from datetime import datetime
-from _ordereddict import ordereddict
+from collections import OrderedDict
 import pymongo
 
 class Sorter( object ):
@@ -15,7 +15,7 @@ class Sorter( object ):
     
     def __init__(self, field=None, sortOrder = pymongo.ASCENDING ):
         self._sorted = {}
-        self._sorted[ "$sort"] = ordereddict()
+        self._sorted[ "$sort"] = OrderedDict()
         if field:
             self.add( field, sortOrder )
         
@@ -29,7 +29,7 @@ class Sorter( object ):
         return str( self._sorted )
     
     def __repr__(self):
-        return self.__ster()
+        return self.__str__()
     
 class Agg(object):
     '''

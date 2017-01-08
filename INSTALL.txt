@@ -6,11 +6,17 @@ Make an API key file
 
 (Create an account on meetup.com, login and go here to get your API key : https://secure.meetup.com/meetup_api/key/)
 
-makeapikeyfile_main.py -a <API_KEY>
+cd MUGALyser/mugalyser
+
+python apps/makeapikeyfile_main.py -a <API_KEY>
 
 Install the mongodb driver for Python
 
 pip install pymongo
+
+Install requests:
+
+pip install requests
 
 Run a mongod locally:
 

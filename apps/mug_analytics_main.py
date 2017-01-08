@@ -129,10 +129,14 @@ def get_events(mdb, batchID, startDate=None, endDate=None, rsvpbound=0):
     
     agg.addProject( { "_id": 0, 
                       "group"        : "$event.group.urlname", 
+                      "name"         : "$event.name",
                       "rsvp_count"   : "$event.yes_rsvp_count",
                       "time"         : "$event.time" })
-        
-    agg.addSort(  Sorter( "time"))
+ 
+    sorter = Sorter( "group")
+    sorter.add( "rsvp_count")
+    sorter.add( "time")
+    agg.addSort(  sorter )
     return agg.aggregate()
     
 def get_country_events( mdb, batchID, country, startDate=None, endDate=None, rsvpbound=0 ):
@@ -185,7 +189,13 @@ if __name__ == '__main__':
     groupTotals(mdb, batchID, EU_COUNTRIES )
     print( "" )
     
-    getMembers( mdb, batchID )
+    print( "US Members")
+    getMembers( mdb, batchID, region=['USA'] )
+    
+    print( "" )
+    
+    print( "EU Members")
+    getMembers( mdb, batchID, region=EU_COUNTRIES )
     
     print( "" )
     
@@ -197,8 +207,7 @@ if __name__ == '__main__':
     
     print( " ")
 
-    events = get_country_events( mdb, batchID, "USA", startDate=datetime( 2016, 1, 1 ), rsvpbound=10 )
+    get_country_events( mdb, batchID, "USA", startDate=datetime( 2016, 1, 1 ), rsvpbound=10 )
     
     print( " " )
-        
         

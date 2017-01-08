@@ -206,7 +206,8 @@ class Audit( object ):
             raise ValueError( "No current valid batch ID" )
         else:
             try :
-                return curBatch.next()[ "batchID"]
+                x= curBatch.next()[ "batchID"]
+                return x
             except StopIteration :
                 raise ValueError( "Have you set a valid API key? (APIKEY='%s')" % get_meetup_key())
             
