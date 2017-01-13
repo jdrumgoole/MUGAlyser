@@ -19,12 +19,12 @@ import pymongo
 import time
 from mugalyser.apikey import get_meetup_key
 
-from audit import Audit
+from mugalyser.audit import Audit
 
-from mongodb import MUGAlyserMongoDB
-from meetup_writer import MeetupWriter
+from mugalyser.mongodb import MUGAlyserMongoDB
+from mugalyser.meetup_writer import MeetupWriter
 
-from version import __version__, __programName__
+from mugalyser.version import __version__, __programName__
 '''
     11-Oct-2016, 0.8 beta: Bumped version. Changed format of master record in Audit Collection. Changed
     name of groupinfo script to muginfo. Added support for URI format arguments. Added replica set argument.
