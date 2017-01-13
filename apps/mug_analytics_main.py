@@ -200,6 +200,21 @@ def get_events(mdb, batchID, region, outfile, fmt, startDate=None, endDate=None,
     cursor = agg.aggregate()
     printCursor( cursor, outfile, fmt, fieldnames=[ "group", "name", "rsvp_count", "date" ] ) #"day", "month", "year" ] )
     
+def get_rsvps(mdb, batchID, region, outfile, fmt, startDate=None, endDate=None, rsvpbound=0):
+    
+    agg = batchMatch( mdb.attendeesCollection(), batchID )
+    
+    agg.addProject( { "_id"        : 0,
+                      "attendee"   : "$info.attendee.member.name", 
+                      "event_name" : "$info.event.name" })
+    
+    agg.addGroup( { "_id" : "$attendee",
+                    "event_count" : { "$sum" : 1 }})
+    
+    agg.addSort( Sorter( "event_count"))
+    cursor = agg.aggregate()
+    printCursor( cursor, outfile, fmt, fieldnames=[ "_id" , "event_count"])
+
 if __name__ == '__main__':
     
     parser = ArgumentParser()
@@ -210,7 +225,7 @@ if __name__ == '__main__':
     parser.add_argument( "--format", default="JSON", choices=[ "JSON", "CSV" ], help="format for output [default: %(default)s]" )
     parser.add_argument( "--output", default="-", help="format for output [default: %(default)s]" )
     parser.add_argument( "--stats",  nargs="+", default=[ "meetups" ], 
-                         choices= [ "meetups", "groups", "members", "events" ],
+                         choices= [ "meetups", "groups", "members", "events", "rsvps" ],
                          help="List of stats to output [default: %(default)s]" )
     parser.add_argument( "--region", choices=[ "all", "EU", "US"], default=[ "all"],
                          help="pick a region to report on [default: %(default)s]")
@@ -239,6 +254,9 @@ if __name__ == '__main__':
         getMembers( mdb, batchID, args.region, outfile, args.format )
 
     if "events" in args.stats:
-        get_events(mdb, batchID, args.region, outfile, args.format )
+        get_events(mdb, batchID, args.region, outfile, args.format)
+        
+    if "rsvps" in args.stats:
+        get_rsvps( mdb, batchID, args.region, outfile, args.format )
   
         
