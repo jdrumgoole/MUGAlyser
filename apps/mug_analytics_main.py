@@ -7,10 +7,9 @@ from argparse import ArgumentParser
 from mugalyser.agg import Agg, Sorter
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
-from mugalyser.groups import EU_COUNTRIES, Groups
+from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
 import pprint
 import pymongo
-from datetime import datetime
 import csv
 import sys
 
@@ -57,16 +56,19 @@ def printJSONCursor( c, outfile, filterField, filterList ):
 
         
 def getMembers( mdb, batchID, region_arg, outfile, fmt ):
+    
+    agg = Agg( mdb.groupsCollection())
+    
+    agg.addMatch({ "batchID"      : batchID,
+                   "group.urlname" : { "$in" : urls }} )
      
-    agg = batchMatch( mdb.groupsCollection(), batchID )
-    urls = get_group_names(mdb, region_arg )
-    agg.addMatch( { "group.urlname" : { "$in" : urls }})
     agg.addProject(  { "_id" : 0, 
                        "urlname" : "$group.urlname", 
+                       "country" : "$group.country",
                        "member_count" : "$group.member_count" })
     agg.addSort( Sorter("member_count", pymongo.DESCENDING ))
     cursor = agg.aggregate()
-    printCursor( cursor, outfile, fmt, fieldnames= [ "urlname", "member_count"] )
+    printCursor( cursor, outfile, fmt, fieldnames= [ "urlname", "country", "member_count"] )
     
 def getGroupInsight( mdb, batchID, urlname):
     
@@ -88,9 +90,9 @@ def get_group_names( mdb, region_arg ):
     return urls
 
     
-def meetupTotals( mdb, batchID, region, outfile, fmt ):
+def meetupTotals( mdb, batchID, urls, outfile, fmt ):
     
-    urls = get_group_names(mdb, region )
+
     agg = Agg( mdb.pastEventsCollection())    
                                                   
     
@@ -118,7 +120,7 @@ def meetupTotals( mdb, batchID, region, outfile, fmt ):
     
     printCursor( cursor, outfile, fmt=fmt, fieldnames=[ "year", "total_rsvp", "total_events"] )
 
-def batchMatch( collection, batchID ):
+def batchMatch( collection, batchID, urls ):
     agg = Agg( collection )
     agg.addMatch({ "batchID" : batchID } )
     return agg
@@ -130,9 +132,14 @@ def matchGroup( mdb, batchID, urlname ):
                    "event.group.urlname" : urlname } )
     return agg
 
-def groupTotals( mdb, batchID, region, outfile, fmt  ):
+def groupTotals( mdb, batchID, urls, outfile, fmt  ):
     
-    agg = batchMatch(mdb.pastEventsCollection(), batchID )
+
+    agg = Agg( mdb.pastEventsCollection())
+
+    agg.addMatch({ "batchID"             : batchID,
+                   "event.status"        : "past",
+                   "event.group.urlname" : { "$in" : urls }} )
     
     agg.addGroup( { "_id" : { "urlname" : "$event.group.urlname", 
                               "year"    : { "$year" : "$event.time"}},
@@ -155,22 +162,12 @@ def groupTotals( mdb, batchID, region, outfile, fmt  ):
     print( agg )
     cursor = agg.aggregate()
 
-    urls = get_group_names( mdb, region )
-    
     printCursor( cursor, outfile, fmt, fieldnames=[  "year", "group", "event_count", "rsvp_count" ], filterField="group", filterList=urls )
 
     
-def get_eu_mugs( mdb, batchID ):
-    agg = batchMatch(mdb.groupsCollection(), batchID )
-    agg.addMatch( {  "group.country" : { "$in" : EU_COUNTRIES }})
-    agg.addProject( { "_id": 0, "group" : "$group.urlname", "country" : "$group.country", "member_count" : "$group.member_count" })
-    return agg.aggregate()
-    
-def get_events(mdb, batchID, region, outfile, fmt, startDate=None, endDate=None, rsvpbound=0):
+def get_events(mdb, batchID, urls, outfile, fmt, startDate=None, endDate=None, rsvpbound=0):
 
     agg = Agg( mdb.pastEventsCollection())
-    
-    urls = get_group_names( mdb, region )
     
     agg.addMatch({ "batchID"      : batchID,
                    "event.status" : "past",
@@ -227,8 +224,10 @@ if __name__ == '__main__':
     parser.add_argument( "--stats",  nargs="+", default=[ "meetups" ], 
                          choices= [ "meetups", "groups", "members", "events", "rsvps" ],
                          help="List of stats to output [default: %(default)s]" )
-    parser.add_argument( "--region", choices=[ "all", "EU", "US"], default=[ "all"],
+    parser.add_argument( "--country", nargs="+", default=[ "all"],
                          help="pick a region to report on [default: %(default)s]")
+    
+
     
     args = parser.parse_args()
     
@@ -238,25 +237,37 @@ if __name__ == '__main__':
         outfile = open( args.output, "wb" )
         
     mdb = MUGAlyserMongoDB( uri=args.host )
+        
+    groups = Groups( mdb )
+    if "all" in args.country :
+        urls = groups.get_region_group_urlnames()
+    elif "EU" in args.country :
+        urls = groups.get_region_group_urlnames( EU_COUNTRIES )
+    elif "NORDICS" in args.country :
+        urls = groups.get_region_group_urlnames( NORDICS_COUNTRIES )
+    else:
+        urls = groups.get_region_group_urlnames(mdb, args.country )
+        
     
     audit = Audit( mdb )
     
     batchID = audit.getCurrentValidBatchID()
 
     if "meetups" in args.stats :
-        meetupTotals( mdb, batchID, args.region, outfile, args.format )
+        meetupTotals( mdb, batchID, urls, outfile, args.format )
     
     if "groups" in args.stats :
         print( "USA Group Totals")
-        groupTotals(mdb, batchID, args.region, outfile, args.format )
+        groupTotals(mdb, batchID, urls, outfile, args.format )
     
     if "members" in args.stats :
-        getMembers( mdb, batchID, args.region, outfile, args.format )
+        getMembers( mdb, batchID, urls, outfile, args.format )
 
     if "events" in args.stats:
-        get_events(mdb, batchID, args.region, outfile, args.format)
+        get_events(mdb, batchID, urls, outfile, args.format)
         
     if "rsvps" in args.stats:
-        get_rsvps( mdb, batchID, args.region, outfile, args.format )
+        get_rsvps( mdb, batchID, urls, outfile, args.format )
+
   
         

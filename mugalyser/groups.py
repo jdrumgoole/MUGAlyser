@@ -6,9 +6,16 @@ Created on 7 Oct 2016
 from pprint import pprint
 
 from mugalyser.mugdata import MUGData
-from utils.query import Query
 import itertools
 
+NORDICS_COUNTRIES = [ "Denmark", 
+                      "Faroe Islands", 
+                      "Finland", 
+                      "Greenland", 
+                      "Iceland", 
+                      "Norway", 
+                      "Sweden" ]
+               
 EU_COUNTRIES = [ "Austria", 
                  "Belgium", 
                  "Bulgaria", 
