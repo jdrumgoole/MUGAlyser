@@ -75,6 +75,11 @@ class Groups(MUGData):
     def get_country_group_urlnames(self, country ):
         return self.get_region_group_urlnames( [ country ])
     
+    def get_country(self, urlname ):
+        
+        group = self.find_one( { "group.urlname" : urlname } )
+        return group[ "group"][ "country"]
+    
     def get_region_group_urlnames(self, regions = None ):
         if regions:
             if type( regions ) is list:

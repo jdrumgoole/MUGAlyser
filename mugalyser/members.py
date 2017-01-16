@@ -4,10 +4,11 @@ Created on 11 Oct 2016
 @author: jdrumgoole
 '''
 
-from mugalyser.agg import Agg
+from mugalyser.agg import Agg, Sorter
 from mugalyser.feedback import Feedback
 from mugalyser.mugdata import MUGData
 import itertools
+import pymongo
 
 from mugalyser.audit import Audit
 from utils.query import Query
@@ -26,7 +27,7 @@ class Members(MUGData):
         self._membersAgg.addMatch({ "member.name": { "$exists" : 1 }})
         self._membersAgg.addProject( { "_id" : 0, "name" : "$member.name" })
         self._membersAgg.addGroup( { "_id" : "$name" , "occurences" : { "$sum" : 1 }})
-        self._membersAgg.addSort( { "occurences" : -1 }) # largest first
+        self._membersAgg.addSort( Sorter( "occurences", pymongo.DESCENDING  )) # largest first
         self._memberCount = 0
         self._feedback = Feedback()
         self._audit = Audit( mdb )

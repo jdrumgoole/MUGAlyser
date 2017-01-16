@@ -25,6 +25,10 @@ class Test_groups(unittest.TestCase):
         g = self._groups.get_group( "DublinMUG")
         self.assertEqual( g[ "group"][ "urlname"], "DublinMUG" )
         
+    def test_get_country(self):
+        c = self._groups.get_country( "DublinMUG" )
+        self.assertEqual( c, "Ireland" )
+        
     def testGroups(self):
         groups = self._groups.get_all_groups()
         self.assertEqual( len( [ x for x in groups ]), 114 )
@@ -32,12 +36,11 @@ class Test_groups(unittest.TestCase):
         groups = self._groups.get_all_groups( region=[ 'USA'] )
         
     def test_get_country_urlnames(self ):
-        urls = self._groups.get_country_group_urlnames()
+        urls = self._groups.get_country_group_urlnames("USA")
         self.assertGreaterEqual( len( urls ), 41 )
         self.assertTrue( "nyccpp" in urls )
         
     def test_get_region_urlnames(self):
-        pass
         eu_groups = self._groups.get_region_group_urlnames()
         self.assertEqual( len( eu_groups ), 114 )
         

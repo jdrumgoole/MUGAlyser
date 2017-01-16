@@ -14,14 +14,14 @@ import csv
 import sys
 
 
-def printCursor( c, outfile, fmt, fieldnames=None, filterField=None, filterList = None ):
+def printCursor( c, outfile, fmt, fieldnames=None  ):
     if fmt == "CSV" :
-        printCSVCursor( c, outfile, fieldnames, filterField, filterList )
+        printCSVCursor( c, outfile, fieldnames )
     else:
-        printJSONCursor( c, outfile, filterField, filterList )
+        printJSONCursor( c, outfile )
         
         
-def printCSVCursor( c, outfile, fieldnames, filterField, filterList ):
+def printCSVCursor( c, outfile, fieldnames ):
     
     if outfile is None:
         outfile = sys.stdout
@@ -38,24 +38,19 @@ def printCSVCursor( c, outfile, fieldnames, filterField, filterList ):
             
         writer.writerow( {k:v.encode('utf8') for k,v in x.items()} ) #{k:v.encode('utf8') for k,v in D.items()}
     
-def printJSONCursor( c, outfile, filterField, filterList ):
+def printJSONCursor( c, outfile ):
     count = 0 
     
     if outfile is None:
         outfile = sys.stdout
         
     for i in c :
-        if filterField and filterList :
-            if i[ filterField ]  in filterList:
-                pprint.pprint( i, outfile )
-                count = count + 1
-        else:
-            pprint.pprint(i, outfile )
-            count = count + 1
+        pprint.pprint(i, outfile )
+        count = count + 1
     outfile.write( "Total records: %i" % count )
 
         
-def getMembers( mdb, batchID, region_arg, outfile, fmt ):
+def getMembers( mdb, batchID, urls, outfile, fmt ):
     
     agg = Agg( mdb.groupsCollection())
     
@@ -120,7 +115,7 @@ def meetupTotals( mdb, batchID, urls, outfile, fmt ):
     
     printCursor( cursor, outfile, fmt=fmt, fieldnames=[ "year", "total_rsvp", "total_events"] )
 
-def batchMatch( collection, batchID, urls ):
+def batchMatch( collection, batchID ):
     agg = Agg( collection )
     agg.addMatch({ "batchID" : batchID } )
     return agg
@@ -137,6 +132,7 @@ def groupTotals( mdb, batchID, urls, outfile, fmt  ):
 
     agg = Agg( mdb.pastEventsCollection())
 
+    groups = Groups( mdb )
     agg.addMatch({ "batchID"             : batchID,
                    "event.status"        : "past",
                    "event.group.urlname" : { "$in" : urls }} )
@@ -146,8 +142,8 @@ def groupTotals( mdb, batchID, urls, outfile, fmt  ):
                     "event_count" : { "$sum" : 1 },
                     "rsvp_count"  : { "$sum" : "$event.yes_rsvp_count" }})
     agg.addProject( { "_id" : 0,
-                      "group" : "$_id.urlname",
-                      "year"  : "$_id.year",
+                      "group"   : "$_id.urlname",
+                      "year"    : "$_id.year",
                       "event_count" : 1,
                       "rsvp_count" : 1 } )
 
@@ -162,7 +158,7 @@ def groupTotals( mdb, batchID, urls, outfile, fmt  ):
     print( agg )
     cursor = agg.aggregate()
 
-    printCursor( cursor, outfile, fmt, fieldnames=[  "year", "group", "event_count", "rsvp_count" ], filterField="group", filterList=urls )
+    printCursor( cursor, outfile, fmt, fieldnames=[  "year", "group", "event_count", "rsvp_count" ] ) 
 
     
 def get_events(mdb, batchID, urls, outfile, fmt, startDate=None, endDate=None, rsvpbound=0):
@@ -246,7 +242,7 @@ if __name__ == '__main__':
     elif "NORDICS" in args.country :
         urls = groups.get_region_group_urlnames( NORDICS_COUNTRIES )
     else:
-        urls = groups.get_region_group_urlnames(mdb, args.country )
+        urls = groups.get_region_group_urlnames( args.country )
         
     
     audit = Audit( mdb )

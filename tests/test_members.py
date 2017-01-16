@@ -61,7 +61,7 @@ class Test_members(unittest.TestCase):
         end = parse( "31-Dec-2009 11:59" )
         members = self._members.get_by_join_date( start , end )
         all_members = list( members )
-        self.assertEqual( len( all_members), 59 )
+        self.assertEqual( len( all_members), 58 )
 
 
     def test_joined_by_year(self):
