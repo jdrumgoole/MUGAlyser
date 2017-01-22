@@ -12,7 +12,24 @@ import pprint
 import pymongo
 import csv
 import sys
+from datetime import datetime
+from mugalyser.members import Members
 
+def addJoinDate( mdb, cursor ):
+    
+    members = Members( mdb )
+    for i in cursor :
+        member = members.get_by_ID( i[ "info"]["attendee"]["member"][ "id"])
+        i[ "join_date"] = member[ "join_time" ]
+        yield i
+        
+    
+def addCountry( mdb, cursor ):
+    groups = Groups( mdb )
+    for i in cursor:
+        country = groups.get_country( i[ 'group'] )
+        i[ "country"] = country
+        yield i    
 
 def printCursor( c, outfile, fmt, fieldnames=None  ):
     if fmt == "CSV" :
@@ -47,7 +64,7 @@ def printJSONCursor( c, outfile ):
     for i in c :
         pprint.pprint(i, outfile )
         count = count + 1
-    outfile.write( "Total records: %i" % count )
+    outfile.write( "Total records: %i\n" % count )
 
         
 def getMembers( mdb, batchID, urls, outfile, fmt ):
@@ -132,7 +149,6 @@ def groupTotals( mdb, batchID, urls, outfile, fmt  ):
 
     agg = Agg( mdb.pastEventsCollection())
 
-    groups = Groups( mdb )
     agg.addMatch({ "batchID"             : batchID,
                    "event.status"        : "past",
                    "event.group.urlname" : { "$in" : urls }} )
@@ -155,10 +171,9 @@ def groupTotals( mdb, batchID, urls, outfile, fmt  ):
     
     agg.addSort( sorter )
 
-    print( agg )
     cursor = agg.aggregate()
 
-    printCursor( cursor, outfile, fmt, fieldnames=[  "year", "group", "event_count", "rsvp_count" ] ) 
+    printCursor( addCountry( mdb, cursor ), outfile, fmt, fieldnames=[  "year", "group", "country", "event_count", "rsvp_count" ] ) 
 
     
 def get_events(mdb, batchID, urls, outfile, fmt, startDate=None, endDate=None, rsvpbound=0):
@@ -193,23 +208,59 @@ def get_events(mdb, batchID, urls, outfile, fmt, startDate=None, endDate=None, r
     cursor = agg.aggregate()
     printCursor( cursor, outfile, fmt, fieldnames=[ "group", "name", "rsvp_count", "date" ] ) #"day", "month", "year" ] )
     
-def get_rsvps(mdb, batchID, region, outfile, fmt, startDate=None, endDate=None, rsvpbound=0):
+def get_rsvps(mdb, batchID, region, outfile, fmt, startDate=None, endDate=None, rsvpbound=0):   
+
+    agg = Agg( mdb.attendeesCollection())
     
-    agg = batchMatch( mdb.attendeesCollection(), batchID )
+    agg.addMatch({ "batchID"            : batchID,
+                   "info.event.group.urlname" : { "$in" : urls }} )
     
     agg.addProject( { "_id"        : 0,
                       "attendee"   : "$info.attendee.member.name", 
+                      "group"      : "$info.event.group.urlname",
                       "event_name" : "$info.event.name" })
     
-    agg.addGroup( { "_id" : "$attendee",
+    agg.addGroup( { "_id" : {  "attendee": "$attendee", "group": "$group" },
                     "event_count" : { "$sum" : 1 }})
+                    
+    agg.addProject( { "_id" : 0,
+                      "attendee" : "$_id.attendee",
+                      "group" : "$_id.group",
+                      "event_count" : 1 } )
     
     agg.addSort( Sorter( "event_count"))
     cursor = agg.aggregate()
-    printCursor( cursor, outfile, fmt, fieldnames=[ "_id" , "event_count"])
+    printCursor( cursor, outfile, fmt, fieldnames=[ "attendee", "group", "event_count"])
 
+def get_active( mdb, batchID, urls, outfile, fmt ):
+    '''
+    We define an active user as somebody who has rsvp'd to at least one event in the last six months.
+    '''
+    agg = Agg( mdb.attendeesCollection())
+    
+    agg.addMatch({ "batchID"            : batchID,
+                   "info.event.group.urlname" : { "$in" : urls },
+                   "info.attendee.rsvp.response" : "yes",
+                   "info.event.time" : { "$gte" : datetime( 2016, 1, 1) }} )
+    
+#     agg.addProject( { "_id" : 0,
+#                       "name" : "$info.attendee.member.name",
+#                       "urlname" : "$info.event.group.urlname",
+#                       "event_name" : "$info.event.name" })
+    
+    agg.addGroup( { "_id"    : "$info.attendee.member.name",
+                    "count"  : { "$sum": 1 },
+                    "groups" : { "$addToSet" : "$info.event.group.urlname" }} )
+    
+    agg.addSort( Sorter( "count" ))
+
+    cursor = agg.aggregate()
+    
+    printCursor( cursor, outfile, fmt, fieldnames=[ "_id", "count", "groups"])
+    
 if __name__ == '__main__':
     
+    cmds = [ "meetups", "groups", "members", "events", "rsvps", "active" ]
     parser = ArgumentParser()
         
     parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", 
@@ -218,12 +269,13 @@ if __name__ == '__main__':
     parser.add_argument( "--format", default="JSON", choices=[ "JSON", "CSV" ], help="format for output [default: %(default)s]" )
     parser.add_argument( "--output", default="-", help="format for output [default: %(default)s]" )
     parser.add_argument( "--stats",  nargs="+", default=[ "meetups" ], 
-                         choices= [ "meetups", "groups", "members", "events", "rsvps" ],
+                         choices= cmds,
                          help="List of stats to output [default: %(default)s]" )
     parser.add_argument( "--country", nargs="+", default=[ "all"],
                          help="pick a region to report on [default: %(default)s]")
     
-
+    parser.add_argument( "--url", nargs="+",
+                         help="pick a URL for a group to report on [default: %(default)s]")
     
     args = parser.parse_args()
     
@@ -253,7 +305,6 @@ if __name__ == '__main__':
         meetupTotals( mdb, batchID, urls, outfile, args.format )
     
     if "groups" in args.stats :
-        print( "USA Group Totals")
         groupTotals(mdb, batchID, urls, outfile, args.format )
     
     if "members" in args.stats :
@@ -264,6 +315,9 @@ if __name__ == '__main__':
         
     if "rsvps" in args.stats:
         get_rsvps( mdb, batchID, urls, outfile, args.format )
+        
+    if "active" in args.stats:
+        get_active( mdb, batchID, urls, outfile, args.format )
 
   
         
