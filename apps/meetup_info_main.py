@@ -21,9 +21,6 @@ program_name = "meetup_info_main"
     
 
 def main( argv ) :
-    
-    if argv:
-        sys.argv.extend( argv )
         
     try :
         parser = ArgumentParser()

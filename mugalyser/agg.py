@@ -171,6 +171,22 @@ class Agg(object):
     def __str__(self):
         return pprint.pformat( self.__repr__())
     
+    def addRangeSearch( self, date_field, lower=None, upper=None ):
+    
+        query = None
+        if lower and upper :
+            query = { date_field : { "$gte" : lower, "$lte" : upper }}
+        elif lower :
+            query = { date_field : { "$gte" : lower  }}
+        elif upper :
+            query ={ date_field : { "$lte" : upper  }}
+        
+        if query:
+            self.addMatch( query )
+            
+        return self
+    
+    
     def __repr__(self):
         return "%s" % self._agg
     
