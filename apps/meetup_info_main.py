@@ -28,7 +28,7 @@ def main( argv ) :
         parser.add_argument( "--apikey", default="", help="API Key to use for Calls")
         parser.add_argument( "-i", "--member_id", type=int, help="Retrieve information for a specific ID")
         parser.add_argument( "-g", "--mug", help="Get Info for MUG")
-        parser.add_argument( "--members", nargs="+", default=[],  help="list all members of a list of groups")
+        parser.add_argument( "--members", default=False, action="store_true",  help="list all members of a list of groups")
         parser.add_argument( "-l", "--listgroups", action="store_true", default=False, help = "List all groups")
         parser.add_argument( "-u", "--urlnames", action="store_true", default=False, help = "List all groups by URL name")
         parser.add_argument( "--pastevents", nargs="+", default=[], help="Get past events for MUG")
@@ -52,22 +52,16 @@ def main( argv ) :
             pprint.pprint( mug )
             
         if args.members :
-            print( "args.members : %s" % args.members )
-            it = m.get_members()
+            print( "args.members" )
+            it = m.get_pro_members()
 
             count = 0 
             for i in it :
+                #pprint.pprint( i )
                 count = count + 1
-                #
-                # sometimes country is not defined.
-                #
-                country = i[ "member" ].pop( "country", "Undefined")
-    
-                if "member_id" in i["member"] : # PRO API member format
-                    print( u"{:30}, {:20}, {:20}".format( i["member"][ "member_name"], country, i["member"][ "member_id"]) )
-                else:
-                    print( u"{:30}, {:20}, {:20}".format( i["member"][ "name"], country, i["member"][ "id"]) )
-                
+
+                print( u"{:30}, {:20}, {:20}".format( i[ "member_name"], i[ "country" ], i[ "member_id"]) )
+
             print( "%i total" % count )
         
         if args.pastevents :
