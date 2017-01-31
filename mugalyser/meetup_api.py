@@ -17,27 +17,120 @@ def returnData( r ):
     if r.raise_for_status() is None:
         return ( r.headers, r.json())
         
-def makeRequest( req, params=None ):
-    logger = logging.getLogger( __programName__ )
-    level = logger.getEffectiveLevel()
+
+class PaginatedRequest( object ):
     
-    logger.setLevel( logging.WARN ) # turn of info output for requests
+    def __init__(self, items=500, logurl = False ):
+
+        self._logurl = logurl
+        self._items = 500
+        
+    def makeRequest(self, req, params ):
+        logger = logging.getLogger( __programName__ )
     
-    r = requests.get( req, params=params )
-    #print( "url: '%s'" % r.url )
-    #print( "text: %s" % r.text )
-    #print( "headers: %s" % r.headers )
-    try:
-        return returnData( r )
-    except requests.HTTPError, e :
+        if self._logurl:
+            logger.info( "URL    : '%s'" % req )
+            logger.info( "params : '%s" % params )
+            
+        level = logger.getEffectiveLevel()
+        
+        logger.setLevel( logging.WARN ) # turn of info output for requests
+        
+        r = requests.get( req, params )
+        #print( "url: '%s'" % r.url )
+        #print( "text: %s" % r.text )
+        #print( "headers: %s" % r.headers )
+        try:
+            return returnData( r )
+        except requests.HTTPError, e :
+    
+            logger.error( "HTTP Error  : %s:", e )
+            raise
+        finally:
+            logger.setLevel( level )
 
-        logger.error( "HTTP Error  : %s:", e )
-        raise
-    finally:
-        logger.setLevel( level )
-
-#embed      
-
+    def getHref( self, s ):
+        ( link, direction ) = s.split( ";", 2 )
+        link = link[ 1:-1]
+        ( _, direction ) = direction.split( "=", 2 )
+        direction = direction[ 1:-1 ]
+        return ( link, direction )
+    
+    def getNextPrev(self, header ):
+        
+        #headerDict = json.loads( header )
+        link = header[ "Link" ]
+        
+        if "," in link : # has prev  and next fields
+            ( nxt, prev ) = link.split( ",", 2 )
+            ( nextLink, _ ) = self.getHref( nxt )
+            ( prevLink, _ )  = self.getHref( prev )
+        else:
+            ( link, direction ) = self.getHref( link )
+            #print( "direction: '%s'" % direction )
+            if direction == "next" :
+                nextLink = link
+                prevLink = None
+            else:
+                prevLink = link
+                nextLink = None
+        
+        return ( nextLink, prevLink )
+    
+    def paginatedRequest(self, req, params, reshaperFunc=None ):
+        
+        (header, body) = self.makeRequest( req, params )
+        #r = requests.get( self._api + url_name + "/events", params = params )
+        #print( "request: '%s'" % r.url )
+        return self.paginator( header, body, params, func=reshaperFunc  )
+    
+    def paginator( self, headers, body, params, func=None, arg=None ):
+        '''
+        Meetup API returns results as pages. The old API embeds the 
+        page data in a meta data object in the response object. The new API
+        returns page data in the Header info. 
+        
+        Func is a function that takes a doc and returns a doc. Right now
+        we use this to reshape geospatial coordinates into a format that MongoDB
+        understands.
+        '''
+        
+        #print( "paginatorEntry( %s )" % headers )
+        if func is None:
+            func = Reshaper.noop
+            
+        data = body
+        #pprint.pprint( data )
+        
+        # old style format 
+        if "meta" in body :
+            for i in body[ "results"]:
+                yield func( i )
+        
+            while ( data[ 'meta' ][ "next" ] != ""  ) :
+                data = self.makeRequest( data['meta'][ 'next' ], params )[1]
+    
+            
+                for i in data[ "results"]:
+                    yield  func( i )
+    
+                    
+        elif ( "Link" in headers ) : #new style pagination
+            for i in data :
+                yield func( i )
+                
+            ( nxt, _) = self.getNextPrev(headers)
+    
+            while ( nxt is not None ) : # no next link in last page
+    
+                ( headers, body ) = self.makeRequest( nxt, params )
+                ( nxt, _ ) = self.getNextPrev(headers)
+                for i in body :
+                    yield  func( i )
+    
+        else: # new style but we have all the data
+            for i in data:
+                yield func( i )
 
 def epochToDatetime( ts ):
     return datetime.datetime.fromtimestamp( ts /1000 )
@@ -88,34 +181,9 @@ class Reshaper( object ):
                                      [ "created", "pro_join_date", "founded_date", "last_event" ])
 
 
-def getHref( s ):
-    ( link, direction ) = s.split( ";", 2 )
-    link = link[ 1:-1]
-    ( _, direction ) = direction.split( "=", 2 )
-    direction = direction[ 1:-1 ]
-    return ( link, direction )
+
     
-    
-def getNextPrev( header ):
-    
-    #headerDict = json.loads( header )
-    link = header[ "Link" ]
-    
-    if "," in link : # has prev  and next fields
-        ( nxt, prev ) = link.split( ",", 2 )
-        ( nextLink, _ ) = getHref( nxt )
-        ( prevLink, _ )  = getHref( prev )
-    else:
-        ( link, direction ) = getHref( link )
-        #print( "direction: '%s'" % direction )
-        if direction == "next" :
-            nextLink = link
-            prevLink = None
-        else:
-            prevLink = link
-            nextLink = None
-    
-    return ( nextLink, prevLink )
+
         
     
 def getHeaderLink( header ):
@@ -132,53 +200,7 @@ def getHeaderLink( header ):
     relVal = relVal[ 1:-1] # strip off quotes
     return ( link, relVal )
 
-def paginator( headers, body, params=None, func=None, arg=None ):
-    '''
-    Meetup API returns results as pages. The old API embeds the 
-    page data in a meta data object in the response object. The new API
-    returns page data in the Header info. 
-    
-    Func is a function that takes a doc and returns a doc. Right now
-    we use this to reshape geospatial coordinates into a format that MongoDB
-    understands.
-    '''
-    
-    #print( "paginatorEntry( %s )" % headers )
-    if func is None:
-        func = Reshaper.noop
-        
-    data = body
-    #pprint.pprint( data )
-    
-    # old style format 
-    if "meta" in body :
-        for i in body[ "results"]:
-            yield func( i )
-    
-        while ( data[ 'meta' ][ "next" ] != ""  ) :
-            data = makeRequest( data['meta'][ 'next' ])[1]
 
-        
-            for i in data[ "results"]:
-                yield  func( i )
-
-                
-    elif ( "Link" in headers ) : #new style pagination
-        for i in data :
-            yield func( i )
-            
-        ( nxt, _) = getNextPrev(headers)
-
-        while ( nxt is not None ) : # no next link in last page
-
-            ( headers, body ) = makeRequest( nxt, params=params )
-            ( nxt, _ ) = getNextPrev(headers)
-            for i in body :
-                yield  func( i )
-
-    else: # new style but we have all the data
-        for i in data:
-            yield func( i )
         
 class MeetupAPI(object):
     '''
@@ -193,7 +215,7 @@ class MeetupAPI(object):
             
         return url
     
-    def __init__(self, apikey = get_meetup_key()):
+    def __init__(self, apikey = get_meetup_key(), items=500, logurl=False):
         '''
         Constructor
         '''
@@ -201,27 +223,24 @@ class MeetupAPI(object):
         self._api = "https://api.meetup.com/"
         self._params = {}
         self._params[ "key" ] = apikey
-        self._params[ "sign"] = "true"
+        self._items = str( items )
+        self._requester = PaginatedRequest( self._items, logurl )
             
     def get_group(self, url_name ):
         
         params = deepcopy( self._params )
         
-        return Reshaper.reshapeGroupDoc( makeRequest( self._api + url_name, params = params )[1] ) 
+        return Reshaper.reshapeGroupDoc( self._requester.makeRequest( self._api + url_name, params = params )[1] ) 
 
     def get_past_events(self, url_name, items=20 ) :
         
         params = deepcopy( self._params )
         
         params[ "status" ]       = "past"
-        params[ "page" ]         = str( items )
+        params[ "page" ]         = self._items
         params[ "group_urlname"] = url_name
         
-        (header, body) = makeRequest( self._api + "2/events", params )
-        #r = requests.get( self._api + url_name + "/events", params = params )
-        #print( "request: '%s'" % r.url )
-        return paginator( header, body, params, Reshaper.reshapeEventDoc )
-
+        return self._requester.paginatedRequest( self._api + "2/events", params, Reshaper.reshapeEventDoc )
 
     def get_all_attendees(self, groups=None, items=50 ):
         groupsIterator = None
@@ -243,32 +262,26 @@ class MeetupAPI(object):
             
     def get_event_attendees(self, eventID, url_name, items=20 ):
         params = deepcopy( self._params )
-        params[ "page" ] = str( items )
+        params[ "page" ] = self._items
         
         #https://api.meetup.com/DublinMUG/events/62760772/attendance?&sign=true&photo-host=public&page=20
         reqURL = self.makeRequestURL( url_name, "events", str( eventID ), "attendance")
 
-        ( header, body ) = makeRequest( reqURL, params=params)
-
-        return paginator( header, body, params )
+        return self._requester.paginatedRequest( reqURL, params )
     
     def get_upcoming_events(self, url_name, items=20 ):
         
         params = deepcopy( self._params )
         params[ "status" ] = "upcoming"
-        params[ "page"]    = str( items )
+        params[ "page"]    = self._items
         params[ "group_urlname"] = url_name
         
-        ( header, body ) = makeRequest( self._api + "2/events", params = params )
-        #r = requests.get( self._api + url_name + "/events", params = params )
-        #print( "request: '%s'" % r.url )
-        return paginator(  header, body, params, Reshaper.reshapeEventDoc )
-    
+        return self._requester.paginatedRequest( self._api + "2/events", params, Reshaper.reshapeEventDoc)
     
     def get_member_by_id(self, member_id ):
         params = deepcopy( self._params )
 
-        ( _, body ) = makeRequest( self._api + "2/member/" + str( member_id ), params = params )
+        ( _, body ) = self._requester.makeRequest( self._api + "2/member/" + str( member_id ), params = params )
         
         return body
     
@@ -276,13 +289,9 @@ class MeetupAPI(object):
         
         params = deepcopy( self._params )
         params[ "group_urlname" ] = url_name
-        params[ "page"]    = str( items )
+        params[ "page"]    = self._items
 
-        logging.debug( "get_members")
-        ( header, body ) = makeRequest( self._api + "2/members", params = params )
-        #r = requests.get( self._api + "2/members", params = params )
-        
-        return paginator( header, body, params )
+        return self._requester.paginatedRequest( self._api + "2/members", params )
     
     def get_groups(self, items=200 ):
         '''
@@ -290,11 +299,9 @@ class MeetupAPI(object):
         '''
         
         params = deepcopy( self._params )
-        params[ "page" ]         = str( items )
+        params[ "page" ]         = self._items
         logging.debug( "get_groups")
-        ( header, body ) = makeRequest( self._api + "self/groups", params )
-
-        return paginator( header, body, params )
+        return self._requester.paginatedRequest(self._api + "self/groups",  params )
     
     def get_pro_groups(self, items=20 ):
         '''
@@ -302,22 +309,20 @@ class MeetupAPI(object):
         '''
         
         params = deepcopy( self._params )
-        params[ "page" ]         = str( items )
+        params[ "page" ]         = self._items
         logging.debug( "get_pro_groups")
-        ( header, body ) = makeRequest( self._api + "pro/MongoDB/groups", params )
-
-        return paginator( header, body, params, Reshaper.reshapeGroupDoc  )
+        
+        return self._requester.paginatedRequest( self._api + "pro/MongoDB/groups", params, Reshaper.reshapeGroupDoc )
     
     def get_pro_members(self, items=200 ):
         params = deepcopy( self._params )
-        params[ "page" ] = str( items )
+        params[ "page" ] = self._items
         logging.debug( "get_pro_members")
-        ( header, body ) = makeRequest( self._api + "pro/MongoDB/members", params )
+        
+        return self._requester.paginatedRequest( self._api + "pro/MongoDB/members", params, Reshaper.reshapeMemberDoc)
 
-        return paginator( header, body, params, Reshaper.reshapeMemberDoc  )
     
     def get_group_names( self ):
         for i in self.get_pro_groups() :
             yield i[ "urlname" ]
     
-
