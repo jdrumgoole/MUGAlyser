@@ -14,7 +14,7 @@ from mugalyser.meetup_api import MeetupAPI
 from traceback import print_exception
 from mugalyser.version import __programName__
 from mugalyser.generator_utils import printCount
-from mugalyser.events import Events
+from mugalyser.mugdata import printCursor
 from mugalyser.groups import Groups
     
 program_name = "meetup_info_main"
@@ -66,22 +66,22 @@ def main( argv ) :
         
         if args.pastevents :
             past_events = m.get_past_events( args.pastevents )
-            printCount( past_events, Events.doc_print )
+            printCursor( past_events )
             
         if args.upcomingevents :
             upcoming_events = m.get_upcoming_events( args.upcomingevents )
-            printCount( upcoming_events,Events.doc_print )
+            printCursor( upcoming_events )
             
             
         if args.listgroups :
-            printCount( m.get_pro_groups(), Groups.printGroup )
+            printCursor( m.get_pro_groups())
             
         #hack
         def printer( i, formatter ):
             print( i )
             
         if args.urlnames :
-            printCount( m.get_group_names(), printer )
+            printCursor( m.get_group_names())
             
     except KeyboardInterrupt:
         print("Keyboard interrupt : Exiting...")
