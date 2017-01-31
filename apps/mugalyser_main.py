@@ -124,7 +124,7 @@ def main(argv=None): # IGNORE:C0111
         mugList = []
 
         mdb = MUGAlyserMongoDB( args.host )
-
+        
         audit = Audit( mdb )
         
         batchID = audit.startBatch( { "args"    : vars( args ), 
@@ -134,7 +134,7 @@ def main(argv=None): # IGNORE:C0111
 
         start = datetime.utcnow()
         logging.info( "Started MUG processing for batch ID: %i", batchID )
-
+        logging.info( "Writing to database : '%s'" % mdb.database().name )
         writer = MeetupWriter( audit, apikey )
         if "all" in args.mugs :
             writer.capture_complete_snapshot()
