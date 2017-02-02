@@ -199,7 +199,7 @@ class Audit( object ):
     
     def getCurrentValidBatchID( self ):
         curBatch = self._auditCollection.find( { "apikey" : get_meetup_key(),
-                                                 "end"    : { "$type" : 17 }, #17 BSON type for timestamp
+                                                 "end"    : { "$type" : "date" }, #17 BSON type for timestamp
                                                  "trial"  : False } ).sort( "batchID", pymongo.DESCENDING ).limit( 1 )
         
         if curBatch is None :
