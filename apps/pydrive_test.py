@@ -25,3 +25,5 @@ if __name__ == '__main__':
     file1 = drive.CreateFile({'title': 'Hello-gdrive.txt'})  # Create GoogleDriveFile instance with title 'Hello.txt'.
     file1.SetContentString('Hello World!') # Set content of the file from given string.
     file1.Upload()
+    
+    file2 = drive.CreateFile( )
