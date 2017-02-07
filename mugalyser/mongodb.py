@@ -8,7 +8,7 @@ import pymongo
 
 class MUGAlyserMongoDB( object ):
     
-    def __init__(self, uri="mongodb://localhost:27017/MUGS", connect=True):
+    def __init__(self, uri="mongodb://localhost:27017/MUGS", setup=True):
 
     #def __init__(self, host="localhost", port=27017, databaseName="MUGS", replset="",
     #            username=None, password=None, ssl=False, admin="admin", connect=True):
@@ -24,9 +24,8 @@ class MUGAlyserMongoDB( object ):
         
         '''
         
-        self._uri = uri 
-        #self._uri = self._uri + "?tz_aware=true"
-        self._client = None
+        self._uri             = uri 
+        self._client          = None
         self._members         = None
         self._groups          = None
         self._pastEvents      = None
@@ -34,10 +33,11 @@ class MUGAlyserMongoDB( object ):
         self._attendees       = None
         
         
-        if connect:
-            self.connect()
-            
-    def connect(self ):
+        if setup:
+            self.setup()
+
+        
+    def setup(self ):
 
         if self._uri.startswith( "mongodb://" ) :
             self._client = pymongo.MongoClient( host=self._uri, tz_aware=True )
