@@ -57,18 +57,18 @@ def addCountry( mdb, cursor ):
 
 class MUG_Analytics( object ):
     
-    def make_filename( self, root, fmt, suffix=None ):
+    def make_filename( self, fileroot, fmt, suffix=None ):
         
         filename = None
         
-        if root == "-" :
-            return root
+        if fileroot == "-" :
+            return fileroot
         else:
             
             if suffix:
-                filename = root + suffix
+                filename = fileroot + suffix
             else:
-                filename = root
+                filename = fileroot
                 
             if fmt == "CSV" :
                 return filename + ".csv"
@@ -129,7 +129,7 @@ class MUG_Analytics( object ):
             output.write( "Total records: %i\n" % count )
 
     
-    def __init__(self, mdb, format, start_date, end_date, root ):
+    def __init__(self, mdb, format, start_date, end_date, fileroot ):
         self._mdb = mdb
         audit = Audit( mdb )
     
@@ -137,7 +137,7 @@ class MUG_Analytics( object ):
         self._start_date = start_date
         self._end_date = end_date
         self._format = format
-        self._root = root
+        self._fileroot = fileroot
         self._files = []
         
     def getMembers( self, urls, filename=None ):
@@ -154,8 +154,6 @@ class MUG_Analytics( object ):
         agg.addSort( Sorter("member_count", pymongo.DESCENDING ))
         cursor = agg.aggregate()
         
-        if filename is None :
-            filename = self._root
         filename = self.make_filename( self._root, self._format,  filename )
         self.printCursor( cursor, filename, self._format, fieldnames= [ "urlname", "country", "member_count"] )
         
@@ -369,7 +367,7 @@ if __name__ == '__main__':
                          help="URI for connecting to MongoDB [default: %(default)s]" )
     
     parser.add_argument( "--format", default="JSON", choices=[ "JSON", "CSV" ], help="format for output [default: %(default)s]" )
-    parser.add_argument( "--root", default="-", help="filename root for output [default: %(default)s]" )
+    parser.add_argument( "--fileroot", default="-", help="filename root for output [default: %(default)s]" )
     parser.add_argument( "--stats",  nargs="+", default=[ "meetups" ], 
                          choices= cmds,
                          help="List of stats to output [default: %(default)s]" )
@@ -391,10 +389,10 @@ if __name__ == '__main__':
     
     upload_List = []
     
-    root = args.root
+    fileroot = args.fileroot
     
-    if root is None:
-        root = "-"
+    if fileroot is None:
+        fileroot = "-"
     
     mdb = MUGAlyserMongoDB( uri=args.host )
         
@@ -418,7 +416,7 @@ if __name__ == '__main__':
         print( "Bad date: %s" % e )
         sys.exit( 2 )
 
-    analytics = MUG_Analytics( mdb, args.format, from_date, to_date, root )
+    analytics = MUG_Analytics( mdb, args.format, from_date, to_date, fileroot )
     
     if "meetuptotals" in args.stats :
         analytics.meetupTotals( urls, filename="meetuptotals" )
