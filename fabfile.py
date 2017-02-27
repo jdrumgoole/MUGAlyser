@@ -12,7 +12,7 @@ env.user = 'ec2-user'
 home = os.getenv( "HOME" )
 env.key_filename = os.path.join( home, "Documents", "jdrumgoole-vosa-eu.pem" )
 
-instance_id = "i-08ec12f4af8554243"
+instance_id = "i-0600d15742f2bc599"
 
 print( "using PEM file '%s' :" % env.key_filename ) 
 
@@ -51,6 +51,7 @@ def start_instance():
     
 def stop_instance():
     local( "aws ec2 stop-instances --instance-id %s" % instance_id )
+    local( "aws ec2  wait instance-stopped --instance-ids %s" % instance_id )
 
 def update() :
     #get_dns_name()
@@ -75,23 +76,17 @@ def apikey():
         
 def get_data():
     get_dns_name()
-    with cd( "GIT/MUGAlyser/mugalyser") :
-        run("atlasrun.sh" )
-        
+    with cd( "GIT/MUGAlyser/apps") :
+        run("sh atlasrun.sh" )
+     
+def prepare():
+    start_instance()
+    get_dns_name()   
 
 def process_batch():
-    start_instance()
-    get_dns_name()
     update()
     gitpull()
     get_data()
     stop_instance()
     
-def test_batch():
-    get_dns_name()
-    update()
-    gitpull()
-    get_data()
-    stop_instance()
     
-get_dns_name()
