@@ -3,20 +3,25 @@ Created on 28 Dec 2016
 
 @author: jdrumgoole
 '''
-from argparse import ArgumentParser
-from mugalyser.agg import Agg, Sorter
-from mugalyser.mongodb import MUGAlyserMongoDB
-from mugalyser.audit import Audit
-from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
+
 import pprint
 import pymongo
 import csv
 import sys
 from datetime import datetime
-from mugalyser.members import Members
+from argparse import ArgumentParser
+
 from dateutil.parser import parse
 from pydrive import auth
 from pydrive.drive import GoogleDrive
+
+
+from mugalyser.agg import Agg, Sorter
+from mugalyser.mongodb import MUGAlyserMongoDB
+from mugalyser.audit import Audit
+from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
+from mugalyser.members import Members
+
 
 import contextlib
     
@@ -139,25 +144,97 @@ class MUG_Analytics( object ):
         self._format = format
         self._root = root
         self._files = []
-        
-    def getMembers( self, urls, filename=None ):
-        
+       
+    def _membersAggregate(self, batchIDs, urls ):
         agg = Agg( self._mdb.groupsCollection())
         
-        agg.addMatch({ "batchID"       : self._batchID,
+        agg.addMatch({ "batchID"       : { "$in" : batchIDs},
                        "group.urlname" : { "$in" : urls }} )
          
         agg.addProject(  { "_id" : 0, 
                            "urlname" : "$group.urlname", 
                            "country" : "$group.country",
+                           "batchID" : 1, 
                            "member_count" : "$group.member_count" })
         agg.addSort( Sorter("member_count", pymongo.DESCENDING ))
+        
+        return agg
+    
+    def getMembers( self, urls, filename=None ):
+        
+        agg = self._membersAggregate( [self._batchID], urls)
         cursor = agg.aggregate()
         
         if filename is None :
             filename = self._root
         filename = self.make_filename( self._root, self._format,  filename )
-        self.printCursor( cursor, filename, self._format, fieldnames= [ "urlname", "country", "member_count"] )
+        self.printCursor( cursor, filename, self._format, fieldnames= [ "urlname", "country", "batchID", "member_count"] )
+        
+        
+    def getRSVPHistory(self, urls, filename=None ):
+        audit = Audit( self._mdb )
+        
+        validBatches = list( audit.getCurrentValidBatchIDs())
+                
+        agg = Agg( self._mdb.pastEventsCollection())  
+        
+        agg.addMatch({ "event.group.urlname" : { "$in" : urls }} )
+        
+        agg.addProject( { "timestamp" : Agg.cond( { "$eq": [ { "$type" : "$event.time" }, "date" ]},
+                                                  { "$dateToString" : { "format" : "%Y", #-%m-%d",
+                                                    "date"          :"$event.time"}},
+                                                    None  ),
+                          "event"     : "$event.name",
+                          "country"    : "$event.venue.country",
+                          "rsvp_count" : "$event.yes_rsvp_count" } )
+        
+        agg.addMatch( { "timestamp" : { "$ne" : None }} )
+        agg.addGroup( { "_id" :"$timestamp",
+                        #"event" : { "$addToSet" : { "event" : "$event", "country" : "$country" }},
+                        "rsvp_count" : { "$sum" : "$rsvp_count"}})
+        sorter = Sorter()
+        sorter.add( "_id" )
+        agg.addSort( sorter )
+        
+        cursor = agg.aggregate()
+        
+        if filename is None :
+            filename = self._root
+        filename = self.make_filename( self._root, self._format,  filename )
+        self.printCursor( cursor, filename, self._format, fieldnames= [ "_id", "rsvp_count" ] )
+        
+
+    def getMemberHistory(self, urls, filename=None ):
+        
+        audit = Audit( self._mdb )
+        
+        validBatches = list( audit.getCurrentValidBatchIDs())
+                
+        agg = Agg( self._mdb.groupsCollection())
+        
+        agg.addMatch({ "batchID"       : { "$in" : validBatches },
+                       "group.urlname" : { "$in" : urls }} )
+
+        agg.addProject({ "timestamp" : { "$dateToString" : { "format" : "%Y-%m-%d",
+                                                             "date"    :"$timestamp"}},
+                         "batchID" : 1,
+                         "urlname" : "$group.urlname",
+                         "count" : "$group.member_count" } )
+        
+        agg.addGroup( { "_id" : { "ts": "$timestamp", "batchID" : "$batchID" },
+                        "groups" : { "$addToSet" : "$urlname" },
+                        "count" : { "$sum" : "$count"}})
+
+        sorter = Sorter()
+        sorter.add( "_id.batchID" )
+        agg.addSort( sorter )
+        
+        cursor = agg.aggregate()
+        
+        if filename is None :
+            filename = self._root
+        filename = self.make_filename( self._root, self._format,  filename )
+        self.printCursor( cursor, filename, self._format, fieldnames= [ "_id", "groups", "count" ] )
         
     def getGroupInsight( self, urlname ):
         
@@ -362,7 +439,7 @@ class MUG_Analytics( object ):
     
 if __name__ == '__main__':
     
-    cmds = [ "meetuptotals", "grouptotals", "groups",  "members", "events", "rsvps", "active", "new" ]
+    cmds = [ "meetuptotals", "grouptotals", "groups",  "members", "events", "rsvps", "active", "new", "history", "rsvp" ]
     parser = ArgumentParser()
         
     parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", 
@@ -443,6 +520,12 @@ if __name__ == '__main__':
 
     if "new" in args.stats :
         analytics.get_new( urls, filename="new" )
+        
+    if "history" in args.stats :
+        analytics.getMemberHistory(urls,  filename="memberhistory")
+        
+    if "rsvp" in args.stats :
+        analytics.getRSVPHistory(urls, filename="rsvphistory")
         
     if args.upload :
         gauth = auth.GoogleAuth()

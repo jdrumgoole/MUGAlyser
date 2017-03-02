@@ -186,6 +186,9 @@ class Agg(object):
             
         return self
     
+    @staticmethod
+    def cond( boolean_expr, thenClause, elseClause ):  #$cond: { if: { $gte: [ "$qty", 250 ] }, then: 30, else: 20 }
+        return { "$cond" : { "if" : boolean_expr, "then" : thenClause, "else" :  elseClause }}
     
     def __repr__(self):
         return "%s" % self._agg

@@ -10,7 +10,7 @@ import datetime
 from copy import deepcopy
 
 from mugalyser.apikey import get_meetup_key
-
+from mugalyser.meetup_api import epochToDatetime
 from mugalyser.version import __programName__
 
 def returnData( r ):
