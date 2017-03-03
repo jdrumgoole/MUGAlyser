@@ -24,6 +24,7 @@ from mugalyser.members import Members
 
 
 import contextlib
+from _sqlite3 import Cursor
     
 def getDate( date_string ):
     if date_string is None :
@@ -60,38 +61,19 @@ def addCountry( mdb, cursor ):
 # analytics functions
 #
 
-class MUG_Analytics( object ):
-    
-    def make_filename( self, root, fmt, suffix=None ):
+class AggFormatter( object ):
         
-        filename = None
+    def __init__(self, cursor, root="mug", suffix=None, ext=None ):
+        '''
+        Data from cursor
+        output to <filename>suffix.ext.
+        '''
+        self._cursor = cursor
+        self._root = root
+        self._suffix = suffix
+        self._ext = ext
+        self._filename = self._make_filename(root, suffix, ext)
         
-        if root == "-" :
-            return root
-        else:
-            
-            if suffix:
-                filename = root + suffix
-            else:
-                filename = root
-                
-            if fmt == "CSV" :
-                return filename + ".csv"
-            else:
-                return filename + ".json"
-            
-    def printCursor( self, c, filename, fmt, fieldnames=None  ):
-    
-        if fmt == "CSV" :
-            self.printCSVCursor( c, filename, fieldnames )
-        else:
-            self.printJSONCursor( c, filename )
-            
-        self._files.append( filename )
-            
-    def files(self):
-        return self._files
-    
     @contextlib.contextmanager
     def smart_open(self, filename=None):
         if filename and filename != '-':
@@ -105,10 +87,26 @@ class MUG_Analytics( object ):
             if fh is not sys.stdout:
                 fh.close()
                 
+    def _make_filename( self, root, suffix=None, ext=None ):
+        
+        filename = None
+        
+        if root == "-" :
+            return root
+        else: 
+            if suffix:
+                filename = root + suffix
+            else:
+                filename = root
+                
+            if ext :
+                return filename + "." + ext
+            
     def printCSVCursor( self, c, filename, fieldnames ):
             
         if filename !="-" :
             print( "Writing : '%s'" % filename )
+            
         with self.smart_open( filename ) as output :
             writer = csv.DictWriter( output, fieldnames = fieldnames)
             writer.writeheader()
@@ -133,15 +131,30 @@ class MUG_Analytics( object ):
                 count = count + 1
             output.write( "Total records: %i\n" % count )
 
+
+    def printCursor( self, c, filename, fmt, fieldnames=None  ):
     
-    def __init__(self, mdb, format, start_date, end_date, root ):
+        if fmt == "csv" :
+            self.printCSVCursor( c, filename, fieldnames )
+        else:
+            self.printJSONCursor( c, filename )
+            
+        return filename
+    
+    def output(self, fieldNames  ):
+
+        self.printCursor( self._cursor, self._filename, self._ext, fieldNames )
+        
+class MUG_Analytics( object ):
+            
+    def __init__(self, mdb, ext, start_date, end_date, root ):
         self._mdb = mdb
         audit = Audit( mdb )
     
         self._batchID = audit.getCurrentValidBatchID()
         self._start_date = start_date
         self._end_date = end_date
-        self._format = format
+        self._ext = ext
         self._root = root
         self._files = []
        
@@ -165,10 +178,8 @@ class MUG_Analytics( object ):
         agg = self._membersAggregate( [self._batchID], urls)
         cursor = agg.aggregate()
         
-        if filename is None :
-            filename = self._root
-        filename = self.make_filename( self._root, self._format,  filename )
-        self.printCursor( cursor, filename, self._format, fieldnames= [ "urlname", "country", "batchID", "member_count"] )
+        formatter = AggFormatter( cursor, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "urlname", "country", "batchID", "member_count"] )
         
         
     def getRSVPHistory(self, urls, filename=None ):
@@ -379,7 +390,7 @@ class MUG_Analytics( object ):
     def get_new( self, urls, rsvpbound=0, filename=None ):
         pass
     
-    def get_rsvps( self, region, rsvpbound=0, filename=None):   
+    def get_rsvps( self, urls, rsvpbound=0, filename=None):   
     
         agg = Agg( self._mdb.attendeesCollection())
         
@@ -437,15 +448,18 @@ class MUG_Analytics( object ):
             
         self.printCursor( cursor, filename, self._format, fieldnames=[ "_id", "count", "groups"])
     
-if __name__ == '__main__':
+
+def main( args ):
+    
+#if __name__ == '__main__':
     
     cmds = [ "meetuptotals", "grouptotals", "groups",  "members", "events", "rsvps", "active", "new", "history", "rsvp" ]
-    parser = ArgumentParser()
+    parser = ArgumentParser( args )
         
     parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", 
                          help="URI for connecting to MongoDB [default: %(default)s]" )
     
-    parser.add_argument( "--format", default="JSON", choices=[ "JSON", "CSV" ], help="format for output [default: %(default)s]" )
+    parser.add_argument( "--format", default="JSON", choices=[ "JSON", "json", "CSV", "csv" ], help="format for output [default: %(default)s]" )
     parser.add_argument( "--root", default="-", help="filename root for output [default: %(default)s]" )
     parser.add_argument( "--stats",  nargs="+", default=[ "meetups" ], 
                          choices= cmds,
@@ -495,7 +509,7 @@ if __name__ == '__main__':
         print( "Bad date: %s" % e )
         sys.exit( 2 )
 
-    analytics = MUG_Analytics( mdb, args.format, from_date, to_date, root )
+    analytics = MUG_Analytics( mdb, args.format.lower(), from_date, to_date, root )
     
     if "meetuptotals" in args.stats :
         analytics.meetupTotals( urls, filename="meetuptotals" )
@@ -537,3 +551,6 @@ if __name__ == '__main__':
             file1 = drive.CreateFile({'title': i})  # Create GoogleDriveFile instance with title 'Hello.txt'.
             file1.SetContentFile( i ) # Set content of the file from given string.
             file1.Upload()
+
+if __name__ == '__main__':
+    main( sys.argv )
