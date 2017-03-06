@@ -159,6 +159,11 @@ class Agg(object):
         return { "$group" : grouper }
     
     @staticmethod
+    def unwind( unwinder ):
+        #Agg._typeCheckDict( unwinder )
+        return { "$unwind" : unwinder }
+    
+    @staticmethod
     def sort( sorter ):
         # we typecheck higher up the stack
         return { "$sort" : sorter }
@@ -229,6 +234,13 @@ class Agg(object):
             raise ValueError( "Parameter to addSort must of of type Sorter (type is '%s'" % type( sorter ))
         return self
 
+    def addUnwind(self, unwinder ):
+        
+        self._hasDollarOutCheck( "`$unwind: %s" % unwinder )
+        self._agg.append( Agg.unwind( unwinder ))
+        
+        return self
+    
     def addOut(self, output=None ):
         
         if output is None :

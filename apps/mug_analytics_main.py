@@ -22,7 +22,6 @@ from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
 from mugalyser.members import Members
 
-
 import contextlib
     
 def getDate( date_string ):
@@ -87,9 +86,9 @@ class MUG_Analytics( object ):
     def getMembers( self, urls, filename=None ):
         
         agg = self._membersAggregate( [self._batchID], urls)
-        cursor = agg.aggregate()
+
         
-        formatter = AggFormatter( cursor, self._root, filename, self._ext )
+        formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "urlname", "country", "batchID", "member_count"] )
         
         
@@ -278,9 +277,26 @@ class MUG_Analytics( object ):
         formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ] )
         
-    def get_new( self, urls, rsvpbound=0, filename=None ):
-        pass
-    
+    def get_newMembers( self, urls, filename=None ):
+        
+        agg = Agg( self._mdb.membersCollection())
+        
+        agg.addUnwind( "$member.chapters" )
+        
+        agg.addMatch({ "batchID"            : self._batchID,
+                       "member.chapters.urlname" : { "$in" : urls }} )
+
+        agg.addRangeSearch( "member.join_time", self._start_date, self._end_date )
+        
+        agg.addProject( { "_id" : 0,
+                          "group"     : "$member.chapters.urlname",
+                          "name"      : "$member.member_name",
+                          "join_date" : { "$dateToString" : { "format" : "%d-%m-%Y",
+                                                              "date"   :"$member.join_time"}}} )
+        
+        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "group", "name", "join_date" ] )
+        
     def get_rsvps( self, urls, rsvpbound=0, filename=None):   
     
         agg = Agg( self._mdb.attendeesCollection())
@@ -339,7 +355,7 @@ def main( args ):
     
 #if __name__ == '__main__':
     
-    cmds = [ "meetuptotals", "grouptotals", "groups",  "members", "events", "rsvps", "active", "new", "memberhistory", "rsvphistory" ]
+    cmds = [ "meetuptotals", "grouptotals", "groups",  "members", "events", "rsvps", "active", "newmembers", "memberhistory", "rsvphistory" ]
     parser = ArgumentParser( args )
         
     parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", 
@@ -418,8 +434,8 @@ def main( args ):
     if "active" in args.stats:
         analytics.get_active(  urls, filename="active" )
 
-    if "new" in args.stats :
-        analytics.get_new( urls, filename="new" )
+    if "newmembers" in args.stats :
+        analytics.get_newMembers( urls, filename="newmembers" )
         
     if "memberhistory" in args.stats :
         analytics.getMemberHistory(urls,  filename="memberhistory")
