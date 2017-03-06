@@ -58,7 +58,7 @@ from version import __version__, __schemaVersion__
 
 from apikey import get_meetup_key
 
-class Audit( object ):
+class AuditSingleton( object ):
     
     class __Audit_Impl( object ):
         name="audit"

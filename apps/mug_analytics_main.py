@@ -1,22 +1,27 @@
+
 '''
 Created on 28 Dec 2016
-
 @author: jdrumgoole
 '''
-from argparse import ArgumentParser
-from mugalyser.agg import Agg, Sorter
-from mugalyser.mongodb import MUGAlyserMongoDB
-from mugalyser.audit import Audit
-from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
+
 import pprint
 import pymongo
 import csv
 import sys
-from datetime import datetime
-from mugalyser.members import Members
+
+from argparse import ArgumentParser
+
 from dateutil.parser import parse
 from pydrive import auth
 from pydrive.drive import GoogleDrive
+
+
+from mugalyser.agg import Agg, Sorter
+from mugalyser.mongodb import MUGAlyserMongoDB
+from mugalyser.audit import Audit
+from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
+from mugalyser.members import Members
+
 
 import contextlib
     
@@ -55,38 +60,19 @@ def addCountry( mdb, cursor ):
 # analytics functions
 #
 
-class MUG_Analytics( object ):
-    
-    def make_filename( self, fileroot, fmt, suffix=None ):
+class AggFormatter( object ):
         
-        filename = None
+    def __init__(self, cursor, root="mug", suffix=None, ext=None ):
+        '''
+        Data from cursor
+        output to <filename>suffix.ext.
+        '''
+        self._cursor = cursor
+        self._root = root
+        self._suffix = suffix
+        self._ext = ext
+        self._filename = self._make_filename(root, suffix, ext)
         
-        if fileroot == "-" :
-            return fileroot
-        else:
-            
-            if suffix:
-                filename = fileroot + suffix
-            else:
-                filename = fileroot
-                
-            if fmt == "CSV" :
-                return filename + ".csv"
-            else:
-                return filename + ".json"
-            
-    def printCursor( self, c, filename, fmt, fieldnames=None  ):
-    
-        if fmt == "CSV" :
-            self.printCSVCursor( c, filename, fieldnames )
-        else:
-            self.printJSONCursor( c, filename )
-            
-        self._files.append( filename )
-            
-    def files(self):
-        return self._files
-    
     @contextlib.contextmanager
     def smart_open(self, filename=None):
         if filename and filename != '-':
@@ -100,10 +86,26 @@ class MUG_Analytics( object ):
             if fh is not sys.stdout:
                 fh.close()
                 
+    def _make_filename( self, root, suffix=None, ext=None ):
+        
+        filename = None
+        
+        if root == "-" :
+            return root
+        else: 
+            if suffix:
+                filename = root + suffix
+            else:
+                filename = root
+                
+            if ext :
+                return filename + "." + ext
+            
     def printCSVCursor( self, c, filename, fieldnames ):
             
         if filename !="-" :
             print( "Writing : '%s'" % filename )
+            
         with self.smart_open( filename ) as output :
             writer = csv.DictWriter( output, fieldnames = fieldnames)
             writer.writeheader()
@@ -128,34 +130,121 @@ class MUG_Analytics( object ):
                 count = count + 1
             output.write( "Total records: %i\n" % count )
 
+
+    def printCursor( self, c, filename, fmt, fieldnames=None  ):
     
-    def __init__(self, mdb, format, start_date, end_date, fileroot ):
+        if fmt == "csv" :
+            self.printCSVCursor( c, filename, fieldnames )
+        else:
+            self.printJSONCursor( c, filename )
+            
+        return filename
+    
+    def output(self, fieldNames  ):
+
+        self.printCursor( self._cursor, self._filename, self._ext, fieldNames )
+        
+class MUG_Analytics( object ):
+            
+    def __init__(self, mdb, ext, start_date, end_date, root ):
         self._mdb = mdb
         audit = Audit( mdb )
     
         self._batchID = audit.getCurrentValidBatchID()
         self._start_date = start_date
         self._end_date = end_date
-        self._format = format
-        self._fileroot = fileroot
+        self._ext = ext
+        self._root = root
         self._files = []
-        
-    def getMembers( self, urls, filename=None ):
-        
+       
+    def _membersAggregate(self, batchIDs, urls ):
         agg = Agg( self._mdb.groupsCollection())
         
-        agg.addMatch({ "batchID"       : self._batchID,
+        agg.addMatch({ "batchID"       : { "$in" : batchIDs},
                        "group.urlname" : { "$in" : urls }} )
          
         agg.addProject(  { "_id" : 0, 
                            "urlname" : "$group.urlname", 
                            "country" : "$group.country",
+                           "batchID" : 1, 
                            "member_count" : "$group.member_count" })
         agg.addSort( Sorter("member_count", pymongo.DESCENDING ))
+        
+        return agg
+    
+    def getMembers( self, urls, filename=None ):
+        
+        agg = self._membersAggregate( [self._batchID], urls)
         cursor = agg.aggregate()
         
+        formatter = AggFormatter( cursor, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "urlname", "country", "batchID", "member_count"] )
+        
+        
+    def getRSVPHistory(self, urls, filename=None ):
+        audit = Audit( self._mdb )
+        
+        validBatches = list( audit.getCurrentValidBatchIDs())
+                
+        agg = Agg( self._mdb.pastEventsCollection())  
+        
+        agg.addMatch({ "event.group.urlname" : { "$in" : urls }} )
+        
+        agg.addProject( { "timestamp" : Agg.cond( { "$eq": [ { "$type" : "$event.time" }, "date" ]},
+                                                  { "$dateToString" : { "format" : "%Y", #-%m-%d",
+                                                    "date"          :"$event.time"}},
+                                                    None  ),
+                          "event"     : "$event.name",
+                          "country"    : "$event.venue.country",
+                          "rsvp_count" : "$event.yes_rsvp_count" } )
+        
+        agg.addMatch( { "timestamp" : { "$ne" : None }} )
+        agg.addGroup( { "_id" :"$timestamp",
+                        #"event" : { "$addToSet" : { "event" : "$event", "country" : "$country" }},
+                        "rsvp_count" : { "$sum" : "$rsvp_count"}})
+        sorter = Sorter()
+        sorter.add( "_id" )
+        agg.addSort( sorter )
+        
+        cursor = agg.aggregate()
+        
+        if filename is None :
+            filename = self._root
         filename = self.make_filename( self._root, self._format,  filename )
-        self.printCursor( cursor, filename, self._format, fieldnames= [ "urlname", "country", "member_count"] )
+        self.printCursor( cursor, filename, self._format, fieldnames= [ "_id", "rsvp_count" ] )
+        
+
+    def getMemberHistory(self, urls, filename=None ):
+        
+        audit = Audit( self._mdb )
+        
+        validBatches = list( audit.getCurrentValidBatchIDs())
+                
+        agg = Agg( self._mdb.groupsCollection())
+        
+        agg.addMatch({ "batchID"       : { "$in" : validBatches },
+                       "group.urlname" : { "$in" : urls }} )
+
+        agg.addProject({ "timestamp" : { "$dateToString" : { "format" : "%Y-%m-%d",
+                                                             "date"    :"$timestamp"}},
+                         "batchID" : 1,
+                         "urlname" : "$group.urlname",
+                         "count" : "$group.member_count" } )
+        
+        agg.addGroup( { "_id" : { "ts": "$timestamp", "batchID" : "$batchID" },
+                        "groups" : { "$addToSet" : "$urlname" },
+                        "count" : { "$sum" : "$count"}})
+
+        sorter = Sorter()
+        sorter.add( "_id.batchID" )
+        agg.addSort( sorter )
+        
+        cursor = agg.aggregate()
+        
+        if filename is None :
+            filename = self._root
+        filename = self.make_filename( self._root, self._format,  filename )
+        self.printCursor( cursor, filename, self._format, fieldnames= [ "_id", "groups", "count" ] )
         
     def getGroupInsight( self, urlname ):
         
@@ -300,7 +389,7 @@ class MUG_Analytics( object ):
     def get_new( self, urls, rsvpbound=0, filename=None ):
         pass
     
-    def get_rsvps( self, region, rsvpbound=0, filename=None):   
+    def get_rsvps( self, urls, rsvpbound=0, filename=None):   
     
         agg = Agg( self._mdb.attendeesCollection())
         
@@ -358,16 +447,19 @@ class MUG_Analytics( object ):
             
         self.printCursor( cursor, filename, self._format, fieldnames=[ "_id", "count", "groups"])
     
-if __name__ == '__main__':
+
+def main( args ):
     
-    cmds = [ "meetuptotals", "grouptotals", "groups",  "members", "events", "rsvps", "active", "new" ]
-    parser = ArgumentParser()
+#if __name__ == '__main__':
+    
+    cmds = [ "meetuptotals", "grouptotals", "groups",  "members", "events", "rsvps", "active", "new", "history", "rsvp" ]
+    parser = ArgumentParser( args )
         
     parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", 
                          help="URI for connecting to MongoDB [default: %(default)s]" )
     
-    parser.add_argument( "--format", default="JSON", choices=[ "JSON", "CSV" ], help="format for output [default: %(default)s]" )
-    parser.add_argument( "--fileroot", default="-", help="filename root for output [default: %(default)s]" )
+    parser.add_argument( "--format", default="JSON", choices=[ "JSON", "json", "CSV", "csv" ], help="format for output [default: %(default)s]" )
+    parser.add_argument( "--root", default="-", help="filename root for output [default: %(default)s]" )
     parser.add_argument( "--stats",  nargs="+", default=[ "meetups" ], 
                          choices= cmds,
                          help="List of stats to output [default: %(default)s]" )
@@ -389,10 +481,10 @@ if __name__ == '__main__':
     
     upload_List = []
     
-    fileroot = args.fileroot
+    root = args.root
     
-    if fileroot is None:
-        fileroot = "-"
+    if root is None:
+        root = "-"
     
     mdb = MUGAlyserMongoDB( uri=args.host )
         
@@ -416,7 +508,7 @@ if __name__ == '__main__':
         print( "Bad date: %s" % e )
         sys.exit( 2 )
 
-    analytics = MUG_Analytics( mdb, args.format, from_date, to_date, fileroot )
+    analytics = MUG_Analytics( mdb, args.format.lower(), from_date, to_date, root )
     
     if "meetuptotals" in args.stats :
         analytics.meetupTotals( urls, filename="meetuptotals" )
@@ -442,6 +534,12 @@ if __name__ == '__main__':
     if "new" in args.stats :
         analytics.get_new( urls, filename="new" )
         
+    if "history" in args.stats :
+        analytics.getMemberHistory(urls,  filename="memberhistory")
+        
+    if "rsvp" in args.stats :
+        analytics.getRSVPHistory(urls, filename="rsvphistory")
+        
     if args.upload :
         gauth = auth.GoogleAuth()
         gauth.LoadClientConfigFile( args.gdrive_config )
@@ -452,3 +550,6 @@ if __name__ == '__main__':
             file1 = drive.CreateFile({'title': i})  # Create GoogleDriveFile instance with title 'Hello.txt'.
             file1.SetContentFile( i ) # Set content of the file from given string.
             file1.Upload()
+
+if __name__ == '__main__':
+    main( sys.argv )
