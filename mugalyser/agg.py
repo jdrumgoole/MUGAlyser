@@ -6,6 +6,9 @@ import pprint
 from datetime import datetime
 from collections import OrderedDict
 import pymongo
+import csv
+import contextlib
+import sys
 
 class Sorter( object ):
     '''
@@ -31,6 +34,91 @@ class Sorter( object ):
     def __repr__(self):
         return self.__str__()
     
+    
+class AggFormatter( object ):
+        
+    def __init__(self, agg, root="mug", suffix=None, ext=None ):
+        '''
+        Data from cursor
+        output to <filename>suffix.ext.
+        '''
+        self._agg = agg
+        self._root = root
+        self._suffix = suffix
+        self._ext = ext
+        self._filename = self._make_filename(root, suffix, ext)
+        
+    @contextlib.contextmanager
+    def smart_open(self, filename=None):
+        if filename and filename != '-':
+            fh = open(filename, 'wb' )
+        else: 
+            fh = sys.stdout
+    
+        try:
+            yield fh
+        finally:
+            if fh is not sys.stdout:
+                fh.close()
+                
+    def _make_filename( self, root, suffix=None, ext=None ):
+        
+        filename = None
+        
+        if root == "-" :
+            return root
+        else: 
+            if suffix:
+                filename = root + suffix
+            else:
+                filename = root
+                
+            if ext :
+                return filename + "." + ext
+            
+    def printCSVCursor( self, c, filename, fieldnames ):
+            
+        if filename !="-" :
+            print( "Writing : '%s'" % filename )
+            
+        with self.smart_open( filename ) as output :
+            writer = csv.DictWriter( output, fieldnames = fieldnames)
+            writer.writeheader()
+            for i in c:
+                x={}
+                for k,v in i.items():
+                    if type( v ) is unicode :
+                        x[ k ] = v
+                    else:
+                        x[ k ] = str( v ).encode( 'utf8')
+                    
+                writer.writerow( {k:v.encode('utf8') for k,v in x.items()} ) 
+    
+    
+    def printJSONCursor( self, c, filename ):
+        count = 0 
+        if filename !="-" :
+            print( "Writing : '%s'" % filename )
+        with self.smart_open( filename ) as output:
+            for i in c :
+                pprint.pprint(i, output )
+                count = count + 1
+            output.write( "Total records: %i\n" % count )
+
+
+    def printCursor( self, c, filename, fmt, fieldnames=None  ):
+    
+        if fmt == "csv" :
+            self.printCSVCursor( c, filename, fieldnames )
+        else:
+            self.printJSONCursor( c, filename )
+            
+        return filename
+    
+    def output(self, fieldNames  ):
+
+        self.printCursor( self._agg.aggregate(), self._filename, self._ext, fieldNames )
+        
 class Agg(object):
     '''
     A wrapper class for the MongoDB Aggregation framework (MongoDB 3.2)

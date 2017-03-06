@@ -16,7 +16,7 @@ from pydrive import auth
 from pydrive.drive import GoogleDrive
 
 
-from mugalyser.agg import Agg, Sorter
+from mugalyser.agg import Agg, Sorter, AggFormatter
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
@@ -55,94 +55,6 @@ def addCountry( mdb, cursor ):
         i[ "country"] = country
         yield i    
 
-
-#
-# analytics functions
-#
-
-class AggFormatter( object ):
-        
-    def __init__(self, cursor, root="mug", suffix=None, ext=None ):
-        '''
-        Data from cursor
-        output to <filename>suffix.ext.
-        '''
-        self._cursor = cursor
-        self._root = root
-        self._suffix = suffix
-        self._ext = ext
-        self._filename = self._make_filename(root, suffix, ext)
-        
-    @contextlib.contextmanager
-    def smart_open(self, filename=None):
-        if filename and filename != '-':
-            fh = open(filename, 'wb' )
-        else: 
-            fh = sys.stdout
-    
-        try:
-            yield fh
-        finally:
-            if fh is not sys.stdout:
-                fh.close()
-                
-    def _make_filename( self, root, suffix=None, ext=None ):
-        
-        filename = None
-        
-        if root == "-" :
-            return root
-        else: 
-            if suffix:
-                filename = root + suffix
-            else:
-                filename = root
-                
-            if ext :
-                return filename + "." + ext
-            
-    def printCSVCursor( self, c, filename, fieldnames ):
-            
-        if filename !="-" :
-            print( "Writing : '%s'" % filename )
-            
-        with self.smart_open( filename ) as output :
-            writer = csv.DictWriter( output, fieldnames = fieldnames)
-            writer.writeheader()
-            for i in c:
-                x={}
-                for k,v in i.items():
-                    if type( v ) is unicode :
-                        x[ k ] = v
-                    else:
-                        x[ k ] = str( v ).encode( 'utf8')
-                    
-                writer.writerow( {k:v.encode('utf8') for k,v in x.items()} ) 
-    
-    
-    def printJSONCursor( self, c, filename ):
-        count = 0 
-        if filename !="-" :
-            print( "Writing : '%s'" % filename )
-        with self.smart_open( filename ) as output:
-            for i in c :
-                pprint.pprint(i, output )
-                count = count + 1
-            output.write( "Total records: %i\n" % count )
-
-
-    def printCursor( self, c, filename, fmt, fieldnames=None  ):
-    
-        if fmt == "csv" :
-            self.printCSVCursor( c, filename, fieldnames )
-        else:
-            self.printJSONCursor( c, filename )
-            
-        return filename
-    
-    def output(self, fieldNames  ):
-
-        self.printCursor( self._cursor, self._filename, self._ext, fieldNames )
         
 class MUG_Analytics( object ):
             
@@ -182,9 +94,6 @@ class MUG_Analytics( object ):
         
         
     def getRSVPHistory(self, urls, filename=None ):
-        audit = Audit( self._mdb )
-        
-        validBatches = list( audit.getCurrentValidBatchIDs())
                 
         agg = Agg( self._mdb.pastEventsCollection())  
         
@@ -206,13 +115,10 @@ class MUG_Analytics( object ):
         sorter.add( "_id" )
         agg.addSort( sorter )
         
-        cursor = agg.aggregate()
-        
-        if filename is None :
-            filename = self._root
-        filename = self.make_filename( self._root, self._format,  filename )
-        self.printCursor( cursor, filename, self._format, fieldnames= [ "_id", "rsvp_count" ] )
-        
+            
+        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "_id", "rsvp_count" ] )
+
 
     def getMemberHistory(self, urls, filename=None ):
         
@@ -239,12 +145,8 @@ class MUG_Analytics( object ):
         sorter.add( "_id.batchID" )
         agg.addSort( sorter )
         
-        cursor = agg.aggregate()
-        
-        if filename is None :
-            filename = self._root
-        filename = self.make_filename( self._root, self._format,  filename )
-        self.printCursor( cursor, filename, self._format, fieldnames= [ "_id", "groups", "count" ] )
+        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "_id", "groups", "count" ] )
         
     def getGroupInsight( self, urlname ):
         
@@ -290,12 +192,9 @@ class MUG_Analytics( object ):
                           "total_events" : 1 } )
         
         agg.addSort( Sorter( "year" ))
-        
-        cursor = agg.aggregate()
-        
-        filename = self.make_filename( self._root, self._format,  filename )
-        
-        self.printCursor( cursor, filename, fmt=self._format, fieldnames=[ "year", "total_rsvp", "total_events"] )
+
+        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "year", "total_rsvp", "total_events" ] )
     
     def batchMatch( self, collection ):
         agg = Agg( collection )
@@ -320,11 +219,9 @@ class MUG_Analytics( object ):
                           "urlname" : "$group.urlname",
                           "founded" :  { "$dateToString" : { "format" : "%Y-%m-%d",
                                                             "date"    :"$group.founded_date"}}} )
-        cursor = agg.aggregate()
         
-        filename = self.make_filename( self._root, self._format,  filename )
-        self.printCursor( cursor, filename, self._format, fieldnames=[ "urlname", "founded" ] )
-    
+        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "urlname", "founded" ] )
         
     def groupTotals( self, urls, filename=None ):
     
@@ -352,11 +249,8 @@ class MUG_Analytics( object ):
         
         agg.addSort( sorter )
     
-        cursor = agg.aggregate()
-        
-        filename = self.make_filename( self._root, self._format,  filename )
-        
-        self.printCursor( addCountry( self._mdb, cursor ), filename, self._format, fieldnames=[  "year", "group", "country", "event_count", "rsvp_count" ] ) 
+        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "year", "group", "country", "event_count", "rsvp_count"] )
     
         
     def get_events(self, urls, rsvpbound=0, filename=None):
@@ -380,11 +274,9 @@ class MUG_Analytics( object ):
         sorter.add( "rsvp_count")
         sorter.add( "date")
         agg.addSort(  sorter )
-        cursor = agg.aggregate()
         
-        filename = self.make_filename( self._root, self._format,  filename )
-            
-        self.printCursor( cursor, filename, self._format, fieldnames=[ "group", "name", "rsvp_count", "date" ] ) #"day", "month", "year" ] )
+        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ] )
         
     def get_new( self, urls, rsvpbound=0, filename=None ):
         pass
@@ -412,11 +304,10 @@ class MUG_Analytics( object ):
                           "event_count" : 1 } )
         
         agg.addSort( Sorter( "event_count"))
-        cursor = agg.aggregate()
         
-        filename = self.make_filename( self._root, self._format,  filename )
-        
-        self.printCursor( cursor, filename, self._format, fieldnames=[ "attendee", "group", "event_count"])
+        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "attendee", "group", "event_count" ] )
+
     
     def get_active( self, urls, filename=None ):
         '''
@@ -440,19 +331,15 @@ class MUG_Analytics( object ):
                         "groups" : { "$addToSet" : "$info.event.group.urlname" }} )
         
         agg.addSort( Sorter( "count" ))
-    
-        cursor = agg.aggregate()
         
-        filename = self.make_filename( self._root, self._format,  filename )
-            
-        self.printCursor( cursor, filename, self._format, fieldnames=[ "_id", "count", "groups"])
-    
+        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        formatter.output( fieldNames= [ "_id", "count", "groups" ] )
 
 def main( args ):
     
 #if __name__ == '__main__':
     
-    cmds = [ "meetuptotals", "grouptotals", "groups",  "members", "events", "rsvps", "active", "new", "history", "rsvp" ]
+    cmds = [ "meetuptotals", "grouptotals", "groups",  "members", "events", "rsvps", "active", "new", "memberhistory", "rsvphistory" ]
     parser = ArgumentParser( args )
         
     parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", 
@@ -460,7 +347,7 @@ def main( args ):
     
     parser.add_argument( "--format", default="JSON", choices=[ "JSON", "json", "CSV", "csv" ], help="format for output [default: %(default)s]" )
     parser.add_argument( "--root", default="-", help="filename root for output [default: %(default)s]" )
-    parser.add_argument( "--stats",  nargs="+", default=[ "meetups" ], 
+    parser.add_argument( "--stats",  nargs="+", default=[ "groups" ], 
                          choices= cmds,
                          help="List of stats to output [default: %(default)s]" )
     parser.add_argument( "--country", nargs="+", default=[ "all"],
@@ -534,10 +421,10 @@ def main( args ):
     if "new" in args.stats :
         analytics.get_new( urls, filename="new" )
         
-    if "history" in args.stats :
+    if "memberhistory" in args.stats :
         analytics.getMemberHistory(urls,  filename="memberhistory")
         
-    if "rsvp" in args.stats :
+    if "rsvphistory" in args.stats :
         analytics.getRSVPHistory(urls, filename="rsvphistory")
         
     if args.upload :

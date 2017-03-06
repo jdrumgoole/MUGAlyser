@@ -8,9 +8,9 @@ import requests
 import logging
 import datetime
 from copy import deepcopy
+import time
 
 from mugalyser.apikey import get_meetup_key
-from mugalyser.meetup_api import epochToDatetime
 from mugalyser.version import __programName__
 
 def returnData( r ):
@@ -37,6 +37,12 @@ class PaginatedRequest( object ):
         logger.setLevel( logging.WARN ) # turn of info output for requests
         
         r = requests.get( req, params )
+        
+        #
+        # meetup limits API calls to 30 a second
+        #
+        if int(r.headers[ "X-RateLimit-Remaining" ])  < 3:
+            time.sleep( 1 )
         #print( "url: '%s'" % r.url )
         #print( "text: %s" % r.text )
         #print( "headers: %s" % r.headers )
@@ -110,6 +116,7 @@ class PaginatedRequest( object ):
             while ( data[ 'meta' ][ "next" ] != ""  ) :
                 data = self.makeRequest( data['meta'][ 'next' ], params )[1]
     
+                
             
                 for i in data[ "results"]:
                     yield  func( i )
