@@ -292,7 +292,7 @@ class MUG_Analytics( object ):
                           "group"     : "$member.chapters.urlname",
                           "name"      : "$member.member_name",
                           "join_date" : { "$dateToString" : { "format" : "%d-%m-%Y",
-                                                              "date"   :"$member.join_time"}}} )
+                                                              "date"   :"$member.join_time" }}} )
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "group", "name", "join_date" ] )
