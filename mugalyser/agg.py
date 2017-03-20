@@ -16,13 +16,29 @@ class Sorter( object ):
     guarantee to maintain insertion order
     '''
     
-    def __init__(self, field=None, sortOrder = pymongo.ASCENDING ):
+    def __init__(self,  **kwargs ):
         self._sorted = {}
         self._sorted[ "$sort"] = OrderedDict()
-        if field:
-            self.add( field, sortOrder )
+
+        self.add( kwargs )
         
-    def add(self, field, sortOrder = pymongo.ASCENDING ):
+    def add(self, sorts ):
+        for  k,v in sorts.iteritems():
+            self.add_sort( k, v )
+            
+    def sort_fields(self):
+        return self._sorted[ "$sort"].keys()
+    
+    def sort_items(self):
+        return self._sorted[ "$sort"].items()
+    
+    def sort_directions(self):
+        return self._sorted[ "$sort"].values()
+    
+    def sorts(self):
+        return self._sorted
+            
+    def add_sort(self, field, sortOrder = pymongo.ASCENDING ):
         self._sorted[ "$sort" ][ field ] = sortOrder
     
     def __call__(self):
@@ -36,8 +52,14 @@ class Sorter( object ):
     
     
 class AggFormatter( object ):
+    '''
+    Take a mongodb Agg object and call aggregate on it.
+    IF root is "-" send the output to stdout.
+    
+    If root is a file name output the content to that file.
+    '''
         
-    def __init__(self, agg, root="mug", suffix=None, ext=None ):
+    def __init__(self, agg, root="-", suffix=None, ext=None ):
         '''
         Data from cursor
         output to <filename>suffix.ext.
@@ -49,7 +71,7 @@ class AggFormatter( object ):
         self._filename = self._make_filename(root, suffix, ext)
         
     @contextlib.contextmanager
-    def smart_open(self, filename=None):
+    def _smart_open(self, filename=None):
         if filename and filename != '-':
             fh = open(filename, 'wb' )
         else: 
@@ -62,6 +84,11 @@ class AggFormatter( object ):
                 fh.close()
                 
     def _make_filename( self, root, suffix=None, ext=None ):
+        '''
+        If root is '-" then we just return that. Otherwise
+        we construct a filename of the form:
+        <root><suffix>.<ext>
+        '''
         
         filename = None
         
@@ -77,11 +104,14 @@ class AggFormatter( object ):
                 return filename + "." + ext
             
     def printCSVCursor( self, c, filename, fieldnames ):
+        '''
+        Output CSV format. items are separated by commas.
+        '''
             
         if filename !="-" :
             print( "Writing : '%s'" % filename )
             
-        with self.smart_open( filename ) as output :
+        with self._smart_open( filename ) as output :
             writer = csv.DictWriter( output, fieldnames = fieldnames)
             writer.writeheader()
             for i in c:
@@ -96,28 +126,40 @@ class AggFormatter( object ):
     
     
     def printJSONCursor( self, c, filename ):
+        '''
+        Output plain JSON objects.
+        '''
+        
         count = 0 
         if filename !="-" :
             print( "Writing : '%s'" % filename )
-        with self.smart_open( filename ) as output:
+        with self._smart_open( filename ) as output:
             for i in c :
                 pprint.pprint(i, output )
                 count = count + 1
             output.write( "Total records: %i\n" % count )
 
 
-    def printCursor( self, c, filename, fmt, fieldnames=None  ):
+    def printCursor( self, c, filename, fmt, fieldnames=None, datemap=None  ):
+        '''
+        Output a cursor to a filename or stdout if filename is "-".
+        fmt defines whether we output CSV or JSON.
+        '''
     
         if fmt == "csv" :
-            self.printCSVCursor( c, filename, fieldnames )
+            self.printCSVCursor( c, filename, fieldnames, datemap )
         else:
-            self.printJSONCursor( c, filename )
+            self.printJSONCursor( c, filename, datemap )
             
         return filename
     
-    def output(self, fieldNames  ):
+    def output(self, fieldNames, datemap=None  ):
+        '''
+        Output all fields using the fieldNames list. for fields in the list datemap indicates the field must
+        be date
+        '''
 
-        self.printCursor( self._agg.aggregate(), self._filename, self._ext, fieldNames )
+        self.printCursor( self._agg.aggregate(), self._filename, self._ext, fieldNames, datemap )
         
 class Agg(object):
     '''
@@ -271,7 +313,7 @@ class Agg(object):
     def __str__(self):
         return pprint.pformat( self.__repr__())
     
-    def addRangeSearch( self, date_field, lower=None, upper=None ):
+    def addRangeMatch( self, date_field, lower=None, upper=None ):
     
         query = None
         if lower and upper :

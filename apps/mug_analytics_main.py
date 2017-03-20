@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 '''
 Created on 28 Dec 2016
 @author: jdrumgoole
@@ -32,10 +32,36 @@ def getDate( date_string ):
         return retVal
 
 def getDateRange( from_date_string, to_date_string ):
-    from_date = getDate( from_date_string )
-    to_date = getDate( to_date_string )
+    '''
+    parse a date range. Return none if ranges are none.
+    '''
     
-    return ( from_date, to_date )
+    if from_date_string:
+        try :
+            from_date = getDate( from_date_string )
+        except ValueError :
+            print( "Ignoring --from date: '%s' not a valid date")
+            from_date = None
+    else:
+        from_date = None
+        
+    if to_date_string:
+        try :
+            to_date = getDate( to_date_string )
+        except ValueError:
+            print( "Ignoring --to date: '%s' not a valid date" )
+            to_date = None
+    else:
+        to_date = None
+    
+    if from_date and to_date:
+        if to_date >= from_date  :
+            return ( from_date, to_date )
+        else:
+            print( "--from date ('%s') is greater than --to date ('%s') ignoring these parameters" % ( from_date, to_date ))
+            return ( None, None )
+    else:
+        return( None, None )
 
     
 def addJoinDate( mdb, cursor ):
@@ -46,7 +72,6 @@ def addJoinDate( mdb, cursor ):
         i[ "join_date"] = member[ "join_time" ]
         yield i
         
-    
 def addCountry( mdb, cursor ):
     groups = Groups( mdb )
     for i in cursor:
@@ -54,24 +79,65 @@ def addCountry( mdb, cursor ):
         i[ "country"] = country
         yield i    
 
+
+class AggAnalytics( object ):
+    
+    def __init__(self, collection ):
+        
+        self._agg = Agg( collection )
+        
+    def agg(self):
+        return self._agg
+    
+    def setMatch(self, match  ): 
+        self._agg.addMatch( match )
+        
+    def setRange(self, field, start, end ):
+        self._agg.addRangeMatch( field, start, end )
+        
+    def setProject(self, project ):
+        self._agg.addProject( project )
+        
+    def setSort(self, sort ):
+        self._agg.addSort( sort )
+    
+    def execute(self, output="-"):
+        pass
         
 class MUG_Analytics( object ):
             
-    def __init__(self, mdb, ext, start_date, end_date, root ):
+    def __init__(self, mdb, ext, root, sorter=None ):
         self._mdb = mdb
         audit = Audit( mdb )
     
         self._batchID = audit.getCurrentValidBatchID()
-        self._start_date = start_date
-        self._end_date = end_date
+        self._sorter = sorter
+        self._start_date = None
+        self._end_date = None
         self._ext = ext
         self._root = root
         self._files = []
-       
-    def _membersAggregate(self, batchIDs, urls ):
+        
+
+    
+    def setRange(self, start_date, end_date ):
+        self._start_date = start_date
+        self._end_date = end_date
+
+        
+    def setSort(self, sort_field, sort_direction ):
+        self._sort_field = sort_field
+        self._sort_direction = sort_direction
+        
+    def getMembers( self, urls, filename=None ):
+        '''
+        Get a count of the members for each group in "urls"
+        Range doens't make sense here so its not used. If supplied it is ignored.
+        '''
+        
         agg = Agg( self._mdb.groupsCollection())
         
-        agg.addMatch({ "batchID"       : { "$in" : batchIDs},
+        agg.addMatch({ "batchID"       : { "$in" : [ self._batchID ]},
                        "group.urlname" : { "$in" : urls }} )
          
         agg.addProject(  { "_id" : 0, 
@@ -79,25 +145,26 @@ class MUG_Analytics( object ):
                            "country" : "$group.country",
                            "batchID" : 1, 
                            "member_count" : "$group.member_count" })
-        agg.addSort( Sorter("member_count", pymongo.DESCENDING ))
         
-        return agg
-    
-    def getMembers( self, urls, filename=None ):
-        
-        agg = self._membersAggregate( [self._batchID], urls)
-
-        
+        if self._sorter:
+            agg.addSort( self._sorter)
+            
         formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "urlname", "country", "batchID", "member_count"] )
         
-        
     def getRSVPHistory(self, urls, filename=None ):
+        '''
+        Get the list of past events for groups (urls) and report on the date of the event
+        and the number of RSVPs.
+        '''
                 
         agg = Agg( self._mdb.pastEventsCollection())  
         
         agg.addMatch({ "event.group.urlname" : { "$in" : urls }} )
         
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "event.time", self._start_date, self._end_date )
+            
         agg.addProject( { "timestamp" : Agg.cond( { "$eq": [ { "$type" : "$event.time" }, "date" ]},
                                                   { "$dateToString" : { "format" : "%Y", #-%m-%d",
                                                     "date"          :"$event.time"}},
@@ -110,26 +177,31 @@ class MUG_Analytics( object ):
         agg.addGroup( { "_id" :"$timestamp",
                         #"event" : { "$addToSet" : { "event" : "$event", "country" : "$country" }},
                         "rsvp_count" : { "$sum" : "$rsvp_count"}})
-        sorter = Sorter()
-        sorter.add( "_id" )
-        agg.addSort( sorter )
         
+        if self._sorter :
+            agg.addSort( self._sorter)
             
         formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "_id", "rsvp_count" ] )
 
-
     def getMemberHistory(self, urls, filename=None ):
-        
+        '''
+        Got into every batch and see what the member count was for each group (URL) this uses all 
+        the batches to get a history of a group.
+        Range is used to select batches in this case via the "timestamp" field.
+        '''
         audit = Audit( self._mdb )
         
         validBatches = list( audit.getCurrentValidBatchIDs())
                 
         agg = Agg( self._mdb.groupsCollection())
         
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "timestamp", self._start_date, self._end_date )
+        
         agg.addMatch({ "batchID"       : { "$in" : validBatches },
                        "group.urlname" : { "$in" : urls }} )
-
+            
         agg.addProject({ "timestamp" : { "$dateToString" : { "format" : "%Y-%m-%d",
                                                              "date"    :"$timestamp"}},
                          "batchID" : 1,
@@ -140,19 +212,11 @@ class MUG_Analytics( object ):
                         "groups" : { "$addToSet" : "$urlname" },
                         "count" : { "$sum" : "$count"}})
 
-        sorter = Sorter()
-        sorter.add( "_id.batchID" )
-        agg.addSort( sorter )
-        
+        if self._sorter :
+            agg.addSort( self._sorter)
+
         formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "_id", "groups", "count" ] )
-        
-    def getGroupInsight( self, urlname ):
-        
-        groups = self._mdb.groupsCollection()
-        agg = Agg( groups )
-        agg.addMatch( { "batchID" : self._batchID, "group.urlname" : urlname })
-        agg.addProject(  { "_id" : 0, "urlname" : "$group.urlname", "member_count" : "$group.member_count" })
     
     def get_group_names( self, region_arg ):
         
@@ -165,17 +229,18 @@ class MUG_Analytics( object ):
             urls = groups.get_region_group_urlnames()
             
         return urls
-    
         
     def meetupTotals( self, urls, filename=None ):
             
-        agg = Agg( self._mdb.pastEventsCollection())    
-                                                      
+        agg = Agg( self._mdb.pastEventsCollection())                                       
         
         agg.addMatch({ "batchID"      : self._batchID,
                        "event.status" : "past",
                        "event.group.urlname" : { "$in" : urls }} )
         
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "event.time", self._start_date, self._end_date )
+            
         agg.addProject( { "_id"   : 0, 
                           "name"  : "$event.name", 
                           "time"  : "$event.time",  
@@ -190,7 +255,8 @@ class MUG_Analytics( object ):
                           "total_rsvp"   : 1,
                           "total_events" : 1 } )
         
-        agg.addSort( Sorter( "year" ))
+        if self._sorter:
+            agg.addSort( self._sorter)
 
         formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "year", "total_rsvp", "total_events" ] )
@@ -208,21 +274,31 @@ class MUG_Analytics( object ):
         return agg
     
     def get_groups( self, urls, filename=None  ):
+        '''
+        Get all the groups listed by urls and their start dates
+        '''
         
         agg = Agg( self._mdb.groupsCollection())
         agg.addMatch( { "batchID" : self._batchID,
                         "group.urlname" : { "$in" : urls }} )
         
-        agg.addRangeSearch( "group.founded_date", self._start_date, self._end_date )
+        
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "group.founded_date", self._start_date, self._end_date )
+            
         agg.addProject( { "_id" : 0,
                           "urlname" : "$group.urlname",
-                          "founded" :  { "$dateToString" : { "format" : "%Y-%m-%d",
-                                                            "date"    :"$group.founded_date"}}} )
+                          "members" : "$group.member_count",
+                          "founded" :  { "$dateToString" : { "format"  : "%d-%m-%Y",
+                                                             "date"    :"$group.founded_date"}}} )
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "urlname", "founded" ] )
+        formatter.output( fieldNames= [ "urlname", "members", "founded" ] )
         
     def groupTotals( self, urls, filename=None ):
+        '''
+        get the total number of RSVPs by group.
+        '''
     
         agg = Agg( self._mdb.pastEventsCollection())
     
@@ -230,26 +306,25 @@ class MUG_Analytics( object ):
                        "event.status"        : "past",
                        "event.group.urlname" : { "$in" : urls }} )
         
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "groups.founded_date", self._start_date, self._end_date )
+            
         agg.addGroup( { "_id" : { "urlname" : "$event.group.urlname", 
                                   "year"    : { "$year" : "$event.time"}},
                         "event_count" : { "$sum" : 1 },
                         "rsvp_count"  : { "$sum" : "$event.yes_rsvp_count" }})
+        
         agg.addProject( { "_id" : 0,
                           "group"   : "$_id.urlname",
                           "year"    : "$_id.year",
                           "event_count" : 1,
                           "rsvp_count" : 1 } )
-    
-        sorter = Sorter()
-        sorter.add( "year" )
-        sorter.add( "group" )
-        sorter.add( "event_count")
-        sorter.add( "rsvp_count" )
         
-        agg.addSort( sorter )
+        if self._sorter:
+            agg.addSort( self._sorter )
     
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "year", "group", "country", "event_count", "rsvp_count"] )
+        formatter.output( fieldNames= [ "year", "group", "event_count", "rsvp_count"] )
     
         
     def get_events(self, urls, rsvpbound=0, filename=None):
@@ -259,9 +334,10 @@ class MUG_Analytics( object ):
         agg.addMatch({ "batchID"      : self._batchID,
                        "event.status" : "past",
                        "event.group.urlname" : { "$in" : urls }} )
-            
-        agg.addRangeSearch( "event.time", self._start_date, self._end_date )
         
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "event.time", self._start_date, self._end_date )
+            
         agg.addProject( { "_id": 0, 
                           "group"        : u"$event.group.urlname", 
                           "name"         : u"$event.name",
@@ -269,15 +345,16 @@ class MUG_Analytics( object ):
                           "date"         : { "$dateToString" : { "format" : "%Y-%m-%d",
                                                                  "date"   :"$event.time"}}} ) 
      
-        sorter = Sorter( "group")
-        sorter.add( "rsvp_count")
-        sorter.add( "date")
-        agg.addSort(  sorter )
+        if self._sorter:
+            agg.addSort( self._sorter)
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ] )
         
     def get_newMembers( self, urls, filename=None ):
+        '''
+        Get all the members of all the groups (urls). Range is join_time.
+        '''
         
         agg = Agg( self._mdb.membersCollection())
         
@@ -285,9 +362,10 @@ class MUG_Analytics( object ):
         
         agg.addMatch({ "batchID"            : self._batchID,
                        "member.chapters.urlname" : { "$in" : urls }} )
-
-        agg.addRangeSearch( "member.join_time", self._start_date, self._end_date )
         
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "member.join_time", self._start_date, self._end_date )
+            
         agg.addProject( { "_id" : 0,
                           "group"     : "$member.chapters.urlname",
                           "name"      : "$member.member_name",
@@ -304,7 +382,8 @@ class MUG_Analytics( object ):
         agg.addMatch({ "batchID"            : self._batchID,
                        "info.event.group.urlname" : { "$in" : urls }} )
         
-        agg.addRangeSearch( "info.event.time", self._start_date, self._end_date )
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "info.event_time", self._start_date, self._end_date )
         
         agg.addProject( { "_id"        : 0,
                           "attendee"   : "$info.attendee.member.name", 
@@ -319,7 +398,8 @@ class MUG_Analytics( object ):
                           "group" : "$_id.group",
                           "event_count" : 1 } )
         
-        agg.addSort( Sorter( "event_count"))
+        if self._sorter :
+            agg.addSort( self._sorter)
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "attendee", "group", "event_count" ] )
@@ -335,7 +415,8 @@ class MUG_Analytics( object ):
                        "info.event.group.urlname" : { "$in" : urls },
                        "info.attendee.rsvp.response" : "yes" } )
         
-        agg.addRangeSearch( "info.event.time", self._start_date, self._end_date )
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "info.event_time", self._start_date, self._end_date )
         
     #     agg.addProject( { "_id" : 0,
     #                       "name" : "$info.attendee.member.name",
@@ -346,11 +427,21 @@ class MUG_Analytics( object ):
                         "count"  : { "$sum": 1 },
                         "groups" : { "$addToSet" : "$info.event.group.urlname" }} )
         
-        agg.addSort( Sorter( "count" ))
-        
+        if self._sorter :
+            agg.addSort( self._sorter)
+            
         formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "_id", "count", "groups" ] )
 
+def convert_direction( arg ):
+    
+    if arg == "ascending" :
+        return pymongo.ASCENDING
+    elif arg == "descending" :
+        return pymongo.DESCENDING
+    else:
+        return pymongo.ASCENDING
+    
 def main( args ):
     
 #if __name__ == '__main__':
@@ -362,7 +453,7 @@ def main( args ):
                          help="URI for connecting to MongoDB [default: %(default)s]" )
     
     parser.add_argument( "--format", default="JSON", choices=[ "JSON", "json", "CSV", "csv" ], help="format for output [default: %(default)s]" )
-    parser.add_argument( "--root", default="-", help="filename root for output [default: %(default)s]" )
+    parser.add_argument( "--root", default="-", help="filename root for output [default: %(default)s for stdout]" )
     parser.add_argument( "--stats",  nargs="+", default=[ "groups" ], 
                          choices= cmds,
                          help="List of stats to output [default: %(default)s]" )
@@ -375,6 +466,11 @@ def main( args ):
     parser.add_argument( "--start", help="Starting date range for a query" )
     
     parser.add_argument( "--end", help="Ending date range for a query" )
+    
+    parser.add_argument( "--sort", action="append", help="Sort the output using this field")
+    
+    parser.add_argument( "--direction", action="append", choices=[ "ascending", "descending" ], 
+                         default=[], help="Sort direction [default: %(default)s] ")
     
     parser.add_argument( "--upload", default=False, action="store_true",  help="upload to gdrive" )
     
@@ -406,12 +502,28 @@ def main( args ):
             urls = groups.get_region_group_urlnames( args.country )
 
     try :
-        ( from_date, to_date ) = getDateRange( args.start, args.end )
+        ( start_date, end_date ) = getDateRange( args.start, args.end )
     except ValueError, e:
         print( "Bad date: %s" % e )
         sys.exit( 2 )
 
-    analytics = MUG_Analytics( mdb, args.format.lower(), from_date, to_date, root )
+    sort_direction = None
+    
+    sorter=None
+    if args.sort :
+        sorter = Sorter()
+        for i in range( len( args.sort )) :
+            if i < len( args.direction )  :
+                sorter.add_sort( args.sort[ i ], convert_direction( args.direction[ i ]))
+            else:
+                sorter.add_sort( args.sort[ i ], pymongo.ASCENDING )
+                
+    
+    analytics = MUG_Analytics( mdb, args.format.lower(), root, sorter )
+    analytics.setRange(start_date, end_date)
+    
+    if args.sort :
+        analytics.setSort( args.sort, sort_direction )
     
     if "meetuptotals" in args.stats :
         analytics.meetupTotals( urls, filename="meetuptotals" )
