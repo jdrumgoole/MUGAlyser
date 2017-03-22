@@ -78,31 +78,6 @@ def addCountry( mdb, cursor ):
         country = groups.get_country( i[ 'group'] )
         i[ "country"] = country
         yield i    
-
-
-class AggAnalytics( object ):
-    
-    def __init__(self, collection ):
-        
-        self._agg = Agg( collection )
-        
-    def agg(self):
-        return self._agg
-    
-    def setMatch(self, match  ): 
-        self._agg.addMatch( match )
-        
-    def setRange(self, field, start, end ):
-        self._agg.addRangeMatch( field, start, end )
-        
-    def setProject(self, project ):
-        self._agg.addProject( project )
-        
-    def setSort(self, sort ):
-        self._agg.addSort( sort )
-    
-    def execute(self, output="-"):
-        pass
         
 class MUG_Analytics( object ):
             
@@ -117,8 +92,9 @@ class MUG_Analytics( object ):
         self._ext = ext
         self._root = root
         self._files = []
-        
-
+        self._sort_field = None
+        self._sort_direction = None
+    
     
     def setRange(self, start_date, end_date ):
         self._start_date = start_date
@@ -165,15 +141,12 @@ class MUG_Analytics( object ):
         if self._start_date or self._end_date :
             agg.addRangeMatch( "event.time", self._start_date, self._end_date )
             
-        agg.addProject( { "timestamp" : Agg.cond( { "$eq": [ { "$type" : "$event.time" }, "date" ]},
-                                                  { "$dateToString" : { "format" : "%Y", #-%m-%d",
-                                                    "date"          :"$event.time"}},
-                                                    None  ),
+        agg.addProject( { "timestamp" : "$event.time", 
                           "event"     : "$event.name",
                           "country"    : "$event.venue.country",
                           "rsvp_count" : "$event.yes_rsvp_count" } )
         
-        agg.addMatch( { "timestamp" : { "$ne" : None }} )
+        agg.addMatch( { "timestamp" : { "$type" : "date" }} )
         agg.addGroup( { "_id" :"$timestamp",
                         #"event" : { "$addToSet" : { "event" : "$event", "country" : "$country" }},
                         "rsvp_count" : { "$sum" : "$rsvp_count"}})
@@ -182,7 +155,7 @@ class MUG_Analytics( object ):
             agg.addSort( self._sorter)
             
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "_id", "rsvp_count" ] )
+        formatter.output( fieldNames= [ "_id", "rsvp_count" ], datemap=[ "_id"] )
 
     def getMemberHistory(self, urls, filename=None ):
         '''
@@ -202,8 +175,7 @@ class MUG_Analytics( object ):
         agg.addMatch({ "batchID"       : { "$in" : validBatches },
                        "group.urlname" : { "$in" : urls }} )
             
-        agg.addProject({ "timestamp" : { "$dateToString" : { "format" : "%Y-%m-%d",
-                                                             "date"    :"$timestamp"}},
+        agg.addProject({ "timestamp" : 1,
                          "batchID" : 1,
                          "urlname" : "$group.urlname",
                          "count" : "$group.member_count" } )
@@ -216,7 +188,7 @@ class MUG_Analytics( object ):
             agg.addSort( self._sorter)
 
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "_id", "groups", "count" ] )
+        formatter.output( fieldNames= [ "_id", "groups", "count" ], datemap=[ "_id.ts" ])
     
     def get_group_names( self, region_arg ):
         
@@ -289,11 +261,13 @@ class MUG_Analytics( object ):
         agg.addProject( { "_id" : 0,
                           "urlname" : "$group.urlname",
                           "members" : "$group.member_count",
-                          "founded" :  { "$dateToString" : { "format"  : "%d-%m-%Y",
-                                                             "date"    :"$group.founded_date"}}} )
+                          "founded" : "$group.founded_date" } )
+
+        if self._sorter:
+            agg.addSort( self._sorter)        
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "urlname", "members", "founded" ] )
+        formatter.output( fieldNames= [ "urlname", "members", "founded" ], datemap=[ "founded" ] )
         
     def groupTotals( self, urls, filename=None ):
         '''
@@ -342,14 +316,13 @@ class MUG_Analytics( object ):
                           "group"        : u"$event.group.urlname", 
                           "name"         : u"$event.name",
                           "rsvp_count"   : "$event.yes_rsvp_count",
-                          "date"         : { "$dateToString" : { "format" : "%Y-%m-%d",
-                                                                 "date"   :"$event.time"}}} ) 
+                          "date"         :"$event.time" }) 
      
         if self._sorter:
             agg.addSort( self._sorter)
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ] )
+        formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ], datemap=[ "date"])
         
     def get_newMembers( self, urls, filename=None ):
         '''
@@ -369,11 +342,10 @@ class MUG_Analytics( object ):
         agg.addProject( { "_id" : 0,
                           "group"     : "$member.chapters.urlname",
                           "name"      : "$member.member_name",
-                          "join_date" : { "$dateToString" : { "format" : "%d-%m-%Y",
-                                                              "date"   :"$member.join_time" }}} )
+                          "join_date" : "$member.join_time" } )
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "group", "name", "join_date" ] )
+        formatter.output( fieldNames= [ "group", "name", "join_date" ], datemap=[ 'join_date'])
         
     def get_rsvps( self, urls, rsvpbound=0, filename=None):   
     
@@ -388,6 +360,7 @@ class MUG_Analytics( object ):
         agg.addProject( { "_id"        : 0,
                           "attendee"   : "$info.attendee.member.name", 
                           "group"      : "$info.event.group.urlname",
+                          "event_time" : "$info.event_time",
                           "event_name" : "$info.event.name" })
         
         agg.addGroup( { "_id" : {  "attendee": "$attendee", "group": "$group" },
@@ -396,13 +369,14 @@ class MUG_Analytics( object ):
         agg.addProject( { "_id" : 0,
                           "attendee" : "$_id.attendee",
                           "group" : "$_id.group",
+                          "event_time" : 1,
                           "event_count" : 1 } )
         
         if self._sorter :
             agg.addSort( self._sorter)
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "attendee", "group", "event_count" ] )
+        formatter.output( fieldNames= [ "attendee", "group", "event_time", "event_count" ] )
 
     
     def get_active( self, urls, filename=None ):

@@ -5,6 +5,8 @@
 import pprint
 from datetime import datetime
 from collections import OrderedDict
+import collections
+
 import pymongo
 import csv
 import contextlib
@@ -103,7 +105,51 @@ class AggFormatter( object ):
             if ext :
                 return filename + "." + ext
             
-    def printCSVCursor( self, c, filename, fieldnames ):
+    @staticmethod
+    def get_value( d, k ):
+        keys = k.split( ".", 1 )
+        
+        print( "get_value %s" % k  )
+        if len( keys ) == 1 :
+            #print( "len(keys) : 1")
+            return d[ keys[ 0 ]]
+        else:
+            #for k,v in dict.__iteritems__( self ):
+            #print( "len(keys) : > 1")
+            nested = d[ keys[ 0 ]]
+            if isinstance( nested, dict ) :
+                    return AggFormatter.get_value( nested, keys[ 1 ] )
+                    
+    @staticmethod
+    def set_value( d, k, v ):
+        
+        keys = k.split( ".", 1 )
+        
+        if len( keys ) == 1 :
+            d[ keys[ 0 ]] = v
+        else:
+            AggFormatter.set_value( d[ keys[0]], keys[ 1 ], v )
+    
+    @staticmethod
+    def dateMapField( doc, field ):
+        
+        value = AggFormatter.get_value( doc, field )
+        AggFormatter.set_value( doc, field, value.strftime( "%d-%b-%Y" ) )
+
+        return doc
+            
+    @staticmethod
+    def dateMapper( doc, datemap ):
+        '''
+        For all the fields in "datemap" find that key in doc and map the datetime object to 
+        a strftime string.
+        '''
+        if datemap:
+            for i in datemap :
+                AggFormatter.dateMapField( doc, i )
+        return doc
+                
+    def printCSVCursor( self, c, filename, fieldnames, datemap ):
         '''
         Output CSV format. items are separated by commas.
         '''
@@ -115,8 +161,9 @@ class AggFormatter( object ):
             writer = csv.DictWriter( output, fieldnames = fieldnames)
             writer.writeheader()
             for i in c:
+                d = AggFormatter.dateMapper( i , datemap)
                 x={}
-                for k,v in i.items():
+                for k,v in d.items():
                     if type( v ) is unicode :
                         x[ k ] = v
                     else:
@@ -124,8 +171,9 @@ class AggFormatter( object ):
                     
                 writer.writerow( {k:v.encode('utf8') for k,v in x.items()} ) 
     
+
     
-    def printJSONCursor( self, c, filename ):
+    def printJSONCursor( self, c, filename, datemap ):
         '''
         Output plain JSON objects.
         '''
@@ -135,7 +183,7 @@ class AggFormatter( object ):
             print( "Writing : '%s'" % filename )
         with self._smart_open( filename ) as output:
             for i in c :
-                pprint.pprint(i, output )
+                pprint.pprint( AggFormatter.dateMapper( i, datemap ), output )
                 count = count + 1
             output.write( "Total records: %i\n" % count )
 
