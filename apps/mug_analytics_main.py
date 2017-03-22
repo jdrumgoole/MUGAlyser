@@ -95,6 +95,8 @@ class MUG_Analytics( object ):
         self._sort_field = None
         self._sort_direction = None
     
+    def files(self):
+        return self._files
     
     def setRange(self, start_date, end_date ):
         self._start_date = start_date
@@ -128,7 +130,7 @@ class MUG_Analytics( object ):
         formatter = AggFormatter( agg, self._root, filename, self._ext )
         formatter.output( fieldNames= [ "urlname", "country", "batchID", "member_count"] )
         
-    def getRSVPHistory(self, urls, filename=None ):
+    def get_RSVP_history(self, urls, filename=None ):
         '''
         Get the list of past events for groups (urls) and report on the date of the event
         and the number of RSVPs.
@@ -155,9 +157,12 @@ class MUG_Analytics( object ):
             agg.addSort( self._sorter)
             
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "_id", "rsvp_count" ], datemap=[ "_id"] )
+        filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ], datemap=[ "_id"] )
+        
+        if filename != "-":
+            self._files.append( filename )
 
-    def getMemberHistory(self, urls, filename=None ):
+    def get_member_history(self, urls, filename=None ):
         '''
         Got into every batch and see what the member count was for each group (URL) this uses all 
         the batches to get a history of a group.
@@ -188,8 +193,11 @@ class MUG_Analytics( object ):
             agg.addSort( self._sorter)
 
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "_id", "groups", "count" ], datemap=[ "_id.ts" ])
+        filename = formatter.output( fieldNames= [ "_id", "groups", "count" ], datemap=[ "_id.ts" ])
     
+        if filename != "-":
+            self._files.append( filename )
+            
     def get_group_names( self, region_arg ):
         
         groups = Groups( self._mdb )
@@ -202,7 +210,7 @@ class MUG_Analytics( object ):
             
         return urls
         
-    def meetupTotals( self, urls, filename=None ):
+    def get_meetup_totals( self, urls, filename=None ):
             
         agg = Agg( self._mdb.pastEventsCollection())                                       
         
@@ -231,8 +239,11 @@ class MUG_Analytics( object ):
             agg.addSort( self._sorter)
 
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "year", "total_rsvp", "total_events" ] )
+        filename = formatter.output( fieldNames= [ "year", "total_rsvp", "total_events" ] )
     
+        if filename != "-":
+            self._files.append( filename )
+            
     def batchMatch( self, collection ):
         agg = Agg( collection )
         agg.addMatch({ "batchID" : self._batchID } )
@@ -267,9 +278,12 @@ class MUG_Analytics( object ):
             agg.addSort( self._sorter)        
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "urlname", "members", "founded" ], datemap=[ "founded" ] )
+        filename = formatter.output( fieldNames= [ "urlname", "members", "founded" ], datemap=[ "founded" ] )
         
-    def groupTotals( self, urls, filename=None ):
+        if filename != "-":
+            self._files.append( filename )
+            
+    def get_group_totals( self, urls, filename=None ):
         '''
         get the total number of RSVPs by group.
         '''
@@ -298,8 +312,10 @@ class MUG_Analytics( object ):
             agg.addSort( self._sorter )
     
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "year", "group", "event_count", "rsvp_count"] )
-    
+        filename = formatter.output( fieldNames= [ "year", "group", "event_count", "rsvp_count"] )
+        
+        if filename != "-":
+            self._files.append( filename )
         
     def get_events(self, urls, rsvpbound=0, filename=None):
     
@@ -322,9 +338,12 @@ class MUG_Analytics( object ):
             agg.addSort( self._sorter)
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ], datemap=[ "date"])
-        
-    def get_newMembers( self, urls, filename=None ):
+        filename = formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ], datemap=[ "date"])
+
+        if filename != "-":
+            self._files.append( filename )
+            
+    def get_new_members( self, urls, filename=None ):
         '''
         Get all the members of all the groups (urls). Range is join_time.
         '''
@@ -345,8 +364,11 @@ class MUG_Analytics( object ):
                           "join_date" : "$member.join_time" } )
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "group", "name", "join_date" ], datemap=[ 'join_date'])
+        filename = formatter.output( fieldNames= [ "group", "name", "join_date" ], datemap=[ 'join_date'])
         
+        if filename != "-":
+            self._files.append( filename )
+            
     def get_rsvps( self, urls, rsvpbound=0, filename=None):   
     
         agg = Agg( self._mdb.attendeesCollection())
@@ -369,17 +391,18 @@ class MUG_Analytics( object ):
         agg.addProject( { "_id" : 0,
                           "attendee" : "$_id.attendee",
                           "group" : "$_id.group",
-                          "event_time" : 1,
                           "event_count" : 1 } )
         
         if self._sorter :
             agg.addSort( self._sorter)
         
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "attendee", "group", "event_time", "event_count" ] )
+        filename = formatter.output( fieldNames= [ "attendee", "group", "event_time", "event_count" ] )
 
-    
-    def get_active( self, urls, filename=None ):
+        if filename != "-":
+            self._files.append( filename )
+            
+    def get_active_users( self, urls, filename=None ):
         '''
         We define an active user as somebody who has rsvp'd to at least one event in the last six months.
         '''
@@ -405,7 +428,10 @@ class MUG_Analytics( object ):
             agg.addSort( self._sorter)
             
         formatter = AggFormatter( agg, self._root, filename, self._ext )
-        formatter.output( fieldNames= [ "_id", "count", "groups" ] )
+        filename = formatter.output( fieldNames= [ "_id", "count", "groups" ] )
+
+        if filename != "-":
+            self._files.append( filename )
 
 def convert_direction( arg ):
     
@@ -420,7 +446,7 @@ def main( args ):
     
 #if __name__ == '__main__':
     
-    cmds = [ "meetuptotals", "grouptotals", "groups",  "members", "events", "rsvps", "active", "newmembers", "memberhistory", "rsvphistory" ]
+    cmds = [ "meetuptotals", "grouptotals", "groups", "events", "rsvps", "activeusers", "newmembers", "memberhistory", "rsvphistory" ]
     parser = ArgumentParser( args )
         
     parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", 
@@ -500,16 +526,16 @@ def main( args ):
         analytics.setSort( args.sort, sort_direction )
     
     if "meetuptotals" in args.stats :
-        analytics.meetupTotals( urls, filename="meetuptotals" )
+        analytics.get_meetup_totals( urls, filename="meetuptotals" )
         
     if "grouptotals" in args.stats :
-        analytics.groupTotals( urls, filename="grouptotals" )
+        analytics.get_group_totals( urls, filename="grouptotals" )
         
     if "groups" in args.stats :
         analytics.get_groups( urls, filename="groups" )
     
-    if "members" in args.stats :
-        analytics.getMembers( urls, filename="members" )
+    if "newmembers" in args.stats :
+        analytics.get_new_members( urls, filename="members" )
 
     if "events" in args.stats:
         analytics.get_events( urls, filename="events" )
@@ -517,17 +543,14 @@ def main( args ):
     if "rsvps" in args.stats:
         analytics.get_rsvps( urls, filename="rsvps" )
         
-    if "active" in args.stats:
-        analytics.get_active(  urls, filename="active" )
-
-    if "newmembers" in args.stats :
-        analytics.get_newMembers( urls, filename="newmembers" )
+    if "activeusers" in args.stats:
+        analytics.get_active_users(  urls, filename="active" )
         
     if "memberhistory" in args.stats :
-        analytics.getMemberHistory(urls,  filename="memberhistory")
+        analytics.get_member_history(urls,  filename="memberhistory")
         
     if "rsvphistory" in args.stats :
-        analytics.getRSVPHistory(urls, filename="rsvphistory")
+        analytics.get_RSVP_history(urls, filename="rsvphistory")
         
     if args.upload :
         gauth = auth.GoogleAuth()
