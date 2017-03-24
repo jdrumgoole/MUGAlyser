@@ -8,6 +8,7 @@ import requests
 import logging
 import datetime
 import time
+import pprint
 
 from copy import deepcopy
 
@@ -31,8 +32,8 @@ class PaginatedRequest( object ):
         logger = logging.getLogger( __programName__ )
     
         if self._logurl:
-            logger.info( "URL    : '%s'" % req )
-            logger.info( "params : '%s" % params )
+            print( "URL    : '%s'" % req )
+            print( "params : '%s" % params )
             
         level = logger.getEffectiveLevel()
         
@@ -42,18 +43,34 @@ class PaginatedRequest( object ):
         #print( "url: '%s'" % r.url )
         #print( "text: %s" % r.text )
         #print( "headers: %s" % r.headers )
-        
-        if int( r.headers[ "X-RateLimit-Remaining"] ) < 5 : #brute force, we can be more clever about this
-            time.sleep( 1 )
+
+
         try:
-            return returnData( r )
+            data = returnData( r )
+            limit = int( data[0][ "X-RateLimit-Remaining"] )
+            if  limit < 5 : #brute force, we can be more clever about this
+                time.sleep( 1 )
+            return data
+        
+        except ValueError :
+            print( "ValueError in makeRequests:")
+            print( "request: '%s'" % r.url)
+            print( "headers" )
+            pprint.pprint( r.headers )
+            print( "text" )
+            pprint.pprint( r.text )
+            raise
+        
         except requests.HTTPError, e :
     
             logger.error( "HTTP Error  : %s:", e )
             raise
+            
         finally:
             logger.setLevel( level )
 
+
+            
     def getHref( self, s ):
         ( link, direction ) = s.split( ";", 2 )
         link = link[ 1:-1]
@@ -83,8 +100,10 @@ class PaginatedRequest( object ):
         return ( nextLink, prevLink )
     
     def paginatedRequest(self, req, params, reshaperFunc=None ):
-        
+    
+        #print( "Intiate paginated request")    
         (header, body) = self.makeRequest( req, params )
+        #print( "Paginator")
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
         return self.paginator( header, body, params, func=reshaperFunc  )
@@ -112,9 +131,13 @@ class PaginatedRequest( object ):
             for i in body[ "results"]:
                 yield func( i )
         
+            count = 0
             while ( data[ 'meta' ][ "next" ] != ""  ) :
+
+                #print( "makeRequest (old): %i" % count )
                 data = self.makeRequest( data['meta'][ 'next' ], params )[1]
-    
+                count = count + 1
+
             
                 for i in data[ "results"]:
                     yield  func( i )
@@ -123,11 +146,16 @@ class PaginatedRequest( object ):
         elif ( "Link" in headers ) : #new style pagination
             for i in data :
                 yield func( i )
-                
+               
+            count = 0 
             ( nxt, _) = self.getNextPrev(headers)
     
+            count = 0
             while ( nxt is not None ) : # no next link in last page
-    
+
+                count = count + 1 
+                #print( "make request (new): %i" % count )
+                    
                 ( headers, body ) = self.makeRequest( nxt, params )
                 ( nxt, _ ) = self.getNextPrev(headers)
                 for i in body :
