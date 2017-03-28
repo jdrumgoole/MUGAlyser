@@ -11,7 +11,7 @@ import pymongo
 import csv
 import contextlib
 import sys
-
+        
 class Sorter( object ):
     '''
     Required for ordered sorting of fields as python dictionaries do not 
@@ -59,7 +59,7 @@ class Sorter( object ):
         return self.__str__()
     
     
-class AggFormatter( object ):
+class CursorFormatter( object ):
     '''
     Take a mongodb Agg object and call aggregate on it.
     IF root is "-" send the output to stdout.
@@ -67,12 +67,12 @@ class AggFormatter( object ):
     If root is a file name output the content to that file.
     '''
         
-    def __init__(self, agg, prefix="", name="-", ext="", results=[] ):
+    def __init__(self, cursor, prefix="", name="-", ext="", results=[] ):
         '''
         Data from cursor
         output to <filename>suffix.ext.
         '''
-        self._agg = agg
+        self._cursor = cursor
         self._name = name
         self._prefix = prefix
         self._ext = ext
@@ -121,7 +121,7 @@ class AggFormatter( object ):
             #print( "len(keys) : > 1")
             nested = d[ keys[ 0 ]]
             if isinstance( nested, dict ) :
-                    return AggFormatter.get_value( nested, keys[ 1 ] )
+                    return CursorFormatter.get_value( nested, keys[ 1 ] )
                     
     @staticmethod
     def set_value( d, k, v ):
@@ -131,16 +131,23 @@ class AggFormatter( object ):
         if len( keys ) == 1 :
             d[ keys[ 0 ]] = v
         else:
-            AggFormatter.set_value( d[ keys[0]], keys[ 1 ], v )
+            CursorFormatter.set_value( d[ keys[0]], keys[ 1 ], v )
     
     @staticmethod
     def dateMapField( doc, field ):
         
-        value = AggFormatter.get_value( doc, field )
-        AggFormatter.set_value( doc, field, value.strftime( "%d-%b-%Y" ) )
+        value = CursorFormatter.get_value( doc, field )
+        CursorFormatter.set_value( doc, field, value.strftime( "%d-%b-%Y" ) )
 
         return doc
-            
+       
+    @staticmethod
+    def fieldMapper( doc, fields ): 
+        new_doc = {}
+        for i in fields:
+            new_doc[ i ] = doc[ i ]  
+        return new_doc  
+    
     @staticmethod
     def dateMapper( doc, datemap ):
         '''
@@ -149,7 +156,7 @@ class AggFormatter( object ):
         '''
         if datemap:
             for i in datemap :
-                AggFormatter.dateMapField( doc, i )
+                CursorFormatter.dateMapField( doc, i )
         return doc
                 
     def printCSVCursor( self, c, fieldnames, datemap ):
@@ -168,7 +175,9 @@ class AggFormatter( object ):
             for i in c:
                 self._results.append( i )
                 count = count + 1
-                d = AggFormatter.dateMapper( i , datemap)
+                d = CursorFormatter.fieldMapper( i, fieldnames )
+                d = CursorFormatter.dateMapper( d , datemap)
+
                 x={}
                 for k,v in d.items():
 
@@ -184,7 +193,7 @@ class AggFormatter( object ):
         return filename
 
     
-    def printJSONCursor( self, c, datemap ):
+    def printJSONCursor( self, c,fieldnames, datemap ):
         '''
         Output plain JSON objects.
         '''
@@ -196,7 +205,9 @@ class AggFormatter( object ):
         with self._smart_open( filename ) as output:
             for i in c :
                 self._results.append( i )
-                pprint.pprint( AggFormatter.dateMapper( i, datemap ), output )
+                d = CursorFormatter.fieldMapper( i, fieldnames )
+                CursorFormatter.dateMapper( d, datemap )
+                pprint.pprint( d, output )
                 count = count + 1
             print( "Total records: %i\n" % count )
 
@@ -211,7 +222,7 @@ class AggFormatter( object ):
         if self._ext == 'csv' :
             filename = self.printCSVCursor( c, fieldnames, datemap )
         else:
-            filename = self.printJSONCursor( c,  datemap )
+            filename = self.printJSONCursor( c,  fieldnames, datemap )
             
         return filename
     
@@ -221,7 +232,7 @@ class AggFormatter( object ):
         be date
         '''
 
-        return self.printCursor( self._agg.aggregate(), fieldNames, datemap )
+        return self.printCursor( self._cursor, fieldNames, datemap )
         
 class Agg(object):
     '''
@@ -416,3 +427,12 @@ class Agg(object):
     def __call__(self ):
         
         return self.aggregate()
+
+    def tee(self, output ):
+        '''
+        Iterator over the aggregator and produce a copy in output
+        '''
+
+        for i in self.aggregate():
+            output.append( i )
+            yield i

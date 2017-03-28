@@ -54,7 +54,7 @@ have an end date field.
 import pymongo
 from datetime import datetime
 from mugalyser.version import __programName__, __version__, __schemaVersion__
-
+from mugalyser.agg import Agg, Sorter
 from mugalyser.apikey import get_meetup_key
 
 class Audit( object ):
@@ -211,12 +211,21 @@ class Audit( object ):
             except StopIteration :
                 raise ValueError( "Have you set a valid API key? (APIKEY='%s')" % get_meetup_key())
             
-    def getCurrentValidBatches( self ):
-        cursor = self._auditCollection.find( { "apikey" : get_meetup_key(),
-                                               "end"    : { "$ne" : None },
-                                               "trial"  : False } ).sort( "batchID", pymongo.DESCENDING )
+    def getCurrentValidBatches( self, start=None, end=None ):
+        
+        agg = Agg( self._auditCollection )
+        agg.addMatch({ "apikey" : get_meetup_key(),
+                       "end"    : { "$ne" : None },
+                       "trial"  : False }  )
+        
+        agg.addRangeMatch( "start", start, end)
+        agg.addSort( Sorter( batchID = pymongo.DESCENDING ))
+        
+#         cursor = self._auditCollection.find( { "apikey" : get_meetup_key(),
+#                                                "end"    : { "$ne" : None },
+#                                                "trial"  : False } ).sort( "batchID", pymongo.DESCENDING )
                                          
-        for i in cursor :
+        for i in agg.aggregate() :
             yield i
             
     def getCurrentValidBatchIDs( self ):

@@ -6,18 +6,16 @@ Created on 28 Dec 2016
 
 import pprint
 import pymongo
-import csv
 import sys
 import datetime
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 
 from dateutil.parser import parse
-from pydrive import auth
 from mugalyser.gdrive import GDrive
 
 
-from mugalyser.agg import Agg, Sorter, AggFormatter
+from mugalyser.agg import Agg, Sorter, CursorFormatter
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
@@ -26,13 +24,19 @@ from mugalyser.events import PastEvents
 
 import contextlib
     
-def getDate( date_string ):
+def get_date( date_string ):
     if date_string is None :
         return None
     else:
         retVal = parse( date_string )
         return retVal
 
+def valid_date( date_string ):
+    try :
+        return get_date( date_string )
+    except ValueError :
+        raise ArgumentTypeError( "'%s' cannot be parsed as a date" % date_string )
+    
 def getDateRange( start_date_string, end_date_string ):
     '''
     parse a date range. Return none if ranges are none.
@@ -40,7 +44,7 @@ def getDateRange( start_date_string, end_date_string ):
     
     if start_date_string:
         try :
-            start_date = getDate( start_date_string )
+            start_date = get_date( start_date_string )
         except ValueError :
             print( "Ignoring --from date: '%s' not a valid date")
             stary_date = None
@@ -49,7 +53,7 @@ def getDateRange( start_date_string, end_date_string ):
         
     if end_date_string:
         try :
-            end_date = getDate( end_date_string )
+            end_date = get_date( end_date_string )
         except ValueError:
             print( "Ignoring --to date: '%s' not a valid date" )
             end_date = None
@@ -135,7 +139,7 @@ class MUG_Analytics( object ):
         else:
             filename = self._name + filename
             
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext )
         formatter.output( fieldNames= [ "urlname", "country", "batchID", "member_count"] )
         
     def get_RSVP_history(self, urls, filename=None ):
@@ -169,7 +173,7 @@ class MUG_Analytics( object ):
         else:
             filename = self._name + filename
             
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ], datemap=[ "_id"] )
         
         if filename != "-":
@@ -205,7 +209,7 @@ class MUG_Analytics( object ):
         if self._sorter :
             agg.addSort( self._sorter)
 
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "_id", "groups", "count" ], datemap=[ "_id.ts" ])
     
         if filename != "-":
@@ -257,7 +261,7 @@ class MUG_Analytics( object ):
             filename = self._name + filename
         
         #pprint.pprint( agg )    
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "year", "total_rsvp", "total_events" ] )
     
         if filename != "-":
@@ -301,7 +305,7 @@ class MUG_Analytics( object ):
         else:
             filename = self._name + filename
             
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "urlname", "members", "founded" ], datemap=[ "founded" ] )
         
         if filename != "-":
@@ -340,7 +344,7 @@ class MUG_Analytics( object ):
         else:
             filename = self._name + filename
             
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "year", "group", "event_count", "rsvp_count"] )
         
         if filename != "-":
@@ -371,7 +375,7 @@ class MUG_Analytics( object ):
         else:
             filename = self._name + filename
             
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ], datemap=[ "date"])
 
         if filename != "-":
@@ -402,7 +406,7 @@ class MUG_Analytics( object ):
         else:
             filename = self._name + filename
             
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "group", "name", "join_date" ], datemap=[ 'join_date'])
         
         if filename != "-":
@@ -442,7 +446,7 @@ class MUG_Analytics( object ):
         else:
             filename = self._name + filename
             
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "attendee", "group", "event_time", "event_count" ] )
 
         if filename != "-":
@@ -470,7 +474,7 @@ class MUG_Analytics( object ):
             filename = self._name + filename
             
         results=[]
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext, results )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext, results )
         filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ] )
         
         return results
@@ -505,7 +509,7 @@ class MUG_Analytics( object ):
         else:
             filename = self._name + filename
             
-        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
+        formatter = CursorFormatter( agg.aggregate(), self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "_id", "count", "groups" ] )
 
         if filename != "-":
@@ -545,6 +549,14 @@ def convert_direction( arg ):
     else:
         return pymongo.ASCENDING
     
+def get_batches( mdb, start, end ):
+    
+    audit = Audit( mdb )
+    
+    c = CursorFormatter( audit.getCurrentValidBatches( start, end ))
+    c.output( [ "batchID" , "end", "start" ], datemap=[ "start", "end"])
+
+        
 def main( args ):
     
 #if __name__ == '__main__':
@@ -561,7 +573,7 @@ def main( args ):
     parser.add_argument( "--format", default="JSON", choices=[ "JSON", "json", "CSV", "csv" ], help="format for output [default: %(default)s]" )
     parser.add_argument( "--prefix", default="<date>", help="prefix for output [default: %(default)s generates datestring]" )
     parser.add_argument( "--output", default="-", help="where to write output [default: %(default)s for stdout]" )
-    parser.add_argument( "--stats",  nargs="+", default=[ "groups" ], 
+    parser.add_argument( "--stats",  nargs="+", 
                          choices= cmds,
                          help="List of stats to output [default: %(default)s]" )
     parser.add_argument( "--country", nargs="+", default=[ "all"],
@@ -570,9 +582,9 @@ def main( args ):
     parser.add_argument( "--url", nargs="+",
                          help="pick a URL for a group to report on [default: %(default)s]")
 
-    parser.add_argument( "--start", help="Starting date range for a query" )
+    parser.add_argument( "--start", type=valid_date, help="Starting date range for a query" )
     
-    parser.add_argument( "--end", help="Ending date range for a query" )
+    parser.add_argument( "--end", type=valid_date, help="Ending date range for a query" )
     
     parser.add_argument( "--sort", action="append", help="Sort the output using this field")
     
@@ -582,6 +594,8 @@ def main( args ):
     parser.add_argument( "--upload", default=False, action="store_true",  help="upload to gdrive" )
     
     parser.add_argument( "--gdrive_config", default="pydrive_auth.json", help="use this gdrive config [default: %(default)s]" )
+    
+    parser.add_argument( "--batches", action="store_true", default=False, help="Find all batches since a specific date")
     
     args = parser.parse_args()
     
@@ -643,6 +657,9 @@ def main( args ):
     analytics = MUG_Analytics( mdb, prefix, output, format, sorter )
     analytics.setRange(start_date, end_date)
     
+    if args.stats is None:
+        args.stats = []
+        
     if args.sort :
         analytics.setSort( args.sort, sort_direction )
     
@@ -695,5 +712,8 @@ def main( args ):
                 ( name, g_id ) = drive.upload_csvFile( mugstats_folder, i )
                 print( "Uploaded '%s' to %s' as id: '%s'" % ( i, name, g_id ))
 
+    if args.batches :
+        get_batches( mdb, start_date, end_date )
+        
 if __name__ == '__main__':
     main( sys.argv )
