@@ -26,7 +26,7 @@ CLIENT_SECRET_FILE = os.path.join(  homedir, 'pydrive_auth.json' )
 
 class GDrive( object ):
     
-    def __init__(self, client_secret_file, application_name = "gdrive", credentials_dir=".credentials" ):
+    def __init__(self, application_name = "gdrive", client_secret_file=CLIENT_SECRET_FILE, credentials_dir=".credentials" ):
         self._client_secret_file = client_secret_file
         self._application_name = application_name
         self._scopes = 'https://www.googleapis.com/auth/drive.file'
@@ -43,6 +43,7 @@ class GDrive( object ):
         self._credentials = None
         self._http = None
         self._service = None
+        self.get_credentials()
         
     def get_credentials( self ):
         """Gets valid user credentials from storage.
@@ -65,7 +66,7 @@ class GDrive( object ):
         self._service = discovery.build('drive', 'v2', http=self._http)
         return self._credentials
 
-    def upload_csvFile( self, folder_id, source_filename, target_filename  ):
+    def upload_csvFile( self, folder_id, source_filename, target_filename=None ):
         return self.upload_file( folder_id, source_filename, 
                                  source_mimetype="text/csv", 
                                  target_mimetype="application/vnd.google-apps.spreadsheet", 
@@ -75,6 +76,7 @@ class GDrive( object ):
         
         if target_filename is None :
             target_filename = os.path.basename( source_filename )
+            target_filename = os.path.splitext( target_filename )[0]
             
         file_metadata = {
           'title' : target_filename,
@@ -86,10 +88,12 @@ class GDrive( object ):
                                  resumable=True)
         
         file_obj = self._service.files().insert(body=file_metadata,
-                                            media_body=media,
-                                            fields='id').execute()
+                                                media_body=media,
+                                                fields='id').execute()
     
-        print( 'File ID: %s' % file_obj.get( "id"))
+        return ( target_filename, file_obj.get( "id"))
+    
+        #print( 'File ID: %s' % file_obj.get( "id"))
 
     def service(self):
         return self._service

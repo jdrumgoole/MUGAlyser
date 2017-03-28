@@ -8,12 +8,13 @@ import pprint
 import pymongo
 import csv
 import sys
+import datetime
 
 from argparse import ArgumentParser
 
 from dateutil.parser import parse
 from pydrive import auth
-from pydrive.drive import GoogleDrive
+from mugalyser.gdrive import GDrive
 
 
 from mugalyser.agg import Agg, Sorter, AggFormatter
@@ -21,6 +22,7 @@ from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
 from mugalyser.members import Members
+from mugalyser.events import PastEvents
 
 import contextlib
     
@@ -31,37 +33,37 @@ def getDate( date_string ):
         retVal = parse( date_string )
         return retVal
 
-def getDateRange( from_date_string, to_date_string ):
+def getDateRange( start_date_string, end_date_string ):
     '''
     parse a date range. Return none if ranges are none.
     '''
     
-    if from_date_string:
+    if start_date_string:
         try :
-            from_date = getDate( from_date_string )
+            start_date = getDate( start_date_string )
         except ValueError :
             print( "Ignoring --from date: '%s' not a valid date")
-            from_date = None
+            stary_date = None
     else:
-        from_date = None
+        start_date = None
         
-    if to_date_string:
+    if end_date_string:
         try :
-            to_date = getDate( to_date_string )
+            end_date = getDate( end_date_string )
         except ValueError:
             print( "Ignoring --to date: '%s' not a valid date" )
-            to_date = None
+            end_date = None
     else:
-        to_date = None
+        end_date = None
     
-    if from_date and to_date:
-        if to_date >= from_date  :
-            return ( from_date, to_date )
+    if start_date and end_date:
+        if end_date >= start_date  :
+            return ( start_date, end_date )
         else:
-            print( "--from date ('%s') is greater than --to date ('%s') ignoring these parameters" % ( from_date, to_date ))
+            print( "--start date ('%s') is greater than --end date ('%s') ignoring these parameters" % ( start_date, end_date ))
             return ( None, None )
     else:
-        return( None, None )
+        return( start_date, end_date )
 
     
 def addJoinDate( mdb, cursor ):
@@ -81,7 +83,7 @@ def addCountry( mdb, cursor ):
         
 class MUG_Analytics( object ):
             
-    def __init__(self, mdb, ext, root, sorter=None ):
+    def __init__(self, mdb, prefix, name, ext, sorter=None ):
         self._mdb = mdb
         audit = Audit( mdb )
     
@@ -89,8 +91,9 @@ class MUG_Analytics( object ):
         self._sorter = sorter
         self._start_date = None
         self._end_date = None
+        self._prefix = prefix
+        self._name = name
         self._ext = ext
-        self._root = root
         self._files = []
         self._sort_field = None
         self._sort_direction = None
@@ -127,7 +130,12 @@ class MUG_Analytics( object ):
         if self._sorter:
             agg.addSort( self._sorter)
             
-        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        if self._name == "-" :
+            filename = self._name
+        else:
+            filename = self._name + filename
+            
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
         formatter.output( fieldNames= [ "urlname", "country", "batchID", "member_count"] )
         
     def get_RSVP_history(self, urls, filename=None ):
@@ -156,7 +164,12 @@ class MUG_Analytics( object ):
         if self._sorter :
             agg.addSort( self._sorter)
             
-        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        if self._name == "-" :
+            filename = self._name
+        else:
+            filename = self._name + filename
+            
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ], datemap=[ "_id"] )
         
         if filename != "-":
@@ -192,7 +205,7 @@ class MUG_Analytics( object ):
         if self._sorter :
             agg.addSort( self._sorter)
 
-        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "_id", "groups", "count" ], datemap=[ "_id.ts" ])
     
         if filename != "-":
@@ -237,8 +250,14 @@ class MUG_Analytics( object ):
         
         if self._sorter:
             agg.addSort( self._sorter)
-
-        formatter = AggFormatter( agg, self._root, filename, self._ext )
+            
+        if self._name == "-" :
+            filename = self._name
+        else:
+            filename = self._name + filename
+        
+        #pprint.pprint( agg )    
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "year", "total_rsvp", "total_events" ] )
     
         if filename != "-":
@@ -277,7 +296,12 @@ class MUG_Analytics( object ):
         if self._sorter:
             agg.addSort( self._sorter)        
         
-        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        if self._name == "-" :
+            filename = self._name
+        else:
+            filename = self._name + filename
+            
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "urlname", "members", "founded" ], datemap=[ "founded" ] )
         
         if filename != "-":
@@ -311,7 +335,12 @@ class MUG_Analytics( object ):
         if self._sorter:
             agg.addSort( self._sorter )
     
-        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        if self._name == "-" :
+            filename = self._name
+        else:
+            filename = self._name + filename
+            
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "year", "group", "event_count", "rsvp_count"] )
         
         if filename != "-":
@@ -337,7 +366,12 @@ class MUG_Analytics( object ):
         if self._sorter:
             agg.addSort( self._sorter)
         
-        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        if self._name == "-" :
+            filename = self._name
+        else:
+            filename = self._name + filename
+            
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ], datemap=[ "date"])
 
         if filename != "-":
@@ -363,14 +397,21 @@ class MUG_Analytics( object ):
                           "name"      : "$member.member_name",
                           "join_date" : "$member.join_time" } )
         
-        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        if self._name == "-" :
+            filename = self._name
+        else:
+            filename = self._name + filename
+            
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "group", "name", "join_date" ], datemap=[ 'join_date'])
         
         if filename != "-":
             self._files.append( filename )
             
     def get_rsvps( self, urls, rsvpbound=0, filename=None):   
-    
+        '''
+        Lookup RSVPs by user. So for each user collect how many events they RSVPed to.
+        '''
         agg = Agg( self._mdb.attendeesCollection())
         
         agg.addMatch({ "batchID"            : self._batchID,
@@ -396,12 +437,44 @@ class MUG_Analytics( object ):
         if self._sorter :
             agg.addSort( self._sorter)
         
-        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        if self._name == "-" :
+            filename = self._name
+        else:
+            filename = self._name + filename
+            
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "attendee", "group", "event_time", "event_count" ] )
 
         if filename != "-":
             self._files.append( filename )
             
+    def get_rsvp_by_event(self, urls, filename="rsvp_events"):
+        
+        agg = Agg( self._mdb.pastEventsCollection())
+        
+        agg.addMatch({ "batchID"             : self._batchID,
+                       "event.group.urlname" : { "$in" : urls }})
+        
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "event.time", self._start_date, self._end_date )
+            
+        agg.addGroup( { "_id" : "$event.group.urlname",
+                        "rsvp_count" : { "$sum" : "$event.yes_rsvp_count" }})
+
+        if self._sorter :
+            agg.addSort( self._sorter)
+            
+        if self._name == "-" :
+            filename = self._name
+        else:
+            filename = self._name + filename
+            
+        results=[]
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext, results )
+        filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ] )
+        
+        return results
+        
     def get_active_users( self, urls, filename=None ):
         '''
         We define an active user as somebody who has rsvp'd to at least one event in the last six months.
@@ -427,11 +500,41 @@ class MUG_Analytics( object ):
         if self._sorter :
             agg.addSort( self._sorter)
             
-        formatter = AggFormatter( agg, self._root, filename, self._ext )
+        if self._name == "-" :
+            filename = self._name
+        else:
+            filename = self._name + filename
+            
+        formatter = AggFormatter( agg, self._prefix, filename, self._ext )
         filename = formatter.output( fieldNames= [ "_id", "count", "groups" ] )
 
         if filename != "-":
             self._files.append( filename )
+            
+    def get_totals(self, urls, countries=EU_COUNTRIES, filename=None ):
+        '''
+        Total number of members
+        Total number of groups
+        Total number of events
+        Total number of RSVPs
+        '''
+    
+        audit = Audit( self._mdb )    
+        members = Members( self._mdb )
+        groups = Groups( self._mdb )
+        if countries is None:
+            member_count = members.get_all_members().count()
+        else:
+            member_count = members.get_all_members( { "member.country" : { "$in" : countries }}).count()
+        print( "Total members: %i" % member_count )
+        
+        events = PastEvents( self._mdb )
+        
+        event_count = events.get_all_events( { "event.group.urlname" : { "$in" : urls }}).count()
+        
+        print( "Total events: %i" % event_count )
+    
+        #group_count = groups.
 
 def convert_direction( arg ):
     
@@ -446,14 +549,18 @@ def main( args ):
     
 #if __name__ == '__main__':
     
-    cmds = [ "meetuptotals", "grouptotals", "groups", "events", "rsvps", "activeusers", "newmembers", "memberhistory", "rsvphistory" ]
+    cmds = [ "meetuptotals", "grouptotals", "groups", "events", "rsvps", 
+            "activeusers", "newmembers", "memberhistory", "rsvphistory",
+            "totals", "rsvpevents" ]
+
     parser = ArgumentParser( args )
         
     parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", 
                          help="URI for connecting to MongoDB [default: %(default)s]" )
     
     parser.add_argument( "--format", default="JSON", choices=[ "JSON", "json", "CSV", "csv" ], help="format for output [default: %(default)s]" )
-    parser.add_argument( "--root", default="-", help="filename root for output [default: %(default)s for stdout]" )
+    parser.add_argument( "--prefix", default="<date>", help="prefix for output [default: %(default)s generates datestring]" )
+    parser.add_argument( "--output", default="-", help="where to write output [default: %(default)s for stdout]" )
     parser.add_argument( "--stats",  nargs="+", default=[ "groups" ], 
                          choices= cmds,
                          help="List of stats to output [default: %(default)s]" )
@@ -478,12 +585,19 @@ def main( args ):
     
     args = parser.parse_args()
     
-    upload_List = []
+    output = args.output
+    prefix = args.prefix 
     
-    root = args.root
+    if prefix is None :
+        prefix = ""
     
-    if root is None:
-        root = "-"
+    if prefix == "<date>":
+        prefix = datetime.datetime.now().strftime( "%d-%b-%y-%H%M%S" ) + "-"
+
+    if output is None:
+        output = "-"
+    
+    format = args.format.lower()
     
     mdb = MUGAlyserMongoDB( uri=args.host )
         
@@ -494,15 +608,22 @@ def main( args ):
     else:
         if "all" in args.country :
             urls = groups.get_region_group_urlnames()
+            countries = None #implies all
         elif "EU" in args.country :
             urls = groups.get_region_group_urlnames( EU_COUNTRIES )
+            countries = EU_COUNTRIES
         elif "NORDICS" in args.country :
             urls = groups.get_region_group_urlnames( NORDICS_COUNTRIES )
+            countries = NORDICS_COUNTRIES
         else:
             urls = groups.get_region_group_urlnames( args.country )
 
     try :
+#         print( "start: %s"  % args.start )
+#         print( "end  : %s"  % args.end )
         ( start_date, end_date ) = getDateRange( args.start, args.end )
+#         print( "Start date: %s" % start_date )
+#         print( "End date  : %s" % end_date )
     except ValueError, e:
         print( "Bad date: %s" % e )
         sys.exit( 2 )
@@ -519,7 +640,7 @@ def main( args ):
                 sorter.add_sort( args.sort[ i ], pymongo.ASCENDING )
                 
     
-    analytics = MUG_Analytics( mdb, args.format.lower(), root, sorter )
+    analytics = MUG_Analytics( mdb, prefix, output, format, sorter )
     analytics.setRange(start_date, end_date)
     
     if args.sort :
@@ -552,16 +673,27 @@ def main( args ):
     if "rsvphistory" in args.stats :
         analytics.get_RSVP_history(urls, filename="rsvphistory")
         
+    if "rsvpevents" in args.stats:
+        analytics.get_rsvp_by_event(urls, filename="rsvpevents")
+    if "totals" in args.stats:
+        analytics.get_totals( urls, countries=countries, filename="totals")
+        
     if args.upload :
-        gauth = auth.GoogleAuth()
-        gauth.LoadClientConfigFile( args.gdrive_config )
-        
-        drive = GoogleDrive(gauth)
-        
-        for i in analytics.files() :
-            file1 = drive.CreateFile({'title': i})  # Create GoogleDriveFile instance with title 'Hello.txt'.
-            file1.SetContentFile( i ) # Set content of the file from given string.
-            file1.Upload()
+
+        if format == "json" :
+            print( "Format is JSON, automatic upload is not supported" )
+            print( "Right now we convert uploaded files from CSV to a gsheet automatically")
+            print( "This won't work for JSON, so we ignore them for now during upload")
+        elif args.output == "-" :
+            print( "--output is '-' (stdout), ignoring --upload" )
+            print( "Please specify a --output filename to upload files")
+        else:
+            drive = GDrive()
+            mugstats_folder = "0By1C8O_N6j4hbUd0cUJfZjAxOUU"
+            for i in analytics.files() :
+                print( "Uploading: '%s' to google drive" % i )
+                ( name, g_id ) = drive.upload_csvFile( mugstats_folder, i )
+                print( "Uploaded '%s' to %s' as id: '%s'" % ( i, name, g_id ))
 
 if __name__ == '__main__':
     main( sys.argv )

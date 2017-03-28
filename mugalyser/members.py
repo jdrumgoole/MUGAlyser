@@ -27,7 +27,7 @@ class Members(MUGData):
         self._membersAgg.addMatch({ "member.name": { "$exists" : 1 }})
         self._membersAgg.addProject( { "_id" : 0, "name" : "$member.name" })
         self._membersAgg.addGroup( { "_id" : "$name" , "occurences" : { "$sum" : 1 }})
-        self._membersAgg.addSort( Sorter( "occurences", pymongo.DESCENDING  )) # largest first
+        self._membersAgg.addSort( Sorter( occurences = pymongo.DESCENDING  )) # largest first
         self._memberCount = 0
         self._feedback = Feedback()
         self._audit = Audit( mdb )
@@ -49,6 +49,15 @@ class Members(MUGData):
         
         return itertools.chain( *[ self.get_group_members( i, query ) for i in groups ] )
 
+    def count_members(self, groups ):
+        
+        total = 0 
+        for i in groups:
+            count = self.get_group_members( i ).count()
+            total = total + count
+            
+        return count
+    
     def get_all_members(self, query=None ):
         '''
         Query meetup API for multiple groups.

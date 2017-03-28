@@ -22,6 +22,8 @@ class Events(MUGData):
         '''
         super( Events, self ).__init__( mdb, collection_name ) 
     
+    def get_all_events(self, query ={}):
+        return self.find( query )
     def get_all_group_events(self, groups=[ "all" ] ):
         
         if "all" in groups:

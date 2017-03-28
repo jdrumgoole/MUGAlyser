@@ -40,8 +40,6 @@ if __name__ == '__main__':
     gauth = auth.GoogleAuth()
     
     gauth.LoadClientConfigFile( args.config )
-    
-
 
     drive = GoogleDrive(gauth)
     
