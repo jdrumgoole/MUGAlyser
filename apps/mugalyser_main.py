@@ -14,6 +14,7 @@ from datetime import datetime
 from argparse import ArgumentParser
 import logging
 from traceback import print_exception
+import os
 
 import pymongo
 import time
@@ -92,7 +93,7 @@ def main(argv=None): # IGNORE:C0111
      
         parser.add_argument( '--mugs', nargs="+", default=[ "all" ], help='Process MUGs list list mugs by name [default: %(default)s]')
    
-        parser.add_argument( "--nopro", default=False, action="store_true", help="use if you don't have a pro account uses non pro API calls")
+        parser.add_argument( "--pro", default=False, action="store_true", help="use if you have a pro account uses pro API calls")
         parser.add_argument( '--phases', nargs="+", choices=[ "groups", "members", "attendees", "upcomingevents", "pastevents"], 
                              default=[ "all"], help='execution phases')
 
@@ -100,6 +101,8 @@ def main(argv=None): # IGNORE:C0111
         
         parser.add_argument( '--apikey', default=None, help='Default API key for meetup')
         
+        parser.add_argument( '--urlfile', default="mongodb_pro_groups", 
+                             help="File containing a list of MUG URLs to be used to parse data default: %(default)s]")
         # Process arguments
         args = parser.parse_args()
             
@@ -122,8 +125,18 @@ def main(argv=None): # IGNORE:C0111
         if verbose > 0:
             logging.info("Verbose mode on")
             
+        if args.urlfile :
+            if not os.path.isfile( args.urlfile ):
+                print( "No such file --urlfile '%s'" % args.urlfile )
+                sys.exit( 1 )
+                
         mugList = []
 
+        if args.pro:
+            nopro=False
+        else:
+            nopro=True
+            
         mdb = MUGAlyserMongoDB( args.host )
         
         audit = Audit( mdb )
@@ -136,9 +149,15 @@ def main(argv=None): # IGNORE:C0111
         start = datetime.utcnow()
         logging.info( "Started MUG processing for batch ID: %i", batchID )
         logging.info( "Writing to database : '%s'" % mdb.database().name )
-        writer = MeetupWriter( audit, apikey )
+        if nopro:
+            logging.info( "Using standard API calls (no pro account API key)")
+            logging.info( "Reading groups from: '%s'", args.urlfile )
+        else:
+            logging.info( "Using pro API calls (pro account API key)")
+            
+        writer = MeetupWriter( audit, args.urlfile,  apikey )
         if "all" in args.mugs :
-            writer.capture_complete_snapshot()
+            writer.capture_complete_snapshot( nopro )
         else:
             mugList.extend( args.mugs )
             

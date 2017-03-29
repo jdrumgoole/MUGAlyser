@@ -22,7 +22,7 @@ class MeetupWriter(object):
     A class that reads data about MUGS from the Meetup API using the MeetupAPI class and writes that
     data to a MongoDB collection. Currently supports the pro API.
     '''
-    def __init__(self, audit, apikey= get_meetup_key(), unordered=True ):
+    def __init__(self, audit, urlfile, apikey= get_meetup_key(), unordered=True ):
         '''
         Write contents of meetup API to MongoDB
         '''
@@ -37,6 +37,7 @@ class MeetupWriter(object):
         self._upcomingEvents = self._mdb.upcomingEventsCollection()
         self._mugs = []
         self._unordered = unordered
+        self._urlfile = urlfile
         
         
     def process(self, collection, retrievalGenerator, processFunc, newFieldName ):
@@ -78,8 +79,13 @@ class MeetupWriter(object):
         groups = self._meetup_api.get_pro_groups()
         self.process( self._groups,  groups, self.updateGroup, "group" )
         
-    def processNoProGroups(self, url_file ):
-        self.process( self._groups, open( url_file), self.updateGroup, "group" )
+    def get_groups(self ):
+        for i in open( self._urlfile):
+            yield self._meetup_api.get_group( i )
+            
+    def processNoProGroups(self ):
+        groups = self.get_groups()
+        self.process( self._groups, groups, self.updateGroup, "group" )
         
     def processPastEvents(self, url_name ):
         pastEvents = self._meetup_api.get_past_events( url_name )
@@ -94,13 +100,27 @@ class MeetupWriter(object):
         members = self._meetup_api.get_pro_members()
         self.process( self._members, members, self._audit.addTimestamp, "member" )
         
-    def capture_complete_snapshot(self ):
+    def get_members(self ):
+        for i in open( self._urlfile):
+            yield self._meetup_api.get_members( i )
+            
+    def processNoProMembers(self  ):
+        members = self.get_members()
+        self.process( self._members, members, self._audit.addTimestamp, "member" )
+        
+    def capture_complete_snapshot(self, nopro=True ):
         
         logging.info( "Capturing complete snapshot" )
         logging.info( "processing groups")
-        self.processGroups()
+        if nopro:
+            self.processNoProGroups()
+        else:
+            self.processGroups()
         logging.info( "processing members")
-        self.processMembers()
+        if nopro:
+            self.processNoProMembers()
+        else:
+            self.processMembers()
         for url_name in self._mugs :
             logging.info( "process past events for      : %s", url_name )
             self.processPastEvents( url_name )
