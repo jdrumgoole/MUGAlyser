@@ -19,7 +19,8 @@ def mergeEvents( writer ):
         
 class MeetupWriter(object):
     '''
-    classdocs
+    A class that reads data about MUGS from the Meetup API using the MeetupAPI class and writes that
+    data to a MongoDB collection. Currently supports the pro API.
     '''
     def __init__(self, audit, apikey= get_meetup_key(), unordered=True ):
         '''
@@ -44,6 +45,10 @@ class MeetupWriter(object):
         document (this should be a generator function). Use processFunc to tranform the 
         document into a new doc (it should take a doc and return a doc).
         Write the new doc using the newFieldName.
+        
+        Write is done using a generator as well. The write receiver accumulates writes until a threshold
+        is reached and then writes them as a batch.
+        
         '''
         bw = BatchWriter( collection, processFunc, newFieldName, orderedWrites=self._unordered )
         writer = bw.bulkWrite()
@@ -64,8 +69,6 @@ class MeetupWriter(object):
         newDoc = self._audit.addTimestamp( groupName, group )
         self._groups.insert_one( newDoc )
         return newDoc
-        
-
 
     def updateGroup(self, groupName, doc ):
         self._mugs.append( doc[ "urlname" ])
@@ -75,7 +78,9 @@ class MeetupWriter(object):
         groups = self._meetup_api.get_pro_groups()
         self.process( self._groups,  groups, self.updateGroup, "group" )
         
-
+    def processNoProGroups(self, url_file ):
+        self.process( self._groups, open( url_file), self.updateGroup, "group" )
+        
     def processPastEvents(self, url_name ):
         pastEvents = self._meetup_api.get_past_events( url_name )
         self.process( self._pastEvents, pastEvents, self._audit.addTimestamp, "event" )
@@ -88,7 +93,6 @@ class MeetupWriter(object):
         
         members = self._meetup_api.get_pro_members()
         self.process( self._members, members, self._audit.addTimestamp, "member" )
-        
         
     def capture_complete_snapshot(self ):
         

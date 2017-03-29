@@ -85,7 +85,8 @@ def main( argv ) :
             print( i )
             
         if args.urlnames :
-            printCursor( m.get_group_names())
+            for i in m.get_group_names():
+                print( i )
             
     except KeyboardInterrupt:
         print("Keyboard interrupt : Exiting...")

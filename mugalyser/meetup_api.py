@@ -100,6 +100,10 @@ class PaginatedRequest( object ):
         return ( nextLink, prevLink )
     
     def paginatedRequest(self, req, params, reshaperFunc=None ):
+        '''
+        Takes a request and hands it off to the paginator API. It does this by initiating the request
+        to get the first document back and then using it to look for headers.
+        '''
     
         #print( "Intiate paginated request")    
         (header, body) = self.makeRequest( req, params )
@@ -116,7 +120,10 @@ class PaginatedRequest( object ):
         
         Func is a function that takes a doc and returns a doc. Right now
         we use this to reshape geospatial coordinates into a format that MongoDB
-        understands.
+        understands and to convert  meetup timestamps to datetime objects.
+        
+        paginator is a generator which yields results.
+        
         '''
         
         #print( "paginatorEntry( %s )" % headers )

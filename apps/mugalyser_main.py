@@ -92,6 +92,7 @@ def main(argv=None): # IGNORE:C0111
      
         parser.add_argument( '--mugs', nargs="+", default=[ "all" ], help='Process MUGs list list mugs by name [default: %(default)s]')
    
+        parser.add_argument( "--nopro", default=False, action="store_true", help="use if you don't have a pro account uses non pro API calls")
         parser.add_argument( '--phases', nargs="+", choices=[ "groups", "members", "attendees", "upcomingevents", "pastevents"], 
                              default=[ "all"], help='execution phases')
 
