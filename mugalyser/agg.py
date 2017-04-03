@@ -112,20 +112,24 @@ class NestedDict( object ):
         else:
             return True
                       
+        
     def set_value( self, k, v ):
         
         keys = k.split( ".", 1 )
         nested = None
         if len( keys ) == 1 :
             self._dict[ keys[ 0 ]] = v
+            return self
         elif self._dict.has_key( keys[ 0 ]) :
             nested = self._dict[ keys[ 0 ]]
         else:
-            raise ValueError( "nested key :'%s' does not exist in %s" % ( keys[ 0 ], self._dict ))
+            self._dict[ keys[ 0 ]] = {}
+            nested = self._dict[ keys[ 0 ]]
         
         if isinstance( nested, dict ) :
             nested = NestedDict( nested )
             nested.set_value( keys[ 1 ], v )
+            return self
         
 class CursorFormatter( object ):
     '''
@@ -183,7 +187,7 @@ class CursorFormatter( object ):
         
         d = NestedDict( doc )
         value = d.get_value(  field )
-        if isinstance( value, datetime.datetime ):
+        if isinstance( value, datetime ):
             d.set_value( field, value.strftime( time_format ) )
         else:
             raise ValueError( "Field '%s' is not a datetime field")

@@ -8,7 +8,7 @@ import datetime
 import pprint
 import os
 
-from mugalyser.agg import Agg, CursorFormatter
+from mugalyser.agg import Agg, CursorFormatter, NestedDict
 from mugalyser.mongodb import MUGAlyserMongoDB
 
 class Test(unittest.TestCase):
@@ -17,6 +17,12 @@ class Test(unittest.TestCase):
     def setUp(self):
         self._mdb = MUGAlyserMongoDB()
         self._agg = Agg( self._mdb.membersCollection())
+        
+    def tearDown(self):
+        pass
+
+
+    def testFormatter(self):
         self._agg.match( { "member.member_name" : "Joe Drumgoole"})
         self._agg.project( { "member.member_name" : 1,
                              "_id" : 0,
@@ -31,10 +37,18 @@ class Test(unittest.TestCase):
         self._formatter.output( fieldNames=[ "member.member_name", "member.join_time", "member.city"], datemap=[ "member.join_time "] )
         self.assertTrue( os.path.isfile( prefix + filename + "." + ext ))
         os.unlink( prefix + filename + "." + ext )
-    def tearDown(self):
-        pass
-
-
+        
+    def testNestedDict(self):
+        d = NestedDict( {})
+        self.assertFalse( d.has_key( "hello"))
+        d.set_value( "hello", "world")
+        self.assertTrue( d.has_key( "hello"))
+        self.assertEqual( d.get_value( "hello" ), "world" )
+        self.assertRaises( KeyError, d.get_value, "Bingo" )
+        
+        d.set_value( "member.name", "Joe Drumgoole")
+        self.assertEqual( d.get_value( "member"), { "name" : "Joe Drumgoole" })
+        
     def test_dateMapField(self):
         
         test_doc = { "a" : 1, "b" : datetime.datetime.now()}
