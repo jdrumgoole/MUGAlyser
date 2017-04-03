@@ -111,15 +111,19 @@ class MeetupWriter(object):
     def capture_complete_snapshot(self, nopro=True ):
         
         logging.info( "Capturing complete snapshot" )
-        logging.info( "processing groups")
+
         if nopro:
+            logging.info( "processing groups (nopro)")
             self.processNoProGroups()
         else:
+            logging.info( "processing groups (pro)")
             self.processGroups()
-        logging.info( "processing members")
+
         if nopro:
+            logging.info( "processing members (nopro)")
             self.processNoProMembers()
         else:
+            logging.info( "processing members (pro)")
             self.processMembers()
         for url_name in self._mugs :
             logging.info( "process past events for      : %s", url_name )

@@ -58,7 +58,74 @@ class Sorter( object ):
     def __repr__(self):
         return self.__str__()
     
+class NestedDict( object ):
+    '''
+    Allow dotted access of nested dicts.
+    so :
+    a[ "x.y.z" ] = 1 is equivalent to a[ x[ y[ z ]]] = 1
     
+    a = { x : { y : z }}}
+    '''
+    
+    def __init__(self, d={}):
+        
+        if isinstance( d, dict ):
+            self._dict = d
+        else:
+            raise ValueError( "d is not a dict type")
+
+    def dict_value(self ):
+        return self._dict
+    
+    def get_value( self, k ):
+        keys = k.split( ".", 1 )
+        
+        #print( "get_value %s" % k  )
+        if len( keys ) == 1 :
+            #print( "len(keys) : 1")
+            return self._dict[ keys[ 0 ]]
+        elif self._dict.has_key( keys[ 0 ]) :
+                nested = self._dict[ keys[ 0 ]]
+        else:
+            raise ValueError( "nested key :'%s' does not exist" % keys[ 0 ])
+        
+        if isinstance( nested, dict ) :
+            nested = NestedDict( nested )
+            return nested.get_value( keys[ 1 ] )
+        else:
+            return nested
+    
+    def has_key( self, k ):
+        
+        keys = k.split( ".", 1 )
+        if len( keys ) == 1 :
+            return self._dict.has_key( keys[ 0 ] )
+        elif self._dict.has_key( keys[ 0 ]) :
+                nested = self._dict[ keys[ 0 ]]
+        else:
+            raise ValueError( "nested key :'%s' does not exist" % keys[ 0 ])
+        
+        if isinstance( nested, dict ) :
+            nested = NestedDict( nested )
+            return nested.has_key( keys[ 1 ] )
+        else:
+            return True
+                      
+    def set_value( self, k, v ):
+        
+        keys = k.split( ".", 1 )
+        
+        if len( keys ) == 1 :
+            self._dict[ keys[ 0 ]] = v
+        elif self._dict.has_key( keys[ 0 ]) :
+            nested = self._dict[ keys[ 0 ]]
+        else:
+            raise ValueError( "nested key :'%s' does not exist" % keys[ 0 ])
+        
+        if isinstance( nested, dict ) :
+            nested = NestedDict( nested )
+            nested.set_value( keys[ 1 ], v )
+        
 class CursorFormatter( object ):
     '''
     Take a mongodb Agg object and call aggregate on it.
@@ -107,46 +174,25 @@ class CursorFormatter( object ):
         else: 
             return prefix + name + "." + ext
 
+    @staticmethod
+    def dateMapField( doc, field, time_format="%d-%b-%Y"):
+        
+        d = NestedDict( doc )
+        value = d.get_value(  field )
+        d.set_value( field, value.strftime( time_format ) )
 
-    @staticmethod
-    def get_value( d, k ):
-        keys = k.split( ".", 1 )
-        
-        #print( "get_value %s" % k  )
-        if len( keys ) == 1 :
-            #print( "len(keys) : 1")
-            return d[ keys[ 0 ]]
-        else:
-            #for k,v in dict.__iteritems__( self ):
-            #print( "len(keys) : > 1")
-            nested = d[ keys[ 0 ]]
-            if isinstance( nested, dict ) :
-                    return CursorFormatter.get_value( nested, keys[ 1 ] )
-                    
-    @staticmethod
-    def set_value( d, k, v ):
-        
-        keys = k.split( ".", 1 )
-        
-        if len( keys ) == 1 :
-            d[ keys[ 0 ]] = v
-        else:
-            CursorFormatter.set_value( d[ keys[0]], keys[ 1 ], v )
-    
-    @staticmethod
-    def dateMapField( doc, field ):
-        
-        value = CursorFormatter.get_value( doc, field )
-        CursorFormatter.set_value( doc, field, value.strftime( "%d-%b-%Y" ) )
-
-        return doc
+        return d.dict_value()
        
     @staticmethod
     def fieldMapper( doc, fields ): 
-        new_doc = {}
+        new_doc = NestedDict( {} )
+        d = NestedDict( doc )
         for i in fields:
-            new_doc[ i ] = doc[ i ]  
-        return new_doc  
+            if d.has_key( i ):
+                print( "doc: %s" % doc )
+                print( "i: %s" %i )
+                d.set_value( i, d.get_value(  i ))  
+        return new_doc.dict_value() 
     
     @staticmethod
     def dateMapper( doc, datemap ):

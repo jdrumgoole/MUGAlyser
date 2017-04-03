@@ -37,28 +37,10 @@ def valid_date( date_string ):
     except ValueError :
         raise ArgumentTypeError( "'%s' cannot be parsed as a date" % date_string )
     
-def getDateRange( start_date_string, end_date_string ):
+def getDateRange( start_date, end_date ):
     '''
     parse a date range. Return none if ranges are none.
     '''
-    
-    if start_date_string:
-        try :
-            start_date = get_date( start_date_string )
-        except ValueError :
-            print( "Ignoring --from date: '%s' not a valid date")
-            stary_date = None
-    else:
-        start_date = None
-        
-    if end_date_string:
-        try :
-            end_date = get_date( end_date_string )
-        except ValueError:
-            print( "Ignoring --to date: '%s' not a valid date" )
-            end_date = None
-    else:
-        end_date = None
     
     if start_date and end_date:
         if end_date >= start_date  :
@@ -87,7 +69,7 @@ def addCountry( mdb, cursor ):
         
 class MUG_Analytics( object ):
             
-    def __init__(self, mdb, prefix, name, ext, sorter=None ):
+    def __init__(self, mdb, prefix, name, ext, sorter=None, batchID=None ):
         self._mdb = mdb
         audit = Audit( mdb )
     
@@ -101,6 +83,10 @@ class MUG_Analytics( object ):
         self._files = []
         self._sort_field = None
         self._sort_direction = None
+        if batchID is None:
+            self._batchID = audit.getCurrentValidBatchID()
+        else:
+            self._batchID = batchID
     
     def files(self):
         return self._files
@@ -554,7 +540,7 @@ def get_batches( mdb, start, end ):
     audit = Audit( mdb )
     
     c = CursorFormatter( audit.getCurrentValidBatches( start, end ))
-    c.output( [ "batchID" , "end", "start" ], datemap=[ "start", "end"])
+    c.output( [ "batchID" , "end", "start", "info.pro_account" ], datemap=[ "start", "end" ])
 
         
 def main( args ):
@@ -597,6 +583,8 @@ def main( args ):
     
     parser.add_argument( "--batches", action="store_true", default=False, help="Find all batches since a specific date")
     
+    parser.add_argument( "--batchid", type=int, help="Use this batch to satisfy the query")
+    
     args = parser.parse_args()
     
     output = args.output
@@ -632,15 +620,10 @@ def main( args ):
         else:
             urls = groups.get_region_group_urlnames( args.country )
 
-    try :
-#         print( "start: %s"  % args.start )
-#         print( "end  : %s"  % args.end )
-        ( start_date, end_date ) = getDateRange( args.start, args.end )
-#         print( "Start date: %s" % start_date )
-#         print( "End date  : %s" % end_date )
-    except ValueError, e:
-        print( "Bad date: %s" % e )
-        sys.exit( 2 )
+    if args.end < args.start  :
+        print( "--end date is before start date ignoring dates")
+        args.end = None
+        args.start = None
 
     sort_direction = None
     
@@ -653,9 +636,13 @@ def main( args ):
             else:
                 sorter.add_sort( args.sort[ i ], pymongo.ASCENDING )
                 
-    
-    analytics = MUG_Analytics( mdb, prefix, output, format, sorter )
-    analytics.setRange(start_date, end_date)
+    if args.batchid:
+        batchID = args.batchid
+    else:
+        batchID = None
+        
+    analytics = MUG_Analytics( mdb, prefix, output, format, sorter, batchID = batchID )
+    analytics.setRange(args.start, args.end )
     
     if args.stats is None:
         args.stats = []
@@ -713,7 +700,7 @@ def main( args ):
                 print( "Uploaded '%s' to %s' as id: '%s'" % ( i, name, g_id ))
 
     if args.batches :
-        get_batches( mdb, start_date, end_date )
+        get_batches( mdb, args.start, args.end )
         
 if __name__ == '__main__':
     main( sys.argv )

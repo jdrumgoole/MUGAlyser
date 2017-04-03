@@ -110,6 +110,7 @@ class PaginatedRequest( object ):
         #print( "Paginator")
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
+        #print( "header: '%s' )
         return self.paginator( header, body, params, func=reshaperFunc  )
     
     def paginator( self, headers, body, params, func=None, arg=None ):

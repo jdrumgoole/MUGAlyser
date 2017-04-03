@@ -142,7 +142,8 @@ def main(argv=None): # IGNORE:C0111
         audit = Audit( mdb )
         
         batchID = audit.startBatch( { "args"    : vars( args ), 
-                                      "version" : __programName__ + " " + __version__ },
+                                      "version" : __programName__ + " " + __version__,
+                                      "pro_account" : args.pro },
                                       trial=args.trialrun,
                                       apikey=apikey )
 
