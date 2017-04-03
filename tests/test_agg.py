@@ -6,8 +6,9 @@ Created on 21 Mar 2017
 import unittest
 import datetime
 import pprint
+import os
 
-from mugalyser.agg import Agg, AggFormatter
+from mugalyser.agg import Agg, CursorFormatter
 from mugalyser.mongodb import MUGAlyserMongoDB
 
 class Test(unittest.TestCase):
@@ -16,9 +17,20 @@ class Test(unittest.TestCase):
     def setUp(self):
         self._mdb = MUGAlyserMongoDB()
         self._agg = Agg( self._mdb.membersCollection())
-        self._formatter = AggFormatter( self._agg )
-
-
+        self._agg.match( { "member.member_name" : "Joe Drumgoole"})
+        self._agg.project( { "member.member_name" : 1,
+                             "_id" : 0,
+                             "member.join_time" : 1,
+                             "member.city" : 1,
+                             })
+        cursor = self._agg.aggregate()
+        prefix="agg_test_"
+        filename="JoeDrumgoole"
+        ext = "json"
+        self._formatter = CursorFormatter( cursor, prefix=prefix, name=filename, ext=ext)
+        self._formatter.output( fieldNames=[ "member.member_name", "member.join_time", "member.city"], datemap=[ "member.join_time "] )
+        self.assertTrue( os.path.isfile( prefix + filename + "." + ext ))
+        os.unlink( prefix + filename + "." + ext )
     def tearDown(self):
         pass
 
@@ -27,7 +39,7 @@ class Test(unittest.TestCase):
         
         test_doc = { "a" : 1, "b" : datetime.datetime.now()}
         pprint.pprint( test_doc )
-        new_doc = AggFormatter.dateMapField(test_doc, "b" )
+        new_doc = CursorFormatter.dateMapField(test_doc, "b" )
         pprint.pprint( new_doc )
 
 if __name__ == "__main__":

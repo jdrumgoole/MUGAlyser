@@ -87,7 +87,7 @@ class NestedDict( object ):
         elif self._dict.has_key( keys[ 0 ]) :
                 nested = self._dict[ keys[ 0 ]]
         else:
-            raise ValueError( "nested key :'%s' does not exist" % keys[ 0 ])
+            raise ValueError( "nested key :'%s' does not exist in keys %s of %s" % ( keys[ 0 ], keys, self._dict ))
         
         if isinstance( nested, dict ) :
             nested = NestedDict( nested )
@@ -98,6 +98,7 @@ class NestedDict( object ):
     def has_key( self, k ):
         
         keys = k.split( ".", 1 )
+        nested = None
         if len( keys ) == 1 :
             return self._dict.has_key( keys[ 0 ] )
         elif self._dict.has_key( keys[ 0 ]) :
@@ -114,13 +115,13 @@ class NestedDict( object ):
     def set_value( self, k, v ):
         
         keys = k.split( ".", 1 )
-        
+        nested = None
         if len( keys ) == 1 :
             self._dict[ keys[ 0 ]] = v
         elif self._dict.has_key( keys[ 0 ]) :
             nested = self._dict[ keys[ 0 ]]
         else:
-            raise ValueError( "nested key :'%s' does not exist" % keys[ 0 ])
+            raise ValueError( "nested key :'%s' does not exist in %s" % ( keys[ 0 ], self._dict ))
         
         if isinstance( nested, dict ) :
             nested = NestedDict( nested )
@@ -176,23 +177,32 @@ class CursorFormatter( object ):
 
     @staticmethod
     def dateMapField( doc, field, time_format="%d-%b-%Y"):
+        '''
+        Given a field that contains a datetime 
+        '''
         
         d = NestedDict( doc )
         value = d.get_value(  field )
-        d.set_value( field, value.strftime( time_format ) )
+        if isinstance( value, datetime.datetime ):
+            d.set_value( field, value.strftime( time_format ) )
+        else:
+            raise ValueError( "Field '%s' is not a datetime field")
 
         return d.dict_value()
        
     @staticmethod
     def fieldMapper( doc, fields ): 
-        new_doc = NestedDict( {} )
-        d = NestedDict( doc )
+        '''
+        Copy all fields from doc to a new doc and return that doc
+        '''
+        newDoc = NestedDict( {} )
+        oldDoc = NestedDict( doc )
         for i in fields:
-            if d.has_key( i ):
+            if oldDoc.has_key( i ):
                 print( "doc: %s" % doc )
                 print( "i: %s" %i )
-                d.set_value( i, d.get_value(  i ))  
-        return new_doc.dict_value() 
+                newDoc.set_value( i, oldDoc.get_value(  i ))  
+        return newDoc.dict_value() 
     
     @staticmethod
     def dateMapper( doc, datemap ):
@@ -250,8 +260,10 @@ class CursorFormatter( object ):
             print( "Writing JSON file: '%s'" % filename )
         with self._smart_open( filename ) as output:
             for i in c :
+                print( "processing: %s" % i )
                 self._results.append( i )
                 d = CursorFormatter.fieldMapper( i, fieldnames )
+                print( "processing fieldmapper: %s" % d )
                 CursorFormatter.dateMapper( d, datemap )
                 pprint.pprint( d, output )
                 count = count + 1
