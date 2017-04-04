@@ -105,6 +105,13 @@ class Audit( object ):
     def inBatch(self):
         return self._currentBatchID
     
+    def isProBatch(self, ID ):
+        doc = self.getBatch( ID )
+
+        return ( doc.has_key( "info") and 
+                 doc[ "info"].has_key( "pro_account" ) and 
+                 ( doc[ "info" ][ "pro_account"] == True ))
+              
     def insertTimestamp( self, doc, ts=None ):
         if ts :
             doc[ "timestamp" ] = ts
@@ -232,6 +239,9 @@ class Audit( object ):
         for i in self.getCurrentValidBatches():
             yield i[ "batchID" ]
             
+    def getCurrentBatch( self ) :
+        return self._auditCollection.find_one( { "name" : 'Current Batch'} )
+    
     def getCurrentBatchID(self ):
         if self._currentBatchID :
             return self._currentBatchID

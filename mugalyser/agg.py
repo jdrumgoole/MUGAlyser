@@ -11,6 +11,7 @@ import pymongo
 import csv
 import contextlib
 import sys
+from pydoc import doc
         
 class Sorter( object ):
     '''
@@ -139,16 +140,14 @@ class CursorFormatter( object ):
     If root is a file name output the content to that file.
     '''
         
-    def __init__(self, cursor, prefix="", name="-", ext="", results=[] ):
+    def __init__(self, cursor, filename="", format="json",  results=[] ):
         '''
         Data from cursor
         output to <filename>suffix.ext.
         '''
         self._cursor = cursor
-        self._name = name
-        self._prefix = prefix
-        self._ext = ext
-        self._filename = self._make_filename(prefix, name, ext)
+        self._format = format
+        self._filename = filename
         self._results = results
         
     def results(self):
@@ -167,17 +166,7 @@ class CursorFormatter( object ):
             if fh is not sys.stdout:
                 fh.close()
                 
-    def _make_filename( self, prefix="", name="-", ext="" ):
-        '''
-        If root is '-" then we just return that. Otherwise
-        we construct a filename of the form:
-        <root><suffix>.<ext>
-        '''
-        
-        if name == "-"  or name is None:
-            return "-"
-        else: 
-            return prefix + name + "." + ext
+
 
     @staticmethod
     def dateMapField( doc, field, time_format="%d-%b-%Y"):
@@ -199,13 +188,22 @@ class CursorFormatter( object ):
         '''
         Copy all fields from doc to a new doc and return that doc
         '''
+        
+        
+        if fields is None or len( fields ) == 0 :
+            return doc
+        
         newDoc = NestedDict( {} )
         oldDoc = NestedDict( doc )
+
+        
         for i in fields:
             if oldDoc.has_key( i ):
-                print( "doc: %s" % doc )
-                print( "i: %s" %i )
-                newDoc.set_value( i, oldDoc.get_value(  i ))  
+                #print( "doc: %s" % doc )
+                #print( "i: %s" %i )
+                newDoc.set_value( i, oldDoc.get_value(  i ))
+            else:
+                raise ValueError( "No such key '%s' in %s" % (i, doc )) 
         return newDoc.dict_value() 
     
     @staticmethod
@@ -224,11 +222,7 @@ class CursorFormatter( object ):
         Output CSV format. items are separated by commas.
         '''
             
-        filename = self._make_filename( self._prefix, self._name, self._ext)
-        if filename !="-" :
-            print( "Writing CSV File: '%s'" % filename )
-            
-        with self._smart_open( filename ) as output :
+        with self._smart_open( self._filename ) as output :
             writer = csv.DictWriter( output, fieldnames = fieldnames)
             writer.writeheader()
             count = 0
@@ -247,10 +241,8 @@ class CursorFormatter( object ):
                         x[ k ] = str( v ).encode( 'utf8')
                     
                 writer.writerow( {k:v.encode('utf8') for k,v in x.items()} ) 
-                            
-            print( "Total records: %i\n" % count )
             
-        return filename
+        return count
 
     
     def printJSONCursor( self, c,fieldnames, datemap ):
@@ -259,21 +251,19 @@ class CursorFormatter( object ):
         '''
         
         count = 0 
-        filename = self._make_filename( self._prefix, self._name, self._ext)
-        if filename !="-" :
-            print( "Writing JSON file: '%s'" % filename )
-        with self._smart_open( filename ) as output:
+
+        with self._smart_open( self._filename ) as output:
             for i in c :
-                print( "processing: %s" % i )
+                #print( "processing: %s" % i )
+                #print( "fieldnames: %s" % fieldnames )
                 self._results.append( i )
                 d = CursorFormatter.fieldMapper( i, fieldnames )
-                print( "processing fieldmapper: %s" % d )
+                #print( "processing fieldmapper: %s" % d )
                 CursorFormatter.dateMapper( d, datemap )
                 pprint.pprint( d, output )
                 count = count + 1
-            print( "Total records: %i\n" % count )
 
-        return filename
+        return count
 
     def printCursor( self, c, fieldnames=None, datemap=None  ):
         '''
@@ -281,20 +271,22 @@ class CursorFormatter( object ):
         fmt defines whether we output CSV or JSON.
         '''
     
-        if self._ext == 'csv' :
-            filename = self.printCSVCursor( c, fieldnames, datemap )
+        if self._format == 'csv' :
+            count = self.printCSVCursor( c, fieldnames, datemap )
         else:
-            filename = self.printJSONCursor( c,  fieldnames, datemap )
+            count = self.printJSONCursor( c,  fieldnames, datemap )
             
-        return filename
+        return count 
     
-    def output(self, fieldNames, datemap=None  ):
+    def output(self, fieldNames=None, datemap=None  ):
         '''
         Output all fields using the fieldNames list. for fields in the list datemap indicates the field must
         be date
         '''
-
-        return self.printCursor( self._cursor, fieldNames, datemap )
+        if self._filename != "-" : 
+            print( "Writing to '%s'" % self._filename )
+        count = self.printCursor( self._cursor, fieldNames, datemap )
+        print( "Wrote %i records" % count )
         
 class Agg(object):
     '''
@@ -312,51 +304,51 @@ class Agg(object):
         self.clear()
     
     @staticmethod
-    def limit( size ):
+    def __limit( size ):
         return  { "$limit" : size }
     
     @staticmethod
-    def sample( sampleSize ):
+    def __sample( sampleSize ):
         return { "$sample" : { "$size" : sampleSize }}
         
     @staticmethod
-    def match( matcher ):
-        Agg._typeCheckDict( matcher )
+    def __match( matcher ):
+        Agg.__typeCheckDict( matcher )
         return { "$match" : matcher  }
      
     @staticmethod
-    def project( projector ):
-        Agg._typeCheckDict( projector )
+    def __project( projector ):
+        Agg.__typeCheckDict( projector )
         return { "$project" : projector }
     
      
     @staticmethod
-    def group( grouper ):
-        Agg._typeCheckDict( grouper )
+    def __group( grouper ):
+        Agg.__typeCheckDict( grouper )
         return { "$group" : grouper }
     
     @staticmethod
-    def unwind( unwinder ):
-        #Agg._typeCheckDict( unwinder )
+    def __unwind( unwinder ):
+        #Agg.__typeCheckDict( unwinder )
         return { "$unwind" : unwinder }
     
     @staticmethod
-    def sort( sorter ):
+    def __sort( sorter ):
         # we typecheck higher up the stack
         return { "$sort" : sorter }
     
     @staticmethod
-    def out( output ):
+    def __out( output ):
         return { "$out" : output }
     
     @staticmethod
-    def _typeCheckDict( val ):
+    def __typeCheckDict( val ):
         if not isinstance( val, dict ):
             t = type( val )
             raise ValueError( "Parameters must be dict objects: %s is a %s object " % ( val, t ))
         
 
-    def _hasDollarOutCheck( self, op ):
+    def __hasDollarOutCheck( self, op ):
         if self._hasDollarOut :
             raise ValueError( "Cannot have more aggregation pipeline operations after $out: operation '%s'" % op )
         
@@ -365,36 +357,36 @@ class Agg(object):
         if size is None :
             return self
         
-        self._hasDollarOutCheck( "limit: %i" % size )
-        self._agg.append( Agg.limit( size ))
+        self.__hasDollarOutCheck( "limit: %i" % size )
+        self._agg.append( Agg.__limit( size ))
         
         return self
     
     def addSample(self, size=100):
         
-        self._hasDollarOutCheck( "sample: %i" % size )
-        self._agg.append( Agg.sample( size ))
+        self.__hasDollarOutCheck( "sample: %i" % size )
+        self._agg.append( Agg.__sample( size ))
         
         return self
     
     def addMatch(self, matcher ):
 
-        self._hasDollarOutCheck( "match: %s" % matcher )
-        self._agg.append( Agg.match( matcher ))
+        self.__hasDollarOutCheck( "match: %s" % matcher )
+        self._agg.append( Agg.__match( matcher ))
         
         return self
         
     def addProject(self, projector ):
         
-        self._hasDollarOutCheck( "project: %s" % projector )
-        self._agg.append( Agg.project( projector ))
+        self.__hasDollarOutCheck( "project: %s" % projector )
+        self._agg.append( Agg.__project( projector ))
         
         return self
 
     def addGroup(self, grouper ):
         
-        self._hasDollarOutCheck( "group: %s" % grouper )
-        self._agg.append( Agg.group( grouper ))
+        self.__hasDollarOutCheck( "group: %s" % grouper )
+        self._agg.append( Agg.__group( grouper ))
         
         return self
     
@@ -403,18 +395,18 @@ class Agg(object):
         Sorter can be a single dict or a list of dicts.
         '''
         
-        self._hasDollarOutCheck( "$sort: %s" % sorter )
+        self.__hasDollarOutCheck( "$sort: %s" % sorter )
         
-        if type( sorter) is Sorter:
+        if isinstance( sorter, Sorter) :
             self._agg.append( sorter())
         else:
-            raise ValueError( "Parameter to addSort must of of type Sorter (type is '%s'" % type( sorter ))
+            raise ValueError( "Parameter to addSort must of of class Sorter (type is '%s'" % type( sorter ))
         return self
 
     def addUnwind(self, unwinder ):
         
         self._hasDollarOutCheck( "`$unwind: %s" % unwinder )
-        self._agg.append( Agg.unwind( unwinder ))
+        self._agg.append( Agg.__unwind( unwinder ))
         
         return self
     
@@ -426,7 +418,7 @@ class Agg(object):
         if self._hasDollarOut :
             raise ValueError( "Aggregation already has $out defined: %s" % self._agg )
         else:
-            self._agg.append( Agg.out( output ))
+            self._agg.append( Agg.__out( output ))
             self._hasDollarOut = True
             
         return self
