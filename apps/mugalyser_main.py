@@ -94,6 +94,7 @@ def main(argv=None): # IGNORE:C0111
         parser.add_argument( '--mugs', nargs="+", default=[ "all" ], help='Process MUGs list list mugs by name [default: %(default)s]')
    
         parser.add_argument( "--pro", default=False, action="store_true", help="use if you have a pro account uses pro API calls")
+        parser.add_argument( "--database", default="MUGS", help="Default database name to write to [default: %(default)s]")
         parser.add_argument( '--phases', nargs="+", choices=[ "groups", "members", "attendees", "upcomingevents", "pastevents"], 
                              default=[ "all"], help='execution phases')
 
