@@ -584,14 +584,22 @@ def get_batches( mdb, start, end ):
     c = CursorFormatter( audit.getCurrentValidBatches( start, end ))
     c.output( [ "batchID" , "end", "start" ], datemap=[ "start", "end" ])
 
-        
+    
+def collection_stats( mdb, collection_name ) :
+    return mdb.collection_stats( collection_name )
+      
+def all_collection_stats( mdb ):
+    
+    for i in mdb.collection_names():
+        yield collection_stats( mdb, i )
+    
 def main( args ):
     
 #if __name__ == '__main__':
     
     cmds = [ "meetuptotals", "grouptotals", "groups", "events", "rsvps", 
             "activeusers", "newmembers", "memberhistory", "rsvphistory",
-            "totals", "rsvpevents" ]
+            "totals", "rsvpevents", "collections" ]
 
     parser = ArgumentParser( args )
         
@@ -694,7 +702,7 @@ def main( args ):
                 print( "Sorting on '%s' direction = '%s'" % ( args.sort[ i ], "ascending")) 
         analytics.setSort( sorter )
     
-    print( "Current batch ID: %i" % Audit( mdb ).getCurrentBatchID())
+    #print( "Current batch ID: %i" % Audit( mdb ).getCurrentBatchID())
     
     if "meetuptotals" in args.stats :
 
@@ -750,6 +758,11 @@ def main( args ):
 
     if args.batches :
         get_batches( mdb, args.start, args.end )
+        
+    if "collections" in args.stats :
+        for i in all_collection_stats(mdb) :
+            print( "=====> %s" % i[ "ns"] )
+            pprint.pprint( i[ "storageSize"] )
         
 if __name__ == '__main__':
     main( sys.argv )

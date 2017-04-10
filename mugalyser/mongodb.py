@@ -84,6 +84,9 @@ class MUGAlyserMongoDB( object ):
     def make_collection(self, collection_name ):
         return self._database[ collection_name ]
     
+    def collection_stats(self, collection_name ):
+        return self._database.command( "collstats", collection_name )
+    
     def pastEventsCollection(self):
         return self._pastEvents
     
@@ -102,3 +105,5 @@ class MUGAlyserMongoDB( object ):
     def attendeesCollection(self):
         return self._attendees
     
+    def collection_names(self ):
+        return [ "groups" , "members", "attendees", "past_events" , "upcoming_events" ]
