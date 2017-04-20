@@ -5,6 +5,7 @@ Created on 12 Oct 2016
 '''
 
 import pymongo
+import bson
 from mugalyser.generator_utils import coroutine
 
 class BatchWriter(object):
@@ -52,4 +53,9 @@ class BatchWriter(object):
                     bulker.execute() 
         except pymongo.errors.BulkWriteError as e :
             print( "Bulk write error : %s" % e.details )
+            raise
+        
+        except bson.errors.InvalidDocument as e:
+            print( "Invalid Document: %s" % doc )
+            print( "bson.errors.InvalidDocument: %s" % e )
             raise

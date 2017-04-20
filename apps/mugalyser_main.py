@@ -91,9 +91,10 @@ def main(argv=None): # IGNORE:C0111
         parser.add_argument( "--wait", default=5, type=int, help='How long to wait between processing the next parallel MUG request [default: %(default)s]')
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
      
-        parser.add_argument( '--mugs', nargs="+", default=[ "all" ], help='Process MUGs list list mugs by name [default: %(default)s]')
+        parser.add_argument( '--mugs', nargs="+", help='Process MUGs list list mugs by name [default: %(default)s]')
    
         parser.add_argument( "--pro", default=False, action="store_true", help="use if you have a pro account uses pro API calls")
+        parser.add_argument( "--admin", default=False, action="store_true", help="Some calls are only available to admin users")
         parser.add_argument( "--database", default="MUGS", help="Default database name to write to [default: %(default)s]")
         parser.add_argument( '--phases', nargs="+", choices=[ "groups", "members", "attendees", "upcomingevents", "pastevents"], 
                              default=[ "all"], help='execution phases')
@@ -102,7 +103,7 @@ def main(argv=None): # IGNORE:C0111
         
         parser.add_argument( '--apikey', default=None, help='Default API key for meetup')
         
-        parser.add_argument( '--urlfile', default="mongodb_pro_groups", 
+        parser.add_argument( '--urlfile', 
                              help="File containing a list of MUG URLs to be used to parse data default: %(default)s]")
         # Process arguments
         args = parser.parse_args()
@@ -131,7 +132,10 @@ def main(argv=None): # IGNORE:C0111
                 print( "No such file --urlfile '%s'" % args.urlfile )
                 sys.exit( 1 )
                 
-        mugList = []
+        if args.mugs:
+            mugList = args.mugs
+        else:
+            mugList = []
 
         if args.pro:
             nopro=False
@@ -153,25 +157,36 @@ def main(argv=None): # IGNORE:C0111
         logging.info( "Writing to database : '%s'" % mdb.database().name )
         if nopro:
             logging.info( "Using standard API calls (no pro account API key)")
-            logging.info( "Reading groups from: '%s'", args.urlfile )
+            if args.urlfile:
+                logging.info( "Reading groups from: '%s'", args.urlfile )
+                with open( args.urlfile ) as f:
+                    mugList = f.read().splitlines()
+                
         else:
             logging.info( "Using pro API calls (pro account API key)")
             
-        writer = MeetupWriter( audit, args.urlfile,  apikey )
-        if "all" in args.mugs :
-            writer.capture_complete_snapshot( nopro )
+        logging.info( "Processing %i MUG URLS", len( mugList ))
+        
+        writer = MeetupWriter( audit, mugList,  apikey )
+            
+        if "all" in args.phases :
+            phases = [ "groups", "members", "upcomingevents", "pastevents"]
+            if args.admin:
+                phases.append( "attendees" )
         else:
-            mugList.extend( args.mugs )
+            phases = args.phases
+        
+        if  "groups" in phases :
+            logging.info( "processing group info for %i groups: nopro=%s" %( len( mugList), nopro ))
+            writer.processGroups( nopro )
+            phases.remove( "groups")
+        if "members" in phases :
+            logging.info( "processing members info for %i groups: nopro=%s" % ( len( mugList), nopro ))
+            writer.processMembers( nopro )
+            phases.remove( "members")
             
-            if "all" in args.phases :
-                phases = [ "groups", "members", "attendees", "upcomingevents", "pastevents"]
-            else:
-                phases = args.phases
-            
-            for i in mugList :
-                logging.info( "Getting data for: %s", i )
-                writer.capture_snapshot_by_phases( i, phases )
-                time.sleep( args.wait )
+        for i in mugList :
+            writer.capture_snapshot( i, nopro, args.admin, phases )
         
         audit.endBatch( batchID )
         end = datetime.utcnow()

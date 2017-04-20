@@ -40,6 +40,7 @@ class PaginatedRequest( object ):
         logger.setLevel( logging.WARN ) # turn of info output for requests
         
         r = requests.get( req, params )
+        logging.debug( "requestURL:'%s'", r.url )
         #print( "url: '%s'" % r.url )
         #print( "text: %s" % r.text )
         #print( "headers: %s" % r.headers )
@@ -50,6 +51,8 @@ class PaginatedRequest( object ):
             limit = int( data[0][ "X-RateLimit-Remaining"] )
             if  limit < 5 : #brute force, we can be more clever about this
                 time.sleep( 1 )
+                
+            logging.debug( "return value: %s", data )
             return data
         
         except ValueError :
@@ -104,9 +107,10 @@ class PaginatedRequest( object ):
         Takes a request and hands it off to the paginator API. It does this by initiating the request
         to get the first document back and then using it to look for headers.
         '''
-    
+
         #print( "Intiate paginated request")    
         (header, body) = self.makeRequest( req, params )
+
         #print( "Paginator")
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
@@ -307,7 +311,6 @@ class MeetupAPI(object):
         
         #https://api.meetup.com/DublinMUG/events/62760772/attendance?&sign=true&photo-host=public&page=20
         reqURL = self.makeRequestURL( url_name, "events", str( eventID ), "attendance")
-
         return self._requester.paginatedRequest( reqURL, params )
     
     def get_upcoming_events(self, url_name, items=20 ):
