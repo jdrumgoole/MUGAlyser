@@ -6,6 +6,7 @@ Created on 12 Oct 2016
 
 import pymongo
 import bson
+import pprint
 from mugalyser.generator_utils import coroutine
 
 class BatchWriter(object):
@@ -37,6 +38,7 @@ class BatchWriter(object):
                 while True:
                     doc = (yield)
                     
+                    pprint.pprint( doc )
                     #print( "dict: %s" % dictEntry ) 
                     bulker.insert( self._processFunc(  self._newDocName, doc  ))
                     bulkerCount = bulkerCount + 1 
@@ -51,11 +53,13 @@ class BatchWriter(object):
             except GeneratorExit :
                 if ( bulkerCount > 0 ) :
                     bulker.execute() 
+            except bson.errors.InvalidDocument as e:
+                print( "Invalid Document" )
+                print( "bson.errors.InvalidDocument: %s" % e )
+
+                raise
         except pymongo.errors.BulkWriteError as e :
             print( "Bulk write error : %s" % e.details )
             raise
         
-        except bson.errors.InvalidDocument as e:
-            print( "Invalid Document: %s" % doc )
-            print( "bson.errors.InvalidDocument: %s" % e )
-            raise
+

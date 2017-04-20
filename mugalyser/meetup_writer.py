@@ -52,7 +52,7 @@ class MeetupWriter(object):
         
         '''
         bw = BatchWriter( collection, processFunc, newFieldName, orderedWrites=self._unordered )
-        writer = bw.bulkWrite()
+        writer = bw.bulkWrite( writeLimit=1)
         
         for i in retrievalGenerator :
             writer.send( i )

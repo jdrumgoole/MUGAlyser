@@ -52,7 +52,17 @@ class PaginatedRequest( object ):
             if  limit < 5 : #brute force, we can be more clever about this
                 time.sleep( 1 )
                 
-            logging.debug( "return value: %s", data )
+            x={}
+            
+            for k,v in data[1].items():
+    
+                if type( v ) is unicode :
+                    x[ k ] = v
+                    print( "unicode")
+                else:
+                    x[ k ] = str( v ).encode( 'utf8')
+                    print( "encoded")
+            #logging.debug( "return value: %s", data )
             return data
         
         except ValueError :
