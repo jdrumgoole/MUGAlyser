@@ -12,10 +12,14 @@ env.user = 'ec2-user'
 home = os.getenv( "HOME" )
 env.key_filename = os.path.join( home, "Documents", "jdrumgoole-vosa-eu.pem" )
 
-instance_id = "i-0600d15742f2bc599"
+if env.has_key( "instance_id" ) :
+    instance_id = env.instance_id 
+else:
+    instance_id = "i-0600d15742f2bc599"
+
 
 print( "using PEM file '%s' :" % env.key_filename ) 
-
+print( "using instance ID: '%s'" % instance_id )
 
 ATLAS_PRIMARY= "mugalyser-shard-00-00-ffp4c.mongodb.net"
 PASSWD = ""
@@ -89,4 +93,11 @@ def process_batch():
     get_data()
     stop_instance()
     
-    
+def get_mongo():
+    run( "wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon-3.4.3.tgz")
+    run( "tar xzvf mongodb-linux-x86_64-amazon-3.4.3.tgz")
+    run( "sudo mkdir -p /usr/local")
+    run( "sudo rm -rf /usr/local/mongodb-linux-x86_64-amazon-3.4.3")
+    run( "sudo mv mongodb-linux-x86_64-amazon-3.4.3 /usr/local" )
+    run( "sudo rm -rf /usr/local/mongodb" )
+    run( "sudo ln -s /usr/local/mongodb-linux-x86_64-amazon-3.4.3 /usr/local/mongodb")
