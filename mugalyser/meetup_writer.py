@@ -107,32 +107,6 @@ class MeetupWriter(object):
         for i in self._urls:
             return self._meetup_api.get_members( i )
             
-        
-    def capture_complete_snapshot(self, nopro=True ):
-        
-        logging.info( "Capturing complete snapshot" )
-
-        if nopro:
-            logging.info( "processing groups (nopro)")
-            self.processNoProGroups()
-        else:
-            logging.info( "processing groups (pro)")
-            self.processGroups()
-
-        if nopro:
-            logging.info( "processing members (nopro)")
-            self.processNoProMembers()
-        else:
-            logging.info( "processing members (pro)")
-            self.processMembers()
-        for url_name in self._mugs :
-            logging.info( "process past events for      : %s", url_name )
-            self.processPastEvents( url_name )
-            logging.info( "process upcoming events for  : %s", url_name )
-            self.processUpcomingEvents( url_name )
-            logging.info( "process attendees for        : %s", url_name )
-            self.processAttendees( url_name )
-            
     def mug_list(self):
         return self._mugs
     
@@ -164,41 +138,6 @@ class MeetupWriter(object):
             logging.fatal( "Stopped processing: %s", e )
             raise
 
-  
-    def capture_snapshot_by_phases(self, url_name, nopro, admin_arg, phases ):
-            
-        try :
-        
-            for i in phases:
-                if  i == "groups" :
-                    self.processGroup( url_name )
-                
-                elif i == "pastevents" :
-                    logging.info( "Getting past events     : '%s'", url_name )
-                    self.processPastEvents( url_name )
-                
-                elif i == "upcomingevents" :
-                    logging.info( "Getting upcoming events : '%s'", url_name )
-                    self.processUpcomingEvents( url_name )
-                
-                elif  i == "members" :
-                    logging.info( "Getting members         : '%s'", url_name )
-                    self.processMembers()
-                    
-                elif i == "attendees" :
-                    if admin_arg:
-                        logging.info( "Getting attendees       : '%s'", url_name )
-                        self.processAttendees( url_name )
-                    else:
-                        logging.warn( "You have not specified the admin arg")
-                        logging.warn( "You must be a meetup admin user to request attendees")
-                        logging.warn( "Ignoring phase 'attendees")
-                else:
-                    logging.warn( "%s is not a valid execution phase", i )
-    
-        except HTTPError, e :
-            logging.fatal( "Stopped processing: %s", e )
-            raise
 
 
 
