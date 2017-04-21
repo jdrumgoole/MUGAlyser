@@ -150,7 +150,7 @@ class MeetupWriter(object):
                     self.processUpcomingEvents( url_name )
                 elif i == "attendees" :
                     if admin_arg:
-                        logging.info( "process attendees       : '%s'", url_name )
+                        logging.info( "process attendees            : '%s'", url_name )
                         self.processAttendees( url_name )
                     else:
                         logging.warn( "You have not specified the admin arg")
