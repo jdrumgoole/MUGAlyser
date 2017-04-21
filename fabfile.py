@@ -76,7 +76,7 @@ def gitclone() :
 def apikey():
     get_dns_name()
     with cd( "GIT/MUGAlyser/mugalyser") :
-        run( "python makeapikeyfile_main.py %s %s" % ( get_meetup_key(), get_mugalyer_passwd()))
+        run( "python makeapikeyfile_main.py %s" % get_meetup_key())
         
 def get_data():
     get_dns_name()

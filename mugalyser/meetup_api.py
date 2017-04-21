@@ -40,7 +40,8 @@ class PaginatedRequest( object ):
         logger.setLevel( logging.WARN ) # turn of info output for requests
         
         r = requests.get( req, params )
-        logging.debug( "requestURL:'%s'", r.url )
+        logging.debug( "request URL   :'%s'", r.url )
+        logging.debug( "request header: '%s'", r.headers )
         #print( "url: '%s'" % r.url )
         #print( "text: %s" % r.text )
         #print( "headers: %s" % r.headers )
@@ -54,15 +55,15 @@ class PaginatedRequest( object ):
                 
             x={}
             
-            for k,v in data[1].items():
-    
-                if type( v ) is unicode :
-                    x[ k ] = v
-                    print( "unicode")
-                else:
-                    x[ k ] = str( v ).encode( 'utf8')
-                    print( "encoded")
-            #logging.debug( "return value: %s", data )
+#             for k,v in data[1].items():
+#     
+#                 if type( v ) is unicode :
+#                     x[ k ] = v
+#                     print( "unicode")
+#                 else:
+#                     x[ k ] = str( v ).encode( 'utf8')
+#                     print( "encoded")
+#             #logging.debug( "return value: %s", data )
             return data
         
         except ValueError :

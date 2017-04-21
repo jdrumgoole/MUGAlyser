@@ -1,36 +1,32 @@
 '''
-Created on 5 Dec 2016
+Created on 20 Apr 2017
 
 @author: jdrumgoole
 '''
 import unittest
-
-from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.meetup_writer import MeetupWriter
-from mugalyser.apikey import get_meetup_key
+from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
-from mugalyser.version import __version__, __programName__
+class Test(unittest.TestCase):
 
-def setup_database( name ):
-    mdb = MUGAlyserMongoDB( uri = "mongodb://localhost/" + name )
-    audit = Audit( mdb )
-    batchID = audit.startBatch( { "args"    : None, 
-                                  "version" : __programName__ + " " + __version__ },
-                                  trial = False,
-                                  apikey=get_meetup_key())
-        
-    writer = MeetupWriter( audit )
-    writer.capture_snapshot( "DublinMUG" )
-        
-    audit.endBatch( batchID )
-    return mdb
-     
-class Test_meetup_writer(unittest.TestCase):
 
-    def test_get_one(self):
-        setup_database( "TEST_DATA_MUGS")
+    def setUp(self):
+        self._mdb = MUGAlyserMongoDB("mongodb://localhost:27017/TESTMUGS")
+        self._audit = Audit( self._mdb )
+        self._writer = MeetupWriter( self._audit, self._mdb, [ "postgresqlrussia" ] )
+
+    def tearDown(self):
+        pass
+
+
+    def test_get_members(self):
+        for _ in self._writer.get_members():
+            pass #print( i )
+            
+    def testProcessMembers(self):
+        self._writer.processMembers( nopro=False)
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
-    
     unittest.main()

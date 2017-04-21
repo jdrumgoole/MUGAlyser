@@ -38,8 +38,7 @@ class BatchWriter(object):
                 while True:
                     doc = (yield)
                     
-                    pprint.pprint( doc )
-                    #print( "dict: %s" % dictEntry ) 
+                    #pprint.pprint( doc )) 
                     bulker.insert( self._processFunc(  self._newDocName, doc  ))
                     bulkerCount = bulkerCount + 1 
                     if ( bulkerCount == writeLimit ):

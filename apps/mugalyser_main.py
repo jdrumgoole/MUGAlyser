@@ -1,5 +1,5 @@
-#!/usr/local/bin/python2.7
-# encoding: utf-8
+#!/usr/bin/env python
+
 '''
 mugalyser_main -- Grab MUG Stats and stuff them into a MongoDB Database
 
@@ -167,7 +167,7 @@ def main(argv=None): # IGNORE:C0111
             
         logging.info( "Processing %i MUG URLS", len( mugList ))
         
-        writer = MeetupWriter( audit, mugList,  apikey )
+        writer = MeetupWriter( audit, mdb, mugList,  apikey )
             
         if "all" in args.phases :
             phases = [ "groups", "members", "upcomingevents", "pastevents"]

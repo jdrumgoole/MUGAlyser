@@ -22,12 +22,12 @@ class MeetupWriter(object):
     A class that reads data about MUGS from the Meetup API using the MeetupAPI class and writes that
     data to a MongoDB collection. Currently supports the pro API.
     '''
-    def __init__(self, audit, urls, apikey= get_meetup_key(), unordered=True ):
+    def __init__(self, audit, mdb, urls, apikey= get_meetup_key(), unordered=True ):
         '''
         Write contents of meetup API to MongoDB
         '''
 
-        self._mdb = audit.mdb()
+        self._mdb = mdb
         self._meetup_api = MeetupAPI( apikey )
         self._audit = audit
         self._groups = self._mdb.groupsCollection()
@@ -95,7 +95,7 @@ class MeetupWriter(object):
         upcomingEvents = self._meetup_api.get_upcoming_events( url_name )
         self.process( self._upcomingEvents, upcomingEvents, self._audit.addTimestamp, "event" )
         
-    def processMembers( self, nopro ):
+    def processMembers( self, nopro=True ):
         
         if nopro:
             members = self.get_members()
@@ -105,7 +105,7 @@ class MeetupWriter(object):
         
     def get_members(self ):
         for i in self._urls:
-            yield self._meetup_api.get_members( i )
+            return self._meetup_api.get_members( i )
             
         
     def capture_complete_snapshot(self, nopro=True ):
