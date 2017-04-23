@@ -332,7 +332,7 @@ class Agg(object):
 
     def addUnwind(self, unwinder ):
         
-        self._hasDollarOutCheck( "$unwind: %s" % unwinder )
+        self.__hasDollarOutCheck( "$unwind: %s" % unwinder )
         self._agg.append( Agg.__unwind( unwinder ))
         
         return self
