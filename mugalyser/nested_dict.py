@@ -4,7 +4,7 @@ Created on 4 Apr 2017
 @author: jdrumgoole
 '''
     
-class nested_dict( object ):
+class Nested_Dict( object ):
     '''
     Allow dotted access of nested dicts.
     so :
@@ -36,7 +36,7 @@ class nested_dict( object ):
             raise ValueError( "nested key :'%s' does not exist in keys %s of %s" % ( keys[ 0 ], keys, self._dict ))
         
         if isinstance( nested, dict ) :
-            nested = nested_dict( nested )
+            nested = Nested_Dict( nested )
             return nested.get_value( keys[ 1 ] )
         else:
             return nested
@@ -53,7 +53,7 @@ class nested_dict( object ):
             raise ValueError( "nested key :'%s' does not exist" % keys[ 0 ])
         
         if isinstance( nested, dict ) :
-            nested = nested_dict( nested )
+            nested = Nested_Dict( nested )
             return nested.has_key( keys[ 1 ] )
         else:
             return True
@@ -73,7 +73,7 @@ class nested_dict( object ):
             nested = self._dict[ keys[ 0 ]]
         
         if isinstance( nested, dict ) :
-            nested = NestedDict( nested )
+            nested = Nested_Dict( nested )
             nested.set_value( keys[ 1 ], v )
             return self
 
