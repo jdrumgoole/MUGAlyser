@@ -101,11 +101,14 @@ class MeetupWriter(object):
             members = self.get_members()
         else:
             members = self._meetup_api.get_pro_members()
+            
         self.process( self._members, members, self._audit.addTimestamp, "member" )
         
     def get_members(self ):
         for i in self._urls:
             return self._meetup_api.get_members( i )
+        
+        return []
             
     def mug_list(self):
         return self._mugs
