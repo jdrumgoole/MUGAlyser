@@ -20,7 +20,7 @@ def mergeEvents( writer ):
 class MeetupWriter(object):
     '''
     A class that reads data about MUGS from the Meetup API using the MeetupAPI class and writes that
-    data to a MongoDB collection. Currently supports the pro API.
+    data to a MongoDB collection. Supports pro and no pro APIs
     '''
     def __init__(self, audit, mdb, urls, apikey= get_meetup_key(), unordered=True ):
         '''
@@ -48,7 +48,7 @@ class MeetupWriter(object):
         Write the new doc using the newFieldName.
         
         Write is done using a generator as well. The write receiver accumulates writes until a threshold
-        is reached and then writes them as a batch.
+        is reached and then writes them as a batch using BatchWriter.
         
         '''
         bw = BatchWriter( collection, processFunc, newFieldName, orderedWrites=self._unordered )
@@ -117,10 +117,10 @@ class MeetupWriter(object):
         
             for i in phases:
                 if i == "pastevents" :
-                    logging.info( "process past events for      : %s", url_name )
+                    logging.info( "process past events for      : '%s'", url_name )
                     self.processPastEvents( url_name )
                 elif i == "upcomingevents" :
-                    logging.info( "process upcoming events for  : %s", url_name )
+                    logging.info( "process upcoming events for  : '%s'", url_name )
                     self.processUpcomingEvents( url_name )
                 elif i == "attendees" :
                     if admin_arg:
