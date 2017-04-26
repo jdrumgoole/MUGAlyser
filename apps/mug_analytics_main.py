@@ -214,18 +214,14 @@ class MUG_Analytics( object ):
         agg.addMatch({ "batchID"       : { "$in" : validBatches },
                        "group.urlname" : { "$in" : urls }} )
         
-        if audit.isProBatch():
-            agg.addProject({ "_id": 0,
-                            "timestamp" : 1,
-                             "batchID" : 1,
-                             "urlname" : "$group.urlname",
-                             "count" : "$group.member_count" } )
-        else:
-            agg.addProject({ "_id" : 0,
-                             "timestamp" : 1,
-                             "batchID" : 1,
-                             "urlname" : "$group.urlname",
-                             "count" : "$group.members" } )
+        agg.addProject({ "_id": 0,
+                        "timestamp" : 1,
+                         "batchID" : 1,
+                         "urlname" : "$group.urlname",
+                         #"count" : "$group.members" } )
+                         "count" : Agg.ifNull( "$group.member_count", "$group.members")})
+
+
         
 
         agg.addGroup( { "_id" : { "ts": "$timestamp", "batchID" : "$batchID" },
@@ -241,6 +237,7 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
+        print( agg )
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
         formatter.output( fieldNames= [ "_id", "groups", "count" ], datemap=[ "_id.ts" ])
     

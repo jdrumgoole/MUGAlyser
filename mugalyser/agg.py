@@ -6,7 +6,7 @@ import pprint
 from datetime import datetime
 from collections import OrderedDict
 import collections
-from mugalyser.nested_dict import nested_dict
+from mugalyser.nested_dict import Nested_Dict
 import pymongo
 import csv
 import contextlib
@@ -96,12 +96,14 @@ class CursorFormatter( object ):
 
 
     @staticmethod
-    def dateMapField( doc, field, time_format="%d-%b-%Y"):
+    def dateMapField( doc, field, time_format=None):
         '''
         Given a field that contains a datetime 
         '''
         
-        d = nested_dict( doc )
+        if time_format is None:
+            time_format = "%d-%b-%Y %H:%M"
+        d = Nested_Dict( doc )
         value = d.get_value(  field )
         if isinstance( value, datetime ):
             d.set_value( field, value.strftime( time_format ) )
@@ -120,8 +122,8 @@ class CursorFormatter( object ):
         if fields is None or len( fields ) == 0 :
             return doc
         
-        newDoc = nested_dict( {} )
-        oldDoc = nested_dict( doc )
+        newDoc = Nested_Dict( {} )
+        oldDoc = Nested_Dict( doc )
 
         
         for i in fields:
@@ -134,17 +136,17 @@ class CursorFormatter( object ):
         return newDoc.dict_value() 
     
     @staticmethod
-    def dateMapper( doc, datemap ):
+    def dateMapper( doc, datemap, time_format=None ):
         '''
         For all the fields in "datemap" find that key in doc and map the datetime object to 
         a strftime string.
         '''
         if datemap:
             for i in datemap :
-                CursorFormatter.dateMapField( doc, i )
+                CursorFormatter.dateMapField( doc, i, time_format=None )
         return doc
                 
-    def printCSVCursor( self, c, fieldnames, datemap ):
+    def printCSVCursor( self, c, fieldnames, datemap, time_format=None):
         '''
         Output CSV format. items are separated by commas.
         '''
@@ -157,7 +159,7 @@ class CursorFormatter( object ):
                 self._results.append( i )
                 count = count + 1
                 d = CursorFormatter.fieldMapper( i, fieldnames )
-                d = CursorFormatter.dateMapper( d , datemap)
+                d = CursorFormatter.dateMapper( d , datemap,time_format )
 
                 x={}
                 for k,v in d.items():
@@ -172,7 +174,7 @@ class CursorFormatter( object ):
         return count
 
     
-    def printJSONCursor( self, c,fieldnames, datemap ):
+    def printJSONCursor( self, c,fieldnames, datemap, time_format=None ):
         '''
         Output plain JSON objects.
         '''
@@ -192,27 +194,27 @@ class CursorFormatter( object ):
 
         return count
 
-    def printCursor( self, c, fieldnames=None, datemap=None  ):
+    def printCursor( self, c, fieldnames=None, datemap=None, time_format=None  ):
         '''
         Output a cursor to a filename or stdout if filename is "-".
         fmt defines whether we output CSV or JSON.
         '''
     
         if self._format == 'csv' :
-            count = self.printCSVCursor( c, fieldnames, datemap )
+            count = self.printCSVCursor( c, fieldnames, datemap, time_format )
         else:
-            count = self.printJSONCursor( c,  fieldnames, datemap )
+            count = self.printJSONCursor( c,  fieldnames, datemap, time_format )
             
         return count 
     
-    def output(self, fieldNames=None, datemap=None  ):
+    def output(self, fieldNames=None, datemap=None, time_format=None ):
         '''
         Output all fields using the fieldNames list. for fields in the list datemap indicates the field must
         be date
         '''
         if self._filename != "-" : 
             print( "Writing to '%s'" % self._filename )
-        count = self.printCursor( self._cursor, fieldNames, datemap )
+        count = self.printCursor( self._cursor, fieldNames, datemap, time_format )
         print( "Wrote %i records" % count )
         
 class Agg(object):
@@ -385,6 +387,10 @@ class Agg(object):
     @staticmethod
     def cond( boolean_expr, thenClause, elseClause ):  #$cond: { if: { $gte: [ "$qty", 250 ] }, then: 30, else: 20 }
         return { "$cond" : { "if" : boolean_expr, "then" : thenClause, "else" :  elseClause }}
+    
+    @staticmethod
+    def ifNull( null_value, non_null_value ):
+        return { "$ifNull" : [ null_value, non_null_value ] }
     
     def __repr__(self):
         return "%s" % self._agg
