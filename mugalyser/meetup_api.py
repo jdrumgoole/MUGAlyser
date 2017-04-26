@@ -377,7 +377,7 @@ class MeetupAPI(object):
         return self._requester.paginatedRequest( self._api + "pro/MongoDB/members", params, Reshaper.reshapeMemberDoc)
 
     
-    def get_group_names( self ):
+    def get_pro_group_names( self ):
         for i in self.get_pro_groups() :
             yield i[ "urlname" ]
     

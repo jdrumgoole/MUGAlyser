@@ -19,6 +19,7 @@ import os
 import pymongo
 import time
 from mugalyser.apikey import get_meetup_key
+from mugalyser.meetup_api import MeetupAPI
 
 from mugalyser.audit import Audit
 
@@ -165,7 +166,10 @@ def main(argv=None): # IGNORE:C0111
         else:
             logging.info( "Using pro API calls (pro account API key)")
             
-        logging.info( "Processing %i MUG URLS", len( mugList ))
+        if nopro:
+            logging.info( "Processing %i MUG URLS", len( mugList ))
+        else:
+            mugList = list( MeetupAPI().get_pro_group_names())
         
         writer = MeetupWriter( audit, mdb, mugList,  apikey )
             

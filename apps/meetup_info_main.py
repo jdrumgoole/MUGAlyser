@@ -34,7 +34,6 @@ def main( argv ) :
         parser.add_argument( "--pastevents", nargs="+", default=[], help="Get past events for MUG")
         parser.add_argument( "--upcomingevents", nargs="+", default=[], help="Get upcoming events for MUG")
         parser.add_argument( "--attendees", nargs="+", default=[], help="Get attendees for list of groups")
-        parser.add_argument( "-f", "--format_type", choices=[ "oneline", "summary", "full" ], default="short", help="type of output ")
         # Process arguments
         args = parser.parse_args()
         

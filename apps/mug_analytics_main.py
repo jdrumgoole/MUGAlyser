@@ -15,7 +15,7 @@ from dateutil.parser import parse
 from mugalyser.gdrive import GDrive
 
 
-from mugalyser.agg import Agg, Sorter, CursorFormatter
+from mongodb_utils.agg import Agg, Sorter, CursorFormatter
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
@@ -23,7 +23,6 @@ from mugalyser.members import Members
 from mugalyser.events import PastEvents
 
 import contextlib
-from astroid.modutils import prefix
     
 def get_date( date_string ):
     if date_string is None :
@@ -106,7 +105,7 @@ class Filename( object ):
         
 class MUG_Analytics( object ):
             
-    def __init__(self, mdb, output_filename="-", format="json", batchID=None ):
+    def __init__(self, mdb, output_filename="-", formatter="json", batchID=None ):
         self._mdb = mdb
         audit = Audit( mdb )
     
@@ -115,7 +114,7 @@ class MUG_Analytics( object ):
         self._start_date = None
         self._end_date = None
         self._filename = output_filename
-        self._format = format
+        self._format = formatter
         self._files = []
 
         if batchID is None:
@@ -257,6 +256,9 @@ class MUG_Analytics( object ):
         return urls
         
     def get_meetup_totals( self, urls, filename=None ):
+        '''
+        Get the total number of events and RSVPS by year.
+        '''
             
         agg = Agg( self._mdb.pastEventsCollection())                                       
         
@@ -287,7 +289,7 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
-        formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
+        formatter = CursorFormatter( agg, self._filename, self._format )
         formatter.output( fieldNames= [ "year", "total_rsvp", "total_events" ] )
     
         if self._filename != "-":
@@ -338,7 +340,7 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
-        formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
+        formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "urlname", "members", "founded" ], datemap=[ "founded" ] )
         
         if self._filename != "-":
@@ -375,7 +377,7 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
-        formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
+        formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "year", "group", "event_count", "rsvp_count"] )
         
         if self._filename != "-":
@@ -404,7 +406,7 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
-        formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
+        formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ], datemap=[ "date"])
 
         if self._filename != "-":
@@ -433,7 +435,7 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
-        formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
+        formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "group", "name", "join_date" ], datemap=[ 'join_date'])
         
         if self._filename != "-":
@@ -471,7 +473,7 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
-        formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
+        formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "attendee", "group", "event_time", "event_count" ] )
 
         if self._filename != "-":
@@ -530,7 +532,7 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
-        formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
+        formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "_id", "count", "groups" ] )
 
         if self._filename != "-":
@@ -544,10 +546,9 @@ class MUG_Analytics( object ):
         Total number of events
         Total number of RSVPs
         '''
-    
-        audit = Audit( self._mdb )    
+       
         members = Members( self._mdb )
-        groups = Groups( self._mdb )
+
         if countries is None:
             member_count = members.get_all_members().count()
         else:
@@ -646,7 +647,7 @@ def main( args ):
     if output is None:
         output = "-"
     
-    format = args.format.lower()
+    formatter = args.format.lower()
     
     mdb = MUGAlyserMongoDB( uri=args.host )
         
@@ -671,15 +672,13 @@ def main( args ):
         print( "--end date is before start date ignoring dates")
         args.end = None
         args.start = None
-
-    sort_direction = None
                 
     if args.batchid:
         batchID =  args.batchid
     else:
         batchID = None
         
-    analytics = MUG_Analytics( mdb, output, format, batchID = batchID )
+    analytics = MUG_Analytics( mdb, output, formatter, batchID = batchID )
     analytics.setRange(args.start, args.end )
     
     filename = Filename( prefix=prefix, name=args.output, ext=format )
