@@ -9,9 +9,6 @@ import os
 
 pyfiles = [ f for f in os.listdir( "." ) if f.endswith( ".py" ) ]
 
-def readme():
-    with open('README.rst') as f:
-        return f.read()
     
 setup(
     name = __programName__,
@@ -20,7 +17,14 @@ setup(
     author = "Joe Drumgoole",
     author_email = "joe@joedrumgoole.com",
     description = "MUGAlyser - a script to extract data from Meetup into a MongoDB database",
-    long_description = readme(),
+    long_description =
+    '''
+MUGLyser uses the meetup API to capture data into a MongoDB Database. The 
+app/mugalyser_main.py program reads this data via the API. You will need a meetup API
+key to read this data. If you have a Meetup pro account you can use the --pro option. 
+You can analyse the data with apps/mug_analytics_main.py
+''',
+
     license = "AGPL",
     keywords = "Meetup MUGS MongoDB API",
     url = "https://github.com/jdrumgoole/MUGAlyser",
