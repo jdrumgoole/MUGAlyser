@@ -105,7 +105,7 @@ class Filename( object ):
         
 class MUG_Analytics( object ):
             
-    def __init__(self, mdb, output_filename="-", formatter="json", batchID=None ):
+    def __init__(self, mdb, output_filename="-", formatter="json", batchID=None, limit=None ):
         self._mdb = mdb
         audit = Audit( mdb )
     
@@ -116,6 +116,7 @@ class MUG_Analytics( object ):
         self._filename = output_filename
         self._format = formatter
         self._files = []
+        self._limit = limit
 
         if batchID is None:
             self._batchID = audit.getCurrentValidBatchID()
@@ -190,7 +191,7 @@ class MUG_Analytics( object ):
             self._filename = filename
 
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
-        filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ], datemap=[ "_id"] )
+        filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ], datemap=[ "_id"], limit=self._limit )
         
         if filename != "-":
             self._files.append( filename )
@@ -238,7 +239,7 @@ class MUG_Analytics( object ):
 
         print( agg )
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
-        formatter.output( fieldNames= [ "_id", "groups", "count" ], datemap=[ "_id.ts" ])
+        formatter.output( fieldNames= [ "_id", "groups", "count" ], datemap=[ "_id.ts" ], limit=self._limit)
     
         if filename != "-":
             self._files.append( filename )
@@ -254,47 +255,7 @@ class MUG_Analytics( object ):
             urls = groups.get_region_group_urlnames()
             
         return urls
-        
-    def get_meetup_totals( self, urls, filename=None ):
-        '''
-        Get the total number of events and RSVPS by year.
-        '''
-            
-        agg = Agg( self._mdb.pastEventsCollection())                                       
-        
-        agg.addMatch({ "batchID"      : self._batchID,
-                       "event.status" : "past",
-                       "event.group.urlname" : { "$in" : urls }} )
-        
-        if self._start_date or self._end_date :
-            agg.addRangeMatch( "event.time", self._start_date, self._end_date )
-            
-        agg.addProject( { "_id"   : 0, 
-                          "name"  : "$event.name", 
-                          "time"  : "$event.time",  
-                          "rsvp"  : "$event.yes_rsvp_count" } )
-        
-        agg.addGroup( { "_id"          : { "$year" : "$time"}, 
-                        "total_rsvp"   : { "$sum" : "$rsvp"},
-                        "total_events" : { "$sum" : 1 }})
-        
-        agg.addProject( { "_id" : 0,
-                          "year"         : "$_id",
-                          "total_rsvp"   : 1,
-                          "total_events" : 1 } )
-        
-        if self._sorter:
-            agg.addSort( self._sorter)
-            
-        if filename :
-            self._filename = filename
-
-        formatter = CursorFormatter( agg, self._filename, self._format )
-        formatter.output( fieldNames= [ "year", "total_rsvp", "total_events" ] )
-    
-        if self._filename != "-":
-            self._files.append( self._filename )
-            
+                    
     def batchMatch( self, collection ):
         agg = Agg( collection )
         agg.addMatch({ "batchID" : self._batchID } )
@@ -316,8 +277,6 @@ class MUG_Analytics( object ):
         agg.addMatch( { "batchID" : self._batchID,
                         "group.urlname" : { "$in" : urls }} )
 
-
-        
         if self._pro_account:
             if self._start_date or self._end_date :
                 agg.addRangeMatch( "group.founded_date", self._start_date, self._end_date )
@@ -325,7 +284,7 @@ class MUG_Analytics( object ):
                               "urlname" : "$group.urlname",
                               "members" : "$group.member_count",
                               "founded" : "$group.founded_date" } )
-            print( "pro" )
+            print( "Using pro search" )
         else:
             if self._start_date or self._end_date :
                 agg.addRangeMatch( "group.created", self._start_date, self._end_date )
@@ -333,7 +292,7 @@ class MUG_Analytics( object ):
                               "urlname" : "$group.urlname",
                               "members" : "$group.members",
                               "founded" : "$group.created" } ) 
-
+            print( "Using nopro search")
         if self._sorter:
             agg.addSort( self._sorter)        
         
@@ -341,7 +300,7 @@ class MUG_Analytics( object ):
             self._filename = filename
 
         formatter = CursorFormatter( agg, self._filename, self._format )
-        filename = formatter.output( fieldNames= [ "urlname", "members", "founded" ], datemap=[ "founded" ] )
+        filename = formatter.output( fieldNames= [ "urlname", "members", "founded" ], datemap=[ "founded" ], limit=self._limit )
         
         if self._filename != "-":
             self._files.append( self._filename )
@@ -378,7 +337,7 @@ class MUG_Analytics( object ):
             self._filename = filename
 
         formatter = CursorFormatter( agg, self._filename, self._format )
-        filename = formatter.output( fieldNames= [ "year", "group", "event_count", "rsvp_count"] )
+        filename = formatter.output( fieldNames= [ "year", "group", "event_count", "rsvp_count"], limit=self._limit )
         
         if self._filename != "-":
             self._files.append( self._filename )
@@ -407,7 +366,7 @@ class MUG_Analytics( object ):
             self._filename = filename
 
         formatter = CursorFormatter( agg, self._filename, self._format )
-        filename = formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ], datemap=[ "date"])
+        filename = formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ], datemap=[ "date"], limit=self._limit)
 
         if self._filename != "-":
             self._files.append( self._filename )
@@ -419,10 +378,14 @@ class MUG_Analytics( object ):
         
         agg = Agg( self._mdb.membersCollection())
         
+
+        agg.addMatch({ "batchID"            : self._batchID } )
+        
         agg.addUnwind( "$member.chapters" )
         
-        agg.addMatch({ "batchID"            : self._batchID,
-                       "member.chapters.urlname" : { "$in" : urls }} )
+        agg.addMatch({ "member.chapters.urlname" : { "$in" : urls }} )
+        
+
         
         if self._start_date or self._end_date :
             agg.addRangeMatch( "member.join_time", self._start_date, self._end_date )
@@ -436,7 +399,7 @@ class MUG_Analytics( object ):
             self._filename = filename
 
         formatter = CursorFormatter( agg, self._filename, self._format )
-        filename = formatter.output( fieldNames= [ "group", "name", "join_date" ], datemap=[ 'join_date'])
+        filename = formatter.output( fieldNames= [ "group", "name", "join_date" ], datemap=[ 'join_date'], limit=self._limit)
         
         if self._filename != "-":
             self._files.append( self._filename )
@@ -456,7 +419,6 @@ class MUG_Analytics( object ):
         agg.addProject( { "_id"        : 0,
                           "attendee"   : "$info.attendee.member.name", 
                           "group"      : "$info.event.group.urlname",
-                          "event_time" : "$info.event_time",
                           "event_name" : "$info.event.name" })
         
         agg.addGroup( { "_id" : {  "attendee": "$attendee", "group": "$group" },
@@ -474,7 +436,7 @@ class MUG_Analytics( object ):
             self._filename = filename
 
         formatter = CursorFormatter( agg, self._filename, self._format )
-        filename = formatter.output( fieldNames= [ "attendee", "group", "event_time", "event_count" ] )
+        filename = formatter.output( fieldNames= [ "attendee", "group", "event_count" ], limit=self._limit )
 
         if self._filename != "-":
             self._files.append( self._filename )
@@ -499,7 +461,7 @@ class MUG_Analytics( object ):
             self._filename = filename
 
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
-        filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ] )
+        filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ], limit=self._limit )
         
         if self._filename != "-":
             self._files.append( self._filename )
@@ -533,7 +495,7 @@ class MUG_Analytics( object ):
             self._filename = filename
 
         formatter = CursorFormatter( agg, self._filename, self._format )
-        filename = formatter.output( fieldNames= [ "_id", "count", "groups" ] )
+        filename = formatter.output( fieldNames= [ "_id", "count", "groups" ], limit=self._limit )
 
         if self._filename != "-":
             self._files.append( self._filename )
@@ -575,12 +537,12 @@ def convert_direction( arg ):
     else:
         return pymongo.ASCENDING
     
-def get_batches( mdb, start, end ):
+def get_batches( mdb, start, end, limit=None ):
     
     audit = Audit( mdb )
     
     c = CursorFormatter( audit.getCurrentValidBatches( start, end ))
-    c.output( [ "batchID" , "end", "start" ], datemap=[ "start", "end" ])
+    c.output( [ "batchID" , "end", "start" ], datemap=[ "start", "end" ], limit=limit)
 
     
 def collection_stats( mdb, collection_name ) :
@@ -595,7 +557,7 @@ def main( args ):
     
 #if __name__ == '__main__':
     
-    cmds = [ "meetuptotals", "grouptotals", "groups", "events", "rsvps", 
+    cmds = [ "grouptotals", "groups", "events", "rsvps", 
             "activeusers", "newmembers", "memberhistory", "rsvphistory",
             "totals", "rsvpevents", "collections" ]
 
@@ -625,6 +587,8 @@ def main( args ):
     parser.add_argument( "--direction", action="append", choices=[ "ascending", "descending" ], 
                          default=[], help="Sort direction [default: %(default)s] ")
     
+    parser.add_argument( "--limit", type=int, help="Limit the number of output records")
+    
     parser.add_argument( "--upload", default=False, action="store_true",  help="upload to gdrive" )
     
     parser.add_argument( "--gdrive_config", default="pydrive_auth.json", help="use this gdrive config [default: %(default)s]" )
@@ -653,6 +617,8 @@ def main( args ):
         
     groups = Groups( mdb )
     
+    urls=[]
+    
     if args.url :
         urls = args.url
     else:
@@ -668,17 +634,19 @@ def main( args ):
         else:
             urls = groups.get_region_group_urlnames( args.country )
 
-    if args.end < args.start  :
-        print( "--end date is before start date ignoring dates")
-        args.end = None
-        args.start = None
+    if args.start and args.end:
+        if args.end < args.start  :
+            print( "--end date is before start date ignoring dates")
+            args.end = None
+            args.start = None
                 
     if args.batchid:
         batchID =  args.batchid
     else:
         batchID = None
         
-    analytics = MUG_Analytics( mdb, output, formatter, batchID = batchID )
+    print( "Processing : %s" % urls )
+    analytics = MUG_Analytics( mdb, output, formatter, batchID = batchID, limit=args.limit )
     analytics.setRange(args.start, args.end )
     
     filename = Filename( prefix=prefix, name=args.output, ext=format )
@@ -699,10 +667,6 @@ def main( args ):
         analytics.setSort( sorter )
     
     #print( "Current batch ID: %i" % Audit( mdb ).getCurrentBatchID())
-    
-    if "meetuptotals" in args.stats :
-
-        analytics.get_meetup_totals( urls, filename=filename("meetuptotals" ))
 
     if "grouptotals" in args.stats :
         analytics.get_group_totals( urls, filename=filename( "grouptotals" ))
