@@ -3,7 +3,7 @@ Created on 30 Sep 2016
 
 @author: jdrumgoole
 '''
-from setuptools import setup
+from setuptools import setup, find_packages
 from mugalyser.version import __version__, __programName__
 import os
 
@@ -47,11 +47,22 @@ You can analyse the data with apps/mug_analytics_main.py
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 2.7' ],
    
-    install_requires = [ "requests", "pymongo", "nose" ],
+    install_requires = [ "requests", "pymongo", "mongodb_utils", "nose" ],
        
-    packages = [ "mugalyser"],
+    packages = find_packages(),
     
-    scripts  = [ "bin/mugalyser", "bin/meetupinfo", "bin/muginfo" ],
+    scripts  = [ "bin/getstats.sh",
+                 "bin/makeapikeyfile_main.py",
+                 "bin/meetup_info_main.py",
+                 "bin/mug_analytics_main.py",
+                 "bin/mug_db_setup.py",
+                 "bin/mugalyser_main.py",
+                 "bin/muginfo_main.py",
+                 "bin/mugs.sh",
+                 "bin/pugs.sh",
+                 "bin/range_query.sh",
+                 "bin/run_prog.sh",
+                 "bin/update_atlas.sh" ],
 
     test_suite='nose.collector',
     tests_require=['nose'],

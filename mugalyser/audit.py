@@ -54,7 +54,7 @@ have an end date field.
 import pymongo
 from datetime import datetime
 from mugalyser.version import __programName__, __version__, __schemaVersion__
-from mugalyser.agg import Agg, Sorter
+from mongodb_utils.agg import Agg, Sorter
 from mugalyser.apikey import get_meetup_key
 
 class Audit( object ):
