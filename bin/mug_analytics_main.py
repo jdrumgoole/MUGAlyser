@@ -21,8 +21,6 @@ from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
 from mugalyser.members import Members
 from mugalyser.events import PastEvents
-
-import contextlib
     
 def get_date( date_string ):
     if date_string is None :
@@ -79,18 +77,19 @@ class Filename( object ):
         self._suffix = suffix
         self._ext = ext
         
-        self._filename = self.make( self._name )
+        self._filename = self.make()
         
-    def __call__(self, suffix=""):
-        return self.make( suffix = suffix )
+    def __call__(self, suffix ):
+        self._suffix = suffix
+        return self.make()
     
     def __str__(self):
         return self._filename
     
     def __repr__(self):
         return self._filename
-    
-    def make( self, suffix ):
+
+    def make( self ):
         '''
         If root is '-" then we just return that. Otherwise
         we construct a filename of the form:
@@ -100,12 +99,13 @@ class Filename( object ):
         if self._name == "-"  or self._name is None:
             return "-"
         else: 
+            print( self._prefix + self._name + self._suffix + "." + self._ext )
             return self._prefix + self._name + self._suffix + "." + self._ext
 
         
 class MUG_Analytics( object ):
             
-    def __init__(self, mdb, output_filename="-", formatter="json", batchID=None, limit=None ):
+    def __init__(self, mdb, output_filename="-", formatter="json", batchID=None, limit=None, view=None ):
         self._mdb = mdb
         audit = Audit( mdb )
     
@@ -118,6 +118,7 @@ class MUG_Analytics( object ):
         self._files = []
         self._limit = limit
 
+        self._view = view
         if batchID is None:
             self._batchID = audit.getCurrentValidBatchID()
         else:
@@ -158,6 +159,9 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
+        if self._view :
+            agg.create_view( self._mdb.database(), "members_view")
+            
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
         formatter.output( fieldNames= [ "urlname", "country", "batchID", "member_count"] )
         
@@ -189,7 +193,10 @@ class MUG_Analytics( object ):
             
         if filename :
             self._filename = filename
-
+            
+        if self._view :
+            agg.create_view( self._mdb.database(), "rsvps_view" )
+            
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
         filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ], datemap=[ "_id"], limit=self._limit )
         
@@ -236,8 +243,10 @@ class MUG_Analytics( object ):
         #CursorFormatter( agg.aggregate()).output()
         if filename :
             self._filename = filename
-
-        print( agg )
+            
+        if self._view :
+            agg.create_view( self._mdb.database(), "groups_view" )
+            
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
         formatter.output( fieldNames= [ "_id", "groups", "count" ], datemap=[ "_id.ts" ], limit=self._limit)
     
@@ -298,7 +307,10 @@ class MUG_Analytics( object ):
         
         if filename :
             self._filename = filename
-
+            
+        if self._view :
+            agg.create_view( self._mdb.database(), "groups_view" )
+            
         formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "urlname", "members", "founded" ], datemap=[ "founded" ], limit=self._limit )
         
@@ -336,6 +348,10 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
+            
+        if self._view :
+            agg.create_view( self._mdb.database(), "group_totals_view" )
+            
         formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "year", "group", "event_count", "rsvp_count"], limit=self._limit )
         
@@ -365,6 +381,10 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
+            
+        if self._view :
+            agg.create_view( self._mdb.database(), "events_view" )
+            
         formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ], datemap=[ "date"], limit=self._limit)
 
@@ -398,13 +418,17 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
+            
+        if self._view :
+            agg.create_view( self._mdb.database(), "new_members_view" )
+            
         formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "group", "name", "join_date" ], datemap=[ 'join_date'], limit=self._limit)
         
         if self._filename != "-":
             self._files.append( self._filename )
             
-    def get_rsvps( self, urls, rsvpbound=0, filename=None):   
+    def get_rsvps( self, urls, filename=None):   
         '''
         Lookup RSVPs by user. So for each user collect how many events they RSVPed to.
         '''
@@ -435,6 +459,10 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
+            
+        if self._view :
+            agg.create_view( self._mdb.database(), "rsvps_view" )
+            
         formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "attendee", "group", "event_count" ], limit=self._limit )
 
@@ -459,7 +487,10 @@ class MUG_Analytics( object ):
             
         if filename :
             self._filename = filename
-
+            
+        if self._view :
+            agg.create_view( self._mdb.database(), "rsvps_by_event_view" )
+            
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
         filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ], limit=self._limit )
         
@@ -494,6 +525,10 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
+            
+        if self._view :
+            agg.create_view( self._mdb.database(), "active_users_view" )
+            
         formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "_id", "count", "groups" ], limit=self._limit )
 
@@ -501,7 +536,7 @@ class MUG_Analytics( object ):
             self._files.append( self._filename )
        
  
-    def get_totals(self, urls, countries=EU_COUNTRIES, filename=None ):
+    def get_totals(self, urls, countries=EU_COUNTRIES ):
         '''
         Total number of members
         Total number of groups
@@ -595,6 +630,8 @@ def main( args ):
     
     parser.add_argument( "--batches", action="store_true", default=False, help="Find all batches since a specific date")
     
+    parser.add_argument( "--createview", action="store_true", default=False, help="Make a view from the agg pipeline")
+    
     parser.add_argument( "--batchid", type=int, help="Use this batch to satisfy the query")
     
     args = parser.parse_args()
@@ -646,10 +683,10 @@ def main( args ):
         batchID = None
         
     print( "Processing : %s" % urls )
-    analytics = MUG_Analytics( mdb, output, formatter, batchID = batchID, limit=args.limit )
+    analytics = MUG_Analytics( mdb, output, formatter, batchID = batchID, limit=args.limit, view=args.createview )
     analytics.setRange(args.start, args.end )
     
-    filename = Filename( prefix=prefix, name=args.output, ext=format )
+    filename = Filename( prefix=prefix, name=args.output, ext=formatter)
     
     if args.stats is None:
         args.stats = []
@@ -696,7 +733,7 @@ def main( args ):
         analytics.get_rsvp_by_event(urls, filename=filename( "rsvpevents" ))
         
     if "totals" in args.stats:
-        analytics.get_totals( urls, countries=countries, filename=filename( "totals" ))
+        analytics.get_totals( urls, countries=countries )
         
     if args.upload :
 

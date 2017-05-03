@@ -7,6 +7,7 @@ Created on 21 Nov 2016
 from mugalyser.batchwriter import BatchWriter
 from requests import HTTPError
 import logging
+import pprint
 from mugalyser.apikey import get_meetup_key
 from mugalyser.meetup_api import MeetupAPI
 
@@ -96,7 +97,6 @@ class MeetupWriter(object):
         self.process( self._upcomingEvents, upcomingEvents, self._audit.addTimestamp, "event" )
         
     def processMembers( self, nopro=True ):
-        
         if nopro:
             members = self.get_members()
         else:
@@ -106,15 +106,18 @@ class MeetupWriter(object):
         
     def get_members(self ):
         for i in self._urls:
-            return self._meetup_api.get_members( i )
-        
-        return []
+            for member in self._meetup_api.get_members( i ):
+#                 if member.has_key( "name" ) :
+#                     print( member[ "name"] )
+#                 else:
+#                     pprint.pprint( member )
+                yield member
             
     def mug_list(self):
         return self._mugs
     
     
-    def capture_snapshot(self, url_name, nopro, admin_arg, phases ):
+    def capture_snapshot(self, url_name,  admin_arg, phases ):
 
         try :
         

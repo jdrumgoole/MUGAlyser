@@ -50,10 +50,9 @@ class PaginatedRequest( object ):
         try:
             data = returnData( r )
             limit = int( data[0][ "X-RateLimit-Remaining"] )
-            if  limit < 5 : #brute force, we can be more clever about this
-                time.sleep( 1 )
-                
-            x={}
+            if  limit < 4: #brute force, we can be more clever about this
+                resetWindow = int( data[0][ "X-RateLimit-Reset"] )
+                time.sleep( resetWindow )
             
 #             for k,v in data[1].items():
 #     
@@ -217,7 +216,7 @@ class Reshaper( object ):
 
     @staticmethod
     def reshapeMemberDoc( doc ):
-        return Reshaper.reshapeTime( Reshaper.reshapeGeospatial(doc), [ "join_time", "last_access_time" ])
+        return Reshaper.reshapeTime( Reshaper.reshapeGeospatial(doc), [ "joined", "join_time", "last_access_time" ])
 
     @staticmethod
     def reshapeEventDoc( doc ):
@@ -271,7 +270,7 @@ class MeetupAPI(object):
             
         return url
     
-    def __init__(self, apikey = get_meetup_key(), items=500, logurl=False):
+    def __init__(self, apikey = get_meetup_key(), items=1000, logurl=False):
         '''
         Constructor
         '''
@@ -345,8 +344,8 @@ class MeetupAPI(object):
         params = deepcopy( self._params )
         params[ "group_urlname" ] = url_name
         params[ "page"]    = self._items
-
-        return self._requester.paginatedRequest( self._api + "2/members", params )
+ 
+        return self._requester.paginatedRequest( self._api + "2/members", params, Reshaper.reshapeMemberDoc)
     
     def get_groups(self, items=200 ):
         '''

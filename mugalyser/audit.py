@@ -232,8 +232,8 @@ class Audit( object ):
 #                                                "end"    : { "$ne" : None },
 #                                                "trial"  : False } ).sort( "batchID", pymongo.DESCENDING )
                                          
-        for i in agg.aggregate() :
-            yield i
+        return agg
+
             
     def getCurrentValidBatchIDs( self ):
         for i in self.getCurrentValidBatches():

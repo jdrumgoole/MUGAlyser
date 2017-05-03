@@ -190,7 +190,7 @@ def main(argv=None): # IGNORE:C0111
             phases.remove( "members")
             
         for i in mugList :
-            writer.capture_snapshot( i, nopro, args.admin, phases )
+            writer.capture_snapshot( i, args.admin, phases )
         
         audit.endBatch( batchID )
         end = datetime.utcnow()
