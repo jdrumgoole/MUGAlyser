@@ -61,7 +61,7 @@ class MeetupWriter(object):
     
     def processAttendees( self, group ):
         
-        writer = self._meetup_api.get_attendees( group, items=100)
+        writer = self._meetup_api.get_attendees( group )
         
         newWriter = mergeEvents( writer )
         self.process( self._attendees, newWriter, self._audit.addTimestamp, "info"  )

@@ -236,7 +236,7 @@ class Audit( object ):
 
             
     def getCurrentValidBatchIDs( self ):
-        for i in self.getCurrentValidBatches():
+        for i in self.getCurrentValidBatches().aggregate():
             yield i[ "batchID" ]
             
     def getCurrentBatch( self ) :
