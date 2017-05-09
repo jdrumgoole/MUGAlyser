@@ -36,7 +36,18 @@ class PaginatedRequest( object ):
         
         logger.setLevel( logging.WARN ) # turn of info output for requests
         
-        r = requests.get( req, params )
+        badRequest = True
+        for _ in range( 3 ) :
+            r = requests.get( req, params )
+            pprint.pprint( r.headers )
+            if int( r.headers['Content-Length' ]) > 0 :
+                badRequest = False
+                break
+        
+        if badRequest :
+            logging.error( "Request returned zero length content after three retrys")
+            raise ValueError( "Content length is 0")
+            
         logger.setLevel( level ) 
         logging.debug( "request URL   :'%s'", r.url )
         logging.debug( "request header: '%s'", r.headers )
@@ -46,6 +57,7 @@ class PaginatedRequest( object ):
 
 
         try:
+
             data = returnData( r )
             remaining = int( data[0][ "X-RateLimit-Remaining"] )
             resetDelay = int( data[0][ "X-RateLimit-Reset"] )
