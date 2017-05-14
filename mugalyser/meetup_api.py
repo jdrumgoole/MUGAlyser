@@ -28,37 +28,48 @@ class PaginatedRequest( object ):
 
         self._items = items
         
-    def makeRequest(self, req, params ):
+    def request(self, req,params ):
         logger = logging.getLogger( __programName__ )
-    
-            
         level = logger.getEffectiveLevel()
+        logger.setLevel( logging.WARN )
+        r = requests.get( req, params )        
+        logger.setLevel( level )
         
-        logger.setLevel( logging.WARN ) # turn of info output for requests
-        
-        badRequest = True
-        for _ in range( 3 ) :
+        return r
+         
+    def makeRequest(self, req, params ):
+        '''
+        The meetup_api occasionally returns a message with no body. When it does the Content-Length is either
+        0 or not present. When it does we retry
+        one time and then give up.
+        '''
+        r = requests.get( req, params )
+        #pprint.pprint( r.headers )
+        if not "Content-Length" in r.headers:
+            logging.info( "Empty content response, retrying")
+            logging.info( "url: '%s'" % r.url )
+            logging.debug( "Header: %s", r.headers )
             r = requests.get( req, params )
-            pprint.pprint( r.headers )
-            if int( r.headers['Content-Length' ]) > 0 :
-                badRequest = False
-                break
+                        
+        elif int( r.headers['Content-Length' ]) == 0 :
+            logging.info( "Content-Length 0, retrying")
+            logging.debug( "Header: %s", r.headers )
+            r = requests.get( req, params )
         
-        if badRequest :
-            logging.error( "Request returned zero length content after three retrys")
-            raise ValueError( "Content length is 0")
             
-        logger.setLevel( level ) 
-        logging.debug( "request URL   :'%s'", r.url )
-        logging.debug( "request header: '%s'", r.headers )
+ 
+        #logging.debug( "request URL   :'%s'", r.url )
+        #logging.debug( "request header: '%s'", r.headers )
         #print( "url: '%s'" % r.url )
         #print( "text: %s" % r.text )
         #print( "headers: %s" % r.headers )
 
-
         try:
 
             data = returnData( r )
+            '''
+            Rate limiting
+            '''
             remaining = int( data[0][ "X-RateLimit-Remaining"] )
             resetDelay = int( data[0][ "X-RateLimit-Reset"] )
             if remaining <= 1 and resetDelay > 0 :
@@ -78,22 +89,17 @@ class PaginatedRequest( object ):
             return data
         
         except ValueError :
-            logger.error( "ValueError in makeRequests:")
-            logger.error( "request: '%s'", r.url)
-            logger.error( "headers" )
+            logging.error( "ValueError in makeRequests:")
+            logging.error( "request: '%s'", r.url)
+            logging.error( "headers" )
             pprint.pprint( r.headers )
-            logger.error( "text" )
+            logging.error( "text" )
             pprint.pprint( r.text )
             raise
         
         except requests.HTTPError, e :
-    
-            logger.error( "HTTP Error  : %s:", e )
+            logging.error( "HTTP Error  : %s:", e )
             raise
-            
-        finally:
-            logger.setLevel( level )
-
 
             
     def getHref( self, s ):

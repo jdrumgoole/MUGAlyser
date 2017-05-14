@@ -3,7 +3,7 @@
 '''
 mugalyser_main -- Grab MUG Stats and stuff them into a MongoDB Database
 
-@author:     Joe.Drumgoole@mongodb.com
+@author:     joe@joedrumgoole.com
 
 @license:    AFGPL
 
@@ -13,26 +13,16 @@ import sys
 from datetime import datetime
 from argparse import ArgumentParser
 import logging
-from traceback import print_exception
 import os
 
 import pymongo
-import time
+
 from mugalyser.apikey import get_meetup_key
 from mugalyser.meetup_api import MeetupAPI
-
 from mugalyser.audit import Audit
-
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.meetup_writer import MeetupWriter
-
 from mugalyser.version import __version__, __programName__
-'''
-    11-Oct-2016, 0.8 beta: Bumped version. Changed format of master record in Audit Collection. Changed
-    name of groupinfo script to muginfo. Added support for URI format arguments. Added replica set argument.
-    
-    10-Oct-2016, 0.7 beta:  Added multi-processing. Also put list of canonical mugs into a Python list.
-'''
 
 
 DEBUG = 1
@@ -80,8 +70,16 @@ def main(argv=None): # IGNORE:C0111
     try:
         # Setup argument parser
         
-        parser = ArgumentParser()
-        
+        parser = ArgumentParser( description='''
+Read data from the Meetup API and write it do a MongoDB database. Each run of this program
+creates a new batch of data identified by a batchID. The default database is MUGS. You can change
+this by using the --host parameter and specifying a different database in the mongodb URI.
+If you use the --pro arguement your API key must be a meetup pro account API key. If not the api
+calls to the pro interface will fail.
+
+If you are and adminstrator on the pro account you should use the --admin flag to give you
+access to the admin APIs.
+''')
         #
         # MongoDB Args
 
@@ -89,7 +87,6 @@ def main(argv=None): # IGNORE:C0111
 
         parser.add_argument( "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         parser.add_argument( "-v", "--version", action='version', version="MeetupAPI " + __version__ )
-        parser.add_argument( "--wait", default=5, type=int, help='How long to wait between processing the next parallel MUG request [default: %(default)s]')
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
      
         parser.add_argument( '--mugs', nargs="+", help='Process MUGs list list mugs by name [default: %(default)s]')
@@ -105,7 +102,7 @@ def main(argv=None): # IGNORE:C0111
         parser.add_argument( '--apikey', default=None, help='Default API key for meetup')
         
         parser.add_argument( '--urlfile', 
-                             help="File containing a list of MUG URLs to be used to parse data default: %(default)s]")
+                             help="File containing a list of MUG URLs to be used to parse data [ default: %(default)s]")
         # Process arguments
         args = parser.parse_args()
             
@@ -155,7 +152,7 @@ def main(argv=None): # IGNORE:C0111
 
         start = datetime.utcnow()
         logging.info( "Started MUG processing for batch ID: %i", batchID )
-        logging.info( "Writing to database : '%s'" % mdb.database().name )
+        logging.info( "Writing to database : '%s'", mdb.database().name )
         if nopro:
             logging.info( "Using standard API calls (no pro account API key)")
             if args.urlfile:
@@ -181,11 +178,11 @@ def main(argv=None): # IGNORE:C0111
             phases = args.phases
         
         if  "groups" in phases :
-            logging.info( "processing group info for %i groups: nopro=%s" %( len( mugList), nopro ))
+            logging.info( "processing group info for %i groups: nopro=%s", len( mugList), nopro )
             writer.processGroups( nopro )
             phases.remove( "groups")
         if "members" in phases :
-            logging.info( "processing members info for %i groups: nopro=%s" % ( len( mugList), nopro ))
+            logging.info( "processing members info for %i groups: nopro=%s", len( mugList), nopro )
             writer.processMembers( nopro )
             phases.remove( "members")
             
@@ -206,14 +203,6 @@ def main(argv=None): # IGNORE:C0111
     except pymongo.errors.ServerSelectionTimeoutError, e :
         print( "Failed to connect to MongoDB Server (server timeout): %s" % e )
         sys.exit( 2 )
-    except Exception, e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        print_exception( exc_type, exc_value, exc_traceback )
-        indent = len( __programName__ ) * " "
-        sys.stderr.write( __programName__ + ": " + repr(e) + "\n")
-        sys.stderr.write(indent + "  for help use --help\n")
-        return 2
-
         
 
 if __name__ == "__main__":

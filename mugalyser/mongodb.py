@@ -8,7 +8,7 @@ import pymongo
 
 class MUGAlyserMongoDB( object ):
     
-    def __init__(self, uri="mongodb://localhost:27017/", database="MUGS",  setup=True):
+    def __init__(self, uri="mongodb://localhost:27017/MUGS", setup=True):
 
     #def __init__(self, host="localhost", port=27017, databaseName="MUGS", replset="",
     #            username=None, password=None, ssl=False, admin="admin", connect=True):
