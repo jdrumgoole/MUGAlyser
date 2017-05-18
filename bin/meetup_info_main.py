@@ -10,6 +10,8 @@ Created on 17 Nov 2016
 import sys
 import pprint
 from argparse import ArgumentParser
+import logging
+
 from mugalyser.meetup_api import MeetupAPI
 from traceback import print_exception
 from mugalyser.mugdata import printCursor
@@ -32,57 +34,71 @@ def main( ) :
         parser.add_argument( "--pastevents", nargs="+", default=[], help="Get past events for MUG")
         parser.add_argument( "--upcomingevents", nargs="+", default=[], help="Get upcoming events for MUG")
         parser.add_argument( "--attendees", nargs="+", default=[], help="Get attendees for list of groups")
+        parser.add_argument( "--loop", type=int, default=1, help="Loop call for --loop times")
         # Process arguments
         args = parser.parse_args()
         
+        format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        logging.basicConfig(format=format_string, level=logging.INFO )
         if args.apikey == "" :
             m = MeetupAPI()
         else:
             m = MeetupAPI( apikey = args.apikey )
             
-        if args.member_id :
-            member = m.get_member_by_id( args.member_id )
-            pprint.pprint( member )
-            print( member )
-            
-        if args.groups :
-            for i in args.mugs:
-                mug = m.get_group( i )
-                pprint.pprint( mug )
-            
-        if args.members :
-            print( "args.members: %s" % args.mugs )
-            for i in args.mugs:
-                it = m.get_members( i )
+        for i in range( args.loop ):
+            if args.member_id :
+                member = m.get_member_by_id( args.member_id )
+                if member.has_key( "name"):
+                    print( member[ "name"] )
+                else:
+                    print( member[ "member_name"])
+                
+            if args.groups :
+                for i in args.mugs:
+                    mug = m.get_group( i )
+                    pprint.pprint( mug )
+                
+            if args.members :
+                print( "args.members: %s" % args.mugs )
+                for i in args.mugs:
+                    it = m.get_members( i )
+    
+                count = 0 
+                name=""
+                mid=""
+                for j in it :
+                    #pprint.pprint( i )
+                    count = count + 1
 
-            count = 0 
-            for j in it :
-                #pprint.pprint( i )
-                count = count + 1
-                pprint.pprint( j )
-                #print( u"{:30}, {:20}, {:20}, {:20}".format( j[ "member_name"], j[ "urlname" ], j[ "country" ], j[ "member_id"]) )
-
-            print( "%i total" % count )
-        
-        if args.pastevents :
-            past_events = m.get_past_events( args.pastevents )
-            printCursor( past_events )
+                    if j.has_key( "name"):
+                        name = j[ "name"]
+                        mid = j[ "id" ]
+                    else:
+                        name = j[ "member_name"]
+                        mid = j[ "member_id"]
+                    print( u"{:30}, {:20}, {:20}, {:20}".format( name, i, j[ "country" ], mid ) )
+    
+                print( "%i total" % count )
             
-        if args.upcomingevents :
-            upcoming_events = m.get_upcoming_events( args.upcomingevents )
-            printCursor( upcoming_events )
-            
-        if args.attendees :
-            attendees = m.get_all_attendees( args.attendees )
-            printCursor( attendees )
-            
-        if args.listgroups :
-            printCursor( m.get_pro_groups())
-            
-        if args.urlnames :
-            for i in m.get_pro_group_names():
-                print( i )
-            
+            if args.pastevents :
+                past_events = m.get_past_events( args.pastevents )
+                printCursor( past_events )
+                
+            if args.upcomingevents :
+                upcoming_events = m.get_upcoming_events( args.upcomingevents )
+                printCursor( upcoming_events )
+                
+            if args.attendees :
+                attendees = m.get_all_attendees( args.attendees )
+                printCursor( attendees )
+                
+            if args.listgroups :
+                printCursor( m.get_pro_groups())
+                
+            if args.urlnames :
+                for i in m.get_pro_group_names():
+                    print( i )
+                
     except KeyboardInterrupt:
         print("Keyboard interrupt : Exiting...")
         sys.exit( 2 )
