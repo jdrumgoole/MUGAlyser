@@ -4,9 +4,8 @@ Created on 6 Jan 2017
 @author: jdrumgoole
 '''
 import unittest
-from mugalyser.mugdata import MUGData
 from mugalyser.mongodb import MUGAlyserMongoDB
-from mugalyser.mugdata import MUGData, printCursor
+from mugalyser.mugdata import MUGData
 class Test(unittest.TestCase):
 
 
