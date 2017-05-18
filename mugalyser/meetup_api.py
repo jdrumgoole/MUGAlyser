@@ -24,7 +24,7 @@ def returnData( r ):
 
 class PaginatedRequest( object ):
     
-    def __init__(self, items=100 ):
+    def __init__(self, items=200 ):
 
         self._items = items
         

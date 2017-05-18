@@ -22,8 +22,9 @@ from mugalyser.meetup_api import MeetupAPI
 from mugalyser.audit import Audit
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.meetup_writer import MeetupWriter
-from mugalyser.version import __version__, __programName__
 
+__programName__ = "MUGAlyser"
+__version__ = "0.8 beta"
 
 DEBUG = 1
 TESTRUN = 0
@@ -86,7 +87,7 @@ access to the admin APIs.
         parser.add_argument( '--host', default="mongodb://localhost:27017/MUGS", help='URI to connect to : [default: %(default)s]')
 
         parser.add_argument( "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
-        parser.add_argument( "-v", "--version", action='version', version="MeetupAPI " + __version__ )
+        parser.add_argument( "-v", "--version", action='version', version=__programName__ + " " + __version__ )
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
      
         parser.add_argument( '--mugs', nargs="+", help='Process MUGs list list mugs by name [default: %(default)s]')
