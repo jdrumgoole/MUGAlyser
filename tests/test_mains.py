@@ -14,7 +14,7 @@ class TestMains(unittest.TestCase):
         self._output_filename = "junk"
         self._home = os.getenv( "HOME" )
         self._root = os.getenv( "MROOT", os.path.join( self._home, "GIT", "MUGAlyser"))
-        self._binPath = os.path.join( self._root, "apps" )
+        self._binPath = os.path.join( self._root, "bin" )
     def tearDown(self):
         os.unlink( self._output_filename )
 
