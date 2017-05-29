@@ -1,11 +1,13 @@
 '''
+Super class that knows about querying the most recent batch.
+
 Created on 23 Nov 2016
 
 @author: jdrumgoole
 '''
 
-from audit import Audit
-from feedback import Feedback
+from mugalyser.audit import Audit
+from mugalyser.feedback import Feedback
 import pprint
 
 from enum import Enum

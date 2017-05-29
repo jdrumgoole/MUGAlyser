@@ -45,7 +45,7 @@ class Test_meetup_api(unittest.TestCase):
         self.assertEqual( event[ "event_url"], u'https://www.meetup.com/DublinMUG/events/62760772/' )
 
     def test_get_all_attendees( self ):
-        attendees = self._api.get_all_attendees( [ "DublinMUG", "London-MongoDB-User-Group" ], items=400 )
+        attendees = self._api.get_all_attendees( [ "DublinMUG", "London-MongoDB-User-Group" ] )
         attendees = list( attendees )
         self.assertGreaterEqual(len( attendees ), 1306 )
         ( attendee, event )  = attendees[ 0 ]
@@ -58,11 +58,16 @@ class Test_meetup_api(unittest.TestCase):
         self.assertTrue( u"name" in event )
         self.assertEqual( event[ "rsvp_limit"], 80 )
 
-    def test_get_aamember_by_id(self):
+    def test_get_member_by_id(self):
         member = self._api.get_member_by_id( 210984049 )
         self.assertEqual( member[ "name"], u"Julio Román" )
         #print( member[ "name"] )
         self.assertEqual( type(member[ "name"] ), types.UnicodeType )
+        
+    def test_get_members(self ):
+        
+        members = list( self._api.get_members( "London-MongoDB-User-Group" ))
+        self.assertTrue( len( members ) > 1600 )
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

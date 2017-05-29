@@ -37,14 +37,19 @@ class PaginatedRequest( object ):
         
         return r
          
-    def makeRequest(self, req, params ):
+    def makeRequest(self, req, params=None ):
         '''
         The meetup_api occasionally returns a message with no body. When it does the Content-Length is either
         0 or not present. When it does we retry
         one time and then give up.
         '''
         
-        r = requests.get( req, params )
+        if params :
+            r = requests.get( req, params )
+        else:
+            r = requests.get( req )
+            
+        logging.debug( "request( r.url='%s' )", r.url )
         #pprint.pprint( r.headers )
         if not "Content-Length" in r.headers:
             logging.info( "Empty content response, retrying")
@@ -159,7 +164,7 @@ class PaginatedRequest( object ):
         paginator is a generator which yields results.
         
         '''
-        
+        #print( "paginator( header= '%s'\n, body='%s'\n, params='%s'\n)" % ( headers, body, params ))
         #print( "paginatorEntry( %s )" % headers )
         if func is None:
             func = Reshaper.noop
@@ -176,7 +181,7 @@ class PaginatedRequest( object ):
             while ( data[ 'meta' ][ "next" ] != ""  ) :
 
                 #print( "makeRequest (old): %i" % count )
-                data = self.makeRequest( data['meta'][ 'next' ], params )[1]
+                data = self.makeRequest( data['meta'][ 'next' ] )[1]
                 count = count + 1
 
             
@@ -192,11 +197,13 @@ class PaginatedRequest( object ):
             ( nxt, _) = self.getNextPrev(headers)
     
             count = 0
+            
             while ( nxt is not None ) : # no next link in last page
 
                 count = count + 1 
                 #print( "make request (new): %i" % count )
                     
+
                 ( headers, body ) = self.makeRequest( nxt, params )
                 ( nxt, _ ) = self.getNextPrev(headers)
                 for i in body :

@@ -13,7 +13,9 @@ class Test(unittest.TestCase):
     def setUp(self):
         self._mdb = MUGAlyserMongoDB("mongodb://localhost:27017/TESTMUGS")
         self._audit = Audit( self._mdb )
+        batchID = self._audit.startBatch({ "test" : 1} )
         self._writer = MeetupWriter( self._audit, self._mdb, [ "postgresqlrussia" ] )
+        self._audit.endBatch(batchID)
 
     def tearDown(self):
         pass
@@ -24,7 +26,7 @@ class Test(unittest.TestCase):
             pass #print( i )
             
     def testProcessMembers(self):
-        self._writer.processMembers( nopro=False)
+        self._writer.processMembers()
 
 
 if __name__ == "__main__":

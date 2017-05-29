@@ -80,7 +80,7 @@ def apikey():
         
 def get_data():
     get_dns_name()
-    with cd( "GIT/MUGAlyser/apps") :
+    with cd( "GIT/MUGAlyser/bin") :
         run("sh atlasrun.sh" )
      
 def prepare():
