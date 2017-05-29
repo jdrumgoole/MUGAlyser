@@ -47,13 +47,13 @@ class PaginatedRequest( object ):
         r = requests.get( req, params )
         #pprint.pprint( r.headers )
         if not "Content-Length" in r.headers:
-            logging.info( "Empty content response, retrying")
-            logging.info( "url: '%s'" % r.url )
+            logging.warn( "No 'Content-Length' field, retrying once")
+            logging.warn( "url: '%s'" % r.url )
             logging.debug( "Header: %s", r.headers )
             r = requests.get( req, params )
                         
         elif int( r.headers['Content-Length' ]) == 0 :
-            logging.info( "Content-Length 0, retrying")
+            logging.warn( "'Content-Length'=0, retrying once")
             logging.debug( "Header: %s", r.headers )
             r = requests.get( req, params )
         

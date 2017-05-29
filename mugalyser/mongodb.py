@@ -37,6 +37,9 @@ class MUGAlyserMongoDB( object ):
             self.setup()
 
         
+    def create_index(self, collection, field, direction, **kwargs  ):
+        collection.create_index([( field, direction )], **kwargs )
+        
     def setup(self ):
 
         if self._uri.startswith( "mongodb://" ) :
@@ -55,7 +58,9 @@ class MUGAlyserMongoDB( object ):
 #                 logging.error( "login failed for %s (method SCRAM-SHA-1)", self._username )
                 
         self._members         = self._database[ "members" ]
+        self._pro_members     = self._database[ "pro_members"]
         self._groups          = self._database[ "groups" ]
+        self._pro_groups      = self._database[ "pro_groups"]
         self._pastEvents      = self._database[ "past_events" ]
         self._upcomingEvents  = self._database[ "upcoming_events" ]
         self._audit           = self._database[ "audit" ]
@@ -69,7 +74,8 @@ class MUGAlyserMongoDB( object ):
         self._members.create_index([( "batchID", pymongo.ASCENDING )])
         self._members.create_index([( "member.join_time", pymongo.ASCENDING )])
         self._members.create_index([( "member.last_access_time", pymongo.ASCENDING )])
-                
+        
+        self.create_index( self._pro_members, "member.location", pymongo.GEOSPHERE) 
         self._groups.create_index([( "batchID", pymongo.ASCENDING )])
         self._pastEvents.create_index([( "batchID", pymongo.ASCENDING )])
         self._upcomingEvents.create_index([( "batchID", pymongo.ASCENDING )])
@@ -101,6 +107,9 @@ class MUGAlyserMongoDB( object ):
     
     def membersCollection(self):
         return self._members
+    
+    def proMembersCollection(self):
+        return self._pro_members
     
     def attendeesCollection(self):
         return self._attendees

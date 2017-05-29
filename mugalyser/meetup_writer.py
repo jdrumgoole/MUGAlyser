@@ -4,10 +4,10 @@ Created on 21 Nov 2016
 @author: jdrumgoole
 '''
 
-from mugalyser.batchwriter import BatchWriter
+from mongodb_utils.batchwriter import BatchWriter
 from requests import HTTPError
 import logging
-import pprint
+#import pprint
 from mugalyser.apikey import get_meetup_key
 from mugalyser.meetup_api import MeetupAPI
 
@@ -33,6 +33,7 @@ class MeetupWriter(object):
         self._audit = audit
         self._groups = self._mdb.groupsCollection()
         self._members = self._mdb.membersCollection()
+        self._pro_members = self._mdb.proMembersCollection()
         self._attendees = self._mdb.attendeesCollection()
         self._pastEvents = self._mdb.pastEventsCollection()
         self._upcomingEvents = self._mdb.upcomingEventsCollection()
@@ -76,13 +77,20 @@ class MeetupWriter(object):
         self._mugs.append( doc[ "urlname" ])
         return self._audit.addTimestamp( groupName, doc )
         
+        
+    def process_nopro_groups(self ):
+        groups = self.get_groups()
+        self.process( self._groups,  groups, self.updateGroup, "group" )
+        
+    def process_pro_groups(self):
+        groups = self._meetup_api.get_pro_groups()
+        self.process( self._pro_groups,  groups, self.updateGroup, "group" )
+        
     def processGroups(self, nopro ):
         if nopro:
-            groups = self.get_groups()
+            self.process_nopro_groups()
         else:
-            groups = self._meetup_api.get_pro_groups()
-            
-        self.process( self._groups,  groups, self.updateGroup, "group" )
+            self.process_pro_groups()
         
     def get_groups(self ):
         for i in self._urls:
@@ -96,13 +104,19 @@ class MeetupWriter(object):
         upcomingEvents = self._meetup_api.get_upcoming_events( url_name )
         self.process( self._upcomingEvents, upcomingEvents, self._audit.addTimestamp, "event" )
         
+    def process_pro_members(self):
+        members = self._get_members()
+        self._process( self._pro_members, members, self._audit.addTimestamp, "member" )
+    
+    def process_nopro_members(self):
+        members = self._meetup_api.get_pro_members()
+        self._process( self._members, members, self._audit.addTimestamp, "member" )
+        
     def processMembers( self, nopro=True ):
         if nopro:
-            members = self.get_members()
+            self.process_nopro_members()
         else:
-            members = self._meetup_api.get_pro_members()
-            
-        self.process( self._members, members, self._audit.addTimestamp, "member" )
+            self._process_pro_members()
         
     def get_members(self ):
         for i in self._urls:
