@@ -11,8 +11,7 @@ class TestMains(unittest.TestCase):
 
 
     def setUp(self):
-        self._output_filename = "junk"
-        self._binPath = os.path.join( "..", "bin" )
+        self._binPath = os.path.abspath( os.path.join( "..", "bin" ))
     def tearDown(self):
         os.unlink( self._output_filename )
 
