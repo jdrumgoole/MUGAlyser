@@ -1,4 +1,16 @@
 #!/bin/sh
+
+cmd() {
+    cmd=$1
+    shift
+    args=$*
+    $cmd $args
+    status=$?
+    if [ $status -ne 0 ]; then
+        echo "$cmd $args failed (status: $status)"
+        exit $status
+    fi
+}
 if [ -d "MUGALYSER_BUILD" ]; then
 	mv MUGALYSER_BUILD MUGALYSER_BUILD.$$
 fi
@@ -10,29 +22,18 @@ fi
 
 mkdir -p MUGALYSER_BUILD
 cd MUGALYSER_BUILD
+git clone https://github.com/jdrumgoole/mongodb_utils.git
 git clone https://github.com/jdrumgoole/MUGAlyser.git
 virtualenv mugalyser_env
 source mugalyser_env/bin/activate
 pip install --upgrade pip
 pip install pymongo
 pip install requests
-pip install mongodb_utils
 pip install pydrive
 cd MUGAlyser
 pushd mugalyser
-python ../bin/makeapikeyfile_main.py --apikey $MEETUP_API_KEY 
-if [ $? -eq 2 ]; then
-        echo "makeapikeyile.py failed to generateed a key"
-	exit 2
-fi
+cmd "python" "../bin/makeapikeyfile_main.py" "--apikey $MEETUP_API_KEY"
 popd
-python setup.py test
-if [ $? -ne 0 ]; then
-        echo "python setup test failed"
-        exit 2
-fi
-python setup.py install
-if [ $? -ne 0 ]; then
-        echo "python setup install failed"
-        exit 2
-fi
+cmd "python" "setup.py" "test"
+cmd "python" "setup.py" "install"
+
