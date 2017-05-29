@@ -160,7 +160,8 @@ class MUG_Analytics( object ):
             self._filename = filename
 
         if self._view :
-            agg.create_view( self._mdb.database(), "members_view")
+            agg.create_view( self._mdb.database(), "member_view" )
+            #agg.create_view( self._mdb.database(), "members_view")
             
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
         formatter.output( fieldNames= [ "urlname", "country", "batchID", "member_count"] )

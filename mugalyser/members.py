@@ -4,14 +4,13 @@ Created on 11 Oct 2016
 @author: jdrumgoole
 '''
 
-from mugalyser.agg import Agg, Sorter
-from mugalyser.feedback import Feedback
-from mugalyser.mugdata import MUGData
 import itertools
 import pymongo
 
+from mongodb_utils.agg import Agg, Sorter
+from mugalyser.feedback import Feedback
+from mugalyser.mugdata import MUGData
 from mugalyser.audit import Audit
-from utils.query import Query
 
 class Members(MUGData):
     '''
