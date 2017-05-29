@@ -69,6 +69,9 @@ class Test_meetup_api(unittest.TestCase):
         members = list( self._api.get_members( "London-MongoDB-User-Group" ))
         self.assertTrue( len( members ) > 1600 )
         
+        members = list( self._api.get_pro_members())
+        self.assertTrue( len( members ) > 50000 )
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

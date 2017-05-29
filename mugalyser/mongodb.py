@@ -102,6 +102,9 @@ class MUGAlyserMongoDB( object ):
     def groupsCollection(self):
         return self._groups
 
+    def proGroupsCollection(self):
+        return self._pro_groups
+
     def auditCollection(self):
         return self._audit
     

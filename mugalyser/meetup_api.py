@@ -14,30 +14,30 @@ from copy import deepcopy
 
 from mugalyser.apikey import get_meetup_key
 
-from mugalyser.version import __programName__
-
 def returnData( r ):
     #print( r.text )
     if r.raise_for_status() is None:
         return ( r.headers, r.json())
         
 
-class PaginatedRequest( object ):
+class MeetupRequest( object ):
     
-    def __init__(self, items=200 ):
-
+    def __init__(self, items ):
+        '''
+        No of items to return per page for paged requests is specified by items
+        '''
         self._items = items
         
-    def request(self, req,params ):
-        logger = logging.getLogger( __programName__ )
-        level = logger.getEffectiveLevel()
-        logger.setLevel( logging.WARN )
-        r = requests.get( req, params )        
-        logger.setLevel( level )
-        
-        return r
+#     def request(self, req, params ):
+#         logger = logging.getLogger( __programName__ )
+#         level = logger.getEffectiveLevel()
+#         logger.setLevel( logging.WARN )
+#         r = requests.get( req, params )        
+#         logger.setLevel( level )
+#         
+#         return r
          
-    def makeRequest(self, req, params=None ):
+    def simple_request(self, req, params=None ):
         '''
         The meetup_api occasionally returns a message with no body. When it does the Content-Length is either
         0 or not present. When it does we retry
@@ -136,22 +136,22 @@ class PaginatedRequest( object ):
         
         return ( nextLink, prevLink )
     
-    def paginatedRequest(self, req, params, reshaperFunc=None ):
+    def paged_request(self, req, params, reshaperFunc=None, limit=0 ):
         '''
         Takes a request and hands it off to the paginator API. It does this by initiating the request
         to get the first document back and then using it to look for headers.
         '''
 
         #print( "Intiate paginated request")    
-        (header, body) = self.makeRequest( req, params )
+        (header, body) = self.simple_request( req, params )
 
         #print( "Paginator")
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
         #print( "header: '%s' )
-        return self.paginator( header, body, params, func=reshaperFunc  )
+        return self.next_page( header, body, params, func=reshaperFunc  )
     
-    def paginator( self, headers, body, params, func=None ):
+    def next_page( self, headers, body, params, func=None ):
         '''
         Meetup API returns results as pages. The old API embeds the 
         page data in a meta data object in the response object. The new API
@@ -161,7 +161,7 @@ class PaginatedRequest( object ):
         we use this to reshape geospatial coordinates into a format that MongoDB
         understands and to convert  meetup timestamps to datetime objects.
         
-        paginator is a generator which yields results.
+        next_page is a generator which yields results.
         
         '''
         #print( "paginator( header= '%s'\n, body='%s'\n, params='%s'\n)" % ( headers, body, params ))
@@ -181,7 +181,7 @@ class PaginatedRequest( object ):
             while ( data[ 'meta' ][ "next" ] != ""  ) :
 
                 #print( "makeRequest (old): %i" % count )
-                data = self.makeRequest( data['meta'][ 'next' ] )[1]
+                data = self.simple_request( data['meta'][ 'next' ] )[1]
                 count = count + 1
 
             
@@ -195,8 +195,7 @@ class PaginatedRequest( object ):
                
             count = 0 
             ( nxt, _) = self.getNextPrev(headers)
-    
-            count = 0
+
             
             while ( nxt is not None ) : # no next link in last page
 
@@ -204,7 +203,7 @@ class PaginatedRequest( object ):
                 #print( "make request (new): %i" % count )
                     
 
-                ( headers, body ) = self.makeRequest( nxt, params )
+                ( headers, body ) = self.simple_request( nxt, params )
                 ( nxt, _ ) = self.getNextPrev(headers)
                 for i in body :
                     yield  func( i )
@@ -299,24 +298,21 @@ class MeetupAPI(object):
         self._api = "https://api.meetup.com/"
         self._params = {}
         self._params[ "key" ] = apikey
-        self._items = str( items )
-        self._requester = PaginatedRequest( self._items )
+        self._items = items
+        self._requester = MeetupRequest( self._items )
             
     def get_group(self, url_name ):
         
-        params = deepcopy( self._params )
-        
-        return Reshaper.reshapeGroupDoc( self._requester.makeRequest( self._api + url_name, params = params )[1] ) 
+        return Reshaper.reshapeGroupDoc( self._requester.simple_request( self._api + url_name, params = self._params )[1] ) 
 
     def get_past_events(self, url_name ) :
         
         params = deepcopy( self._params )
         
         params[ "status" ]       = "past"
-        params[ "page" ]         = self._items
         params[ "group_urlname"] = url_name
         
-        return self._requester.paginatedRequest( self._api + "2/events", params, Reshaper.reshapeEventDoc )
+        return self._requester.paged_request( self._api + "2/events", params, Reshaper.reshapeEventDoc )
 
     def get_all_attendees(self, groups=None ):
         groupsIterator = None
@@ -337,26 +333,22 @@ class MeetupAPI(object):
     
             
     def get_event_attendees(self, eventID, url_name ):
-        params = deepcopy( self._params )
-        params[ "page" ] = self._items
         
         #https://api.meetup.com/DublinMUG/events/62760772/attendance?&sign=true&photo-host=public&page=20
         reqURL = self.makeRequestURL( url_name, "events", str( eventID ), "attendance")
-        return self._requester.paginatedRequest( reqURL, params )
+        return self._requester.paged_request( reqURL, self._params )
     
     def get_upcoming_events(self, url_name ):
         
         params = deepcopy( self._params )
         params[ "status" ] = "upcoming"
-        params[ "page"]    = self._items
         params[ "group_urlname"] = url_name
         
-        return self._requester.paginatedRequest( self._api + "2/events", params, Reshaper.reshapeEventDoc)
+        return self._requester.paged_request( self._api + "2/events", params, Reshaper.reshapeEventDoc)
     
     def get_member_by_id(self, member_id ):
-        params = deepcopy( self._params )
 
-        ( _, body ) = self._requester.makeRequest( self._api + "2/member/" + str( member_id ), params = params )
+        ( _, body ) = self._requester.simple_request( self._api + "2/member/" + str( member_id ), params = self._params )
         
         return body
     
@@ -366,35 +358,32 @@ class MeetupAPI(object):
         params[ "group_urlname" ] = url_name
         params[ "page"]    = self._items
  
-        return self._requester.paginatedRequest( self._api + "2/members", params, Reshaper.reshapeMemberDoc)
+        return self._requester.paged_request( self._api + "2/members", params, Reshaper.reshapeMemberDoc)
     
     def get_groups(self ):
         '''
         Get all groups associated with this API key.
         '''
-        
-        params = deepcopy( self._params )
-        params[ "page" ]         = self._items
         logging.debug( "get_groups")
-        return self._requester.paginatedRequest(self._api + "self/groups",  params )
+        return self._requester.paged_request(self._api + "self/groups",  self._params )
     
     def get_pro_groups(self  ):
         '''
         Get all groups associated with this API key.
         '''
         
-        params = deepcopy( self._params )
-        params[ "page" ]         = self._items
         logging.debug( "get_pro_groups")
         
-        return self._requester.paginatedRequest( self._api + "pro/MongoDB/groups", params, Reshaper.reshapeGroupDoc )
+        return self._requester.paged_request( self._api + "pro/MongoDB/groups", self._params, Reshaper.reshapeGroupDoc )
     
-    def get_pro_members(self ):
-        params = deepcopy( self._params )
-        params[ "page" ] = self._items
+    def get_pro_members(self, limit=0 ):
+        '''
+        Retrieve "limit" pages or all pages if limit is 0.
+        '''
+        
         logging.debug( "get_pro_members")
         
-        return self._requester.paginatedRequest( self._api + "pro/MongoDB/members", params, Reshaper.reshapeMemberDoc)
+        return self._requester.paged_request( self._api + "pro/MongoDB/members", self._params, Reshaper.reshapeMemberDoc)
 
     
     def get_pro_group_names( self ):

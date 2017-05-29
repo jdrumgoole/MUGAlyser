@@ -32,6 +32,7 @@ class MeetupWriter(object):
         self._meetup_api = MeetupAPI( apikey )
         self._audit = audit
         self._groups = self._mdb.groupsCollection()
+        self._pro_groups = self._mdb.proGroupsCollection()
         self._members = self._mdb.membersCollection()
         self._pro_members = self._mdb.proMembersCollection()
         self._attendees = self._mdb.attendeesCollection()
@@ -86,12 +87,15 @@ class MeetupWriter(object):
         groups = self._meetup_api.get_pro_groups()
         self.process( self._pro_groups,  groups, self.updateGroup, "group" )
         
-    def processGroups(self, nopro ):
-        if nopro:
+    def processGroups(self, collect ):
+        if collect == "nopro":
             self.process_nopro_groups()
+        elif collect == "pro":
+            self.process_pro_groups()
         else:
             self.process_pro_groups()
-        
+            self.process_nopro_groups()
+
     def get_groups(self ):
         for i in self._urls:
             yield self._meetup_api.get_group( i )
@@ -105,18 +109,21 @@ class MeetupWriter(object):
         self.process( self._upcomingEvents, upcomingEvents, self._audit.addTimestamp, "event" )
         
     def process_pro_members(self):
-        members = self._get_members()
-        self._process( self._pro_members, members, self._audit.addTimestamp, "member" )
+        members = self._meetup_api.get_pro_members()
+        self.process( self._pro_members, members, self._audit.addTimestamp, "member" )
     
     def process_nopro_members(self):
-        members = self._meetup_api.get_pro_members()
-        self._process( self._members, members, self._audit.addTimestamp, "member" )
+        members = self.get_members()
+        self.process( self._members, members, self._audit.addTimestamp, "member" )
         
-    def processMembers( self, nopro=True ):
-        if nopro:
+    def processMembers( self, collect ):
+        if collect == "nopro":
             self.process_nopro_members()
+        elif collect == "pro":
+            self.process_pro_members()
         else:
-            self._process_pro_members()
+            self.process_pro_members()
+            self.process_nopro_members() 
         
     def get_members(self ):
         for i in self._urls:

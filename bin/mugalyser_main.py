@@ -3,6 +3,9 @@
 '''
 mugalyser_main -- Grab MUG Stats and stuff them into a MongoDB Database
 
+29-May-2017 : Changed program to use --collect argument to allow collection of pro, nopro or all
+data. Pro and No Pro data are now stored in seperate collections.
+
 @author:     joe@joedrumgoole.com
 
 @license:    AFGPL
@@ -92,7 +95,7 @@ access to the admin APIs.
      
         parser.add_argument( '--mugs', nargs="+", help='Process MUGs list list mugs by name [default: %(default)s]')
    
-        parser.add_argument( "--pro", default=False, action="store_true", help="use if you have a pro account uses pro API calls")
+        parser.add_argument( "--collect",  choices=[ "pro", "nopro", "all" ], default="all", help="Use pro API calls, no pro API calls or both")
         parser.add_argument( "--admin", default=False, action="store_true", help="Some calls are only available to admin users")
         parser.add_argument( "--database", default="MUGS", help="Default database name to write to [default: %(default)s]")
         parser.add_argument( '--phases', nargs="+", choices=[ "groups", "members", "attendees", "upcomingevents", "pastevents"], 
@@ -136,10 +139,6 @@ access to the admin APIs.
         else:
             mugList = []
 
-        if args.pro:
-            nopro=False
-        else:
-            nopro=True
             
         mdb = MUGAlyserMongoDB( args.host )
         
@@ -147,26 +146,26 @@ access to the admin APIs.
         
         batchID = audit.startBatch( { "args"    : vars( args ), 
                                       "version" : __programName__ + " " + __version__,
-                                      "pro_account" : args.pro },
+                                      "collect" : args.collect },
                                       trial=args.trialrun,
                                       apikey=apikey )
 
         start = datetime.utcnow()
         logging.info( "Started MUG processing for batch ID: %i", batchID )
         logging.info( "Writing to database : '%s'", mdb.database().name )
-        if nopro:
-            logging.info( "Using standard API calls (no pro account API key)")
+        if args.collect in [ "nopro", "all" ] :
             if args.urlfile:
-                logging.info( "Reading groups from: '%s'", args.urlfile )
-                with open( args.urlfile ) as f:
+                urlfile = os.path.abspath( args.urlfile )
+                logging.info( "Reading groups from: '%s'", urlfile )
+                with open( urlfile ) as f:
                     mugList = f.read().splitlines()
+            else:
+                logging.warning( "No urlfile specified: No groups will be analysed in nopro mode")
                 
-        else:
+        elif args.collect == "pro":
             logging.info( "Using pro API calls (pro account API key)")
             
-        if nopro:
-            logging.info( "Processing %i MUG URLS", len( mugList ))
-        else:
+        if args.collect == "pro":
             mugList = list( MeetupAPI().get_pro_group_names())
         
         writer = MeetupWriter( audit, mdb, mugList,  apikey )
@@ -179,12 +178,12 @@ access to the admin APIs.
             phases = args.phases
         
         if  "groups" in phases :
-            logging.info( "processing group info for %i groups: nopro=%s", len( mugList), nopro )
-            writer.processGroups( nopro )
+            logging.info( "processing group info for %i groups: collect=%s", len( mugList), args.collect )
+            writer.processGroups( args.collect )
             phases.remove( "groups")
         if "members" in phases :
-            logging.info( "processing members info for %i groups: nopro=%s", len( mugList), nopro )
-            writer.processMembers( nopro )
+            logging.info( "processing members info for %i groups: collect=%s", len( mugList), args.collect  )
+            writer.processMembers( args.collect )
             phases.remove( "members")
             
         for i in mugList :
