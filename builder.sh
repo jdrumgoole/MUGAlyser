@@ -30,9 +30,13 @@ pip install --upgrade pip
 pip install pymongo
 pip install requests
 pip install pydrive
+pip install enum
+pip install dateutils
+cd MUGAlyser
 pushd bin
 cmd "python" "makeapikeyfile_main.py" "--apikey $MEETUP_API_KEY"
 popd
+mongorestore -d TESTMUGS --drop --archive=tests/testmugs.tar.gz --gzip
 cmd "python" "setup.py" "test"
 cmd "python" "setup.py" "install"
 
