@@ -25,6 +25,8 @@ cd MUGALYSER_BUILD
 git clone https://github.com/jdrumgoole/mongodb_utils.git
 git clone https://github.com/jdrumgoole/MUGAlyser.git
 virtualenv mugalyser_env
+export MROOT=`pwd`/MUGAlyser
+echo "MROOT is $MROOT"
 source mugalyser_env/bin/activate
 pip install --upgrade pip
 pip install pymongo

@@ -6,12 +6,17 @@ Created on 12 Dec 2016
 import unittest
 import subprocess
 import os
+import sys
 
 class TestMains(unittest.TestCase):
 
 
     def setUp(self):
-        self._binPath = os.path.abspath( os.path.join( "..", "bin" ))
+        root = os.getenv( "MROOT", "")
+        if root == "" :
+            print( "Environment variable MROOT is not defined" )
+            sys.exit( 2 )
+        self._binPath = os.path.abspath( os.path.join( root, "bin" ))
     def tearDown(self):
         os.unlink( self._output_filename )
 
