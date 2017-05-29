@@ -29,14 +29,14 @@ if __name__ == '__main__':
     input_path = os.path.join( root, "apikey_template.py" )
     
     if os.path.isfile( input_path ) :
-        output_path = os.path.join( root, "apikey.py" )
+        output_path = os.path.abspath( os.path.join( root, "apikey.py" ))
         with open( input_path, "r") as infile:
             with open( output_path, "w" ) as outfile:
                 outfile.write( "# Created: %s\n" % datetime.now())
                 for line in infile :
                     if line.startswith( "MEETUP_API_KEY"):
                         outfile.write( "MEETUP_API_KEY=\"%s\"\n" % apikey )
-                        print( "%s -> %s" % ( apikey, output_path ))
+                        print( "Generating key: '%s' into '%s'" % ( apikey, output_path ))
                     else:
                         outfile.write( line )
     else:

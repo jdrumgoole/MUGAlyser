@@ -30,9 +30,8 @@ pip install --upgrade pip
 pip install pymongo
 pip install requests
 pip install pydrive
-cd MUGAlyser
-pushd mugalyser
-cmd "python" "../bin/makeapikeyfile_main.py" "--apikey $MEETUP_API_KEY"
+pushd bin
+cmd "python" "makeapikeyfile_main.py" "--apikey $MEETUP_API_KEY"
 popd
 cmd "python" "setup.py" "test"
 cmd "python" "setup.py" "install"
