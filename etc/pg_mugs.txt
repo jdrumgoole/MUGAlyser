@@ -42,14 +42,12 @@ Meetup-de-PostgreSQL-Santa-Fe
 Charlotte-PostgreSQL-User-Group
 off-to-BPUG
 Tallinn-PostgreSQL-Meetup
-LA-PUG
 PostgreSQL-MX
 PPUG-Philippines-Postgres-User-Group
 PostgreSQL-Goteborg
 PDXPUG-Portland-PostgreSQL-Users-Group
 China-Postgres-User-Group-Beijing
 postgresCMH
-Jhipster-Grupo-de-usuarios
 Buenos-Aires-PostgreSQL-Meetup
 PoZGres
 Kong-MELBOURNE

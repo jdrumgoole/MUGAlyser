@@ -290,7 +290,7 @@ class MeetupAPI(object):
             
         return url
     
-    def __init__(self, apikey = get_meetup_key(), items=100):
+    def __init__(self, apikey = get_meetup_key(), items=500):
         '''
         Constructor
         '''

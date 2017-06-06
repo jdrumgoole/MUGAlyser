@@ -27,7 +27,7 @@ class Test_groups(unittest.TestCase):
         
     def test_get_country(self):
         c = self._groups.get_country( "DublinMUG" )
-        self.assertEqual( c, "Ireland" )
+        self.assertEqual( c, "IE" )
         
     def testGroups(self):
         groups = self._groups.get_all_groups()
