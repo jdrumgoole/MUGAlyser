@@ -439,7 +439,7 @@ class MUG_Analytics( object ):
                        "info.event.group.urlname" : { "$in" : urls }} )
         
         if self._start_date or self._end_date :
-            agg.addRangeMatch( "info.event_time", self._start_date, self._end_date )
+            agg.addRangeMatch( "info.event.time", self._start_date, self._end_date )
         
         agg.addProject( { "_id"        : 0,
                           "attendee"   : "$info.attendee.member.name", 
@@ -509,7 +509,7 @@ class MUG_Analytics( object ):
                        "info.attendee.rsvp.response" : "yes" } )
         
         if self._start_date or self._end_date :
-            agg.addRangeMatch( "info.event_time", self._start_date, self._end_date )
+            agg.addRangeMatch( "info.event.time", self._start_date, self._end_date )
         
     #     agg.addProject( { "_id" : 0,
     #                       "name" : "$info.attendee.member.name",
