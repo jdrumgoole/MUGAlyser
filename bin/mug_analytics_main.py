@@ -683,7 +683,7 @@ def main( args ):
     else:
         batchID = None
         
-    print( "Processing : %s" % urls )
+    print( "Processing : %i urls" % len( urls ))
     analytics = MUG_Analytics( mdb, output, formatter, batchID = batchID, limit=args.limit, view=args.createview )
     analytics.setRange(args.start, args.end )
     

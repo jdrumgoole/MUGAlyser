@@ -206,8 +206,8 @@ class Audit( object ):
     
     def getCurrentValidBatchID( self ):
         curBatch = self._auditCollection.find( { "apikey" : get_meetup_key(),
-                                                 "end"    : { "$type" : "date" }, #17 BSON type for timestamp
-                                                 "trial"  : False } ).sort( "batchID", pymongo.DESCENDING ).limit( 1 )
+                                                 "end"    : { "$type" : "date" }} #17 BSON type for timestamp
+                                                 ).sort( "batchID", pymongo.DESCENDING ).limit( 1 )
         
         if curBatch is None :
             raise ValueError( "No current valid batch ID" )
