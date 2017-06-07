@@ -305,6 +305,10 @@ class MeetupAPI(object):
         
         return Reshaper.reshapeGroupDoc( self._requester.simple_request( self._api + url_name, params = self._params )[1] ) 
 
+    def get_groups_by_url(self, urls ):
+        for i in urls:
+            yield self._meetup_api.get_group( i )
+            
     def get_past_events(self, url_name ) :
         
         params = deepcopy( self._params )
@@ -352,7 +356,12 @@ class MeetupAPI(object):
         
         return body
     
-    def get_members(self, url_name ):
+    def get_members(self , urls ):
+        for i in urls:
+            for member in self.__get_members( i ):
+                yield member
+                
+    def __get_members(self, url_name ):
         
         params = deepcopy( self._params )
         params[ "group_urlname" ] = url_name

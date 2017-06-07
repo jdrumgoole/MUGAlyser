@@ -64,13 +64,18 @@ class Test_meetup_api(unittest.TestCase):
         #print( member[ "name"] )
         self.assertEqual( type(member[ "name"] ), types.UnicodeType )
         
+    def test_get_member_by_url(self):
+        
+        members = self._api.get_members( [ "DublinMUG", "London-MongoDB-User-Group"])
+        self.assertGreaterEqual( ( sum( 1 for _ in  members )), 2465 )
+        
     def test_get_members(self ):
         
-        members = list( self._api.get_members( "London-MongoDB-User-Group" ))
-        self.assertTrue( len( members ) > 1600 )
+        members = self._api.get_members( ["London-MongoDB-User-Group" ] )
+        self.assertGreater( ( sum( 1 for _ in  members )),  1600 )
         
         members = list( self._api.get_pro_members())
-        self.assertTrue( len( members ) > 50000 )
+        self.assertGreater( ( sum( 1 for _ in  members )) , 50000 )
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

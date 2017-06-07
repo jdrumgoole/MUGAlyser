@@ -22,6 +22,12 @@ class MeetupWriter(object):
     '''
     A class that reads data about MUGS from the Meetup API using the MeetupAPI class and writes that
     data to a MongoDB collection. Supports pro and no pro APIs
+    
+    The process function is a generic reader function that takes a retrieval generator (provided by
+    the MeetupAPI class and a processing function. It iterates over the docs returned by the
+    retrieval generator and transforms then with "processFunc". The results are returned in an 
+    embedded document with the key "newFieldname".
+    
     '''
     def __init__(self, audit, mdb, urls, apikey= get_meetup_key(), unordered=True ):
         '''
@@ -43,7 +49,7 @@ class MeetupWriter(object):
         self._urls = urls
         
         
-    def process(self, collection, retrievalGenerator, processFunc, newFieldName ):
+    def write(self, collection, retrievalGenerator, processFunc, newFieldName ):
         '''
         Call batchWriter with a collection. Use retrievalGenerator to get a single
         document (this should be a generator function). Use processFunc to tranform the 
@@ -61,14 +67,14 @@ class MeetupWriter(object):
             writer.send( i )
 
     
-    def processAttendees( self, group ):
+    def writeAttendees( self, group ):
         
         writer = self._meetup_api.get_attendees( group )
         
         newWriter = mergeEvents( writer )
         self.process( self._attendees, newWriter, self._audit.addTimestamp, "info"  )
         
-    def processGroup(self, url_name, groupName="group"):
+    def write_group(self, url_name, groupName="group"):
         group = self._meetup_api.get_group( url_name )
         newDoc = self._audit.addTimestamp( groupName, group )
         self._groups.insert_one( newDoc )
@@ -79,60 +85,49 @@ class MeetupWriter(object):
         return self._audit.addTimestamp( groupName, doc )
         
         
-    def process_nopro_groups(self ):
+    def write_nopro_groups(self ):
         groups = self.get_groups()
         self.process( self._groups,  groups, self.updateGroup, "group" )
         
-    def process_pro_groups(self):
+    def write_pro_groups(self):
         groups = self._meetup_api.get_pro_groups()
         self.process( self._pro_groups,  groups, self.updateGroup, "group" )
         
-    def processGroups(self, collect ):
+    def write_groups(self, collect ):
         if collect == "nopro":
-            self.process_nopro_groups()
+            self.write_nopro_groups()
         elif collect == "pro":
-            self.process_pro_groups()
+            self.write_pro_groups()
         else:
-            self.process_pro_groups()
-            self.process_nopro_groups()
+            self.write_pro_groups()
+            self.write_nopro_groups()
 
-    def get_groups(self ):
-        for i in self._urls:
-            yield self._meetup_api.get_group( i )
         
-    def processPastEvents(self, url_name ):
+    def write_PastEvents(self, url_name ):
         pastEvents = self._meetup_api.get_past_events( url_name )
-        self.process( self._pastEvents, pastEvents, self._audit.addTimestamp, "event" )
+        self.write( self._pastEvents, pastEvents, self._audit.addTimestamp, "event" )
    
-    def processUpcomingEvents(self, url_name ):
+    def write_UpcomingEvents(self, url_name ):
         upcomingEvents = self._meetup_api.get_upcoming_events( url_name )
         self.process( self._upcomingEvents, upcomingEvents, self._audit.addTimestamp, "event" )
         
-    def process_pro_members(self):
+    def write_pro_members(self):
         members = self._meetup_api.get_pro_members()
-        self.process( self._pro_members, members, self._audit.addTimestamp, "member" )
+        self.write( self._pro_members, members, self._audit.addTimestamp, "member" )
     
-    def process_nopro_members(self):
-        members = self.get_members()
-        self.process( self._members, members, self._audit.addTimestamp, "member" )
+    def write_nopro_members(self):
+        members = self._meetup_api.get_members( ["DublinMUG", "London-MongoDB-User-Group" ] )
+        self.write( self._members, members, self._audit.addTimestamp, "member" )
         
-    def processMembers( self, collect ):
+    def write_members( self, collect ):
         if collect == "nopro":
-            self.process_nopro_members()
+            self.write_nopro_members()
         elif collect == "pro":
-            self.process_pro_members()
+            self.write_pro_members()
         else:
-            self.process_pro_members()
-            self.process_nopro_members() 
+            self.write_pro_members()
+            self.write_nopro_members() 
         
-    def get_members(self ):
-        for i in self._urls:
-            for member in self._meetup_api.get_members( i ):
-#                 if member.has_key( "name" ) :
-#                     print( member[ "name"] )
-#                 else:
-#                     pprint.pprint( member )
-                yield member
             
     def mug_list(self):
         return self._mugs
