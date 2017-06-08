@@ -8,10 +8,8 @@ from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
 import unittest
 from mugalyser.version import __programName__, __version__
-from mugalyser.apikey import get_meetup_key
 
 class Test_audit(unittest.TestCase):
-
 
     def setUp(self):
         self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TEST_AUDIT" )
@@ -20,7 +18,6 @@ class Test_audit(unittest.TestCase):
 
     def tearDown(self):
         self._mdb.client().drop_database( "TEST_AUDIT" )
-        pass
     
     #@unittest.skip
     def test_incrementID(self):
@@ -32,27 +29,25 @@ class Test_audit(unittest.TestCase):
         self.assertEqual( batchID + 1, newID )
         
     def test_getCurrentValidBatchID(self):
-        batchID1 = self._audit.startBatch( doc={ "test" : "doc"}, trial=True)
+        batchID1 = self._audit.startBatch( doc={ "test" : "doc"})
         self._audit.endBatch(batchID1 )
         #self.assertRaises( ValueError, self._audit.getCurrentValidBatchID )
         
         batchID2 = self._audit.startBatch( {  "args" : "arg list",
-                                              "version" : __programName__ + " " + __version__ },
-                                              trial=False,
-                                              apikey=get_meetup_key())
+                                              "version" : __programName__ + " " + __version__ })
         
         self._audit.endBatch( batchID2 )
         self.assertEqual( batchID2, self._audit.getCurrentValidBatchID())
         
-        batchID3 = self._audit.startBatch( doc={ "test" : "doc"}, trial=True)
+        batchID3 = self._audit.startBatch( doc={ "test" : "doc"})
         self._audit.endBatch(batchID3 )
-        self.assertEqual( batchID2, self._audit.getCurrentValidBatchID())
+        self.assertEqual( batchID3, self._audit.getCurrentValidBatchID())
         
     def test_batch(self):
         
         batchIDs = [ x for x in self._audit.getBatchIDs()]
         
-        thisBatchID = self._audit.startBatch( doc={ "test" : "doc"}, trial=True)
+        thisBatchID = self._audit.startBatch( doc={ "test" : "doc"} )
         
         newBatchIDs = [ x for x in self._audit.getBatchIDs()]
         
@@ -61,11 +56,9 @@ class Test_audit(unittest.TestCase):
         self.assertTrue( thisBatchID in newBatchIDs )
         
         self._audit.endBatch( thisBatchID )
-        
-    #@unittest.skip
+    
     def test_IDs(self):
         self.assertRaises( ValueError,self._audit.getCurrentBatchID )
-        self.assertRaises( ValueError, self._audit.getLastBatchID )
         self.assertFalse( self._audit.inBatch())
         batchID = self._audit.startBatch( {} )
         self.assertTrue( self._audit.inBatch())
@@ -85,7 +78,6 @@ class Test_audit(unittest.TestCase):
         self._audit.endBatch( batchID )
         self.assertFalse( self._audit.inBatch())
         
-    #@unittest.skip
     def test_start_end_batch(self):
         
         batchID = self._audit.startBatch({})
@@ -93,6 +85,9 @@ class Test_audit(unittest.TestCase):
         self._audit.endBatch( batchID )
         self.assertFalse( self._audit.incomplete( batchID ))
         
+    def test_get_current_valid_batches(self):
+        pass
+    
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

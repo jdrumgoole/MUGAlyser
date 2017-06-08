@@ -75,7 +75,7 @@ class Test_meetup_api(unittest.TestCase):
         self.assertGreater( ( sum( 1 for _ in  members )),  1600 )
         
         members = list( self._api.get_pro_members())
-        self.assertGreater( ( sum( 1 for _ in  members )) , 50000 )
+        self.assertGreaterEqual( ( sum( 1 for _ in  members )) , 17400 )
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

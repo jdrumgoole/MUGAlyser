@@ -60,19 +60,20 @@ class MeetupWriter(object):
         is reached and then writes them as a batch using BatchWriter.
         
         '''
-        bw = BatchWriter( collection, processFunc, newFieldName, orderedWrites=self._unordered )
+        bw = BatchWriter( collection, processFunc, newFieldName, self._unordered )
+        
         writer = bw.bulkWrite( writeLimit=1)
         
         for i in retrievalGenerator :
             writer.send( i )
 
     
-    def writeAttendees( self, group ):
+    def write_Attendees( self, group ):
         
         writer = self._meetup_api.get_attendees( group )
         
         newWriter = mergeEvents( writer )
-        self.process( self._attendees, newWriter, self._audit.addTimestamp, "info"  )
+        self.write( self._attendees, newWriter, self._audit.addTimestamp, "info"  )
         
     def write_group(self, url_name, groupName="group"):
         group = self._meetup_api.get_group( url_name )
@@ -86,12 +87,12 @@ class MeetupWriter(object):
         
         
     def write_nopro_groups(self ):
-        groups = self.get_groups()
-        self.process( self._groups,  groups, self.updateGroup, "group" )
+        groups = self._meetup_api.get_groups()
+        self.write( self._groups,  groups, self.updateGroup, "group" )
         
     def write_pro_groups(self):
         groups = self._meetup_api.get_pro_groups()
-        self.process( self._pro_groups,  groups, self.updateGroup, "group" )
+        self.write( self._pro_groups,  groups, self.updateGroup, "group" )
         
     def write_groups(self, collect ):
         if collect == "nopro":
@@ -109,7 +110,7 @@ class MeetupWriter(object):
    
     def write_UpcomingEvents(self, url_name ):
         upcomingEvents = self._meetup_api.get_upcoming_events( url_name )
-        self.process( self._upcomingEvents, upcomingEvents, self._audit.addTimestamp, "event" )
+        self.write( self._upcomingEvents, upcomingEvents, self._audit.addTimestamp, "event" )
         
     def write_pro_members(self):
         members = self._meetup_api.get_pro_members()
@@ -140,14 +141,14 @@ class MeetupWriter(object):
             for i in phases:
                 if i == "pastevents" :
                     logging.info( "process past events for      : '%s'", url_name )
-                    self.processPastEvents( url_name )
+                    self.write_PastEvents( url_name )
                 elif i == "upcomingevents" :
                     logging.info( "process upcoming events for  : '%s'", url_name )
-                    self.processUpcomingEvents( url_name )
+                    self.write_UpcomingEvents( url_name )
                 elif i == "attendees" :
                     if admin_arg:
                         logging.info( "process attendees            : '%s'", url_name )
-                        self.processAttendees( url_name )
+                        self.write_Attendees( url_name )
                     else:
                         logging.warn( "You have not specified the admin arg")
                         logging.warn( "You must be a meetup admin user to request attendees")

@@ -163,7 +163,7 @@ class Audit( object ):
 #                                       { "$set" : { "currentID" : self._currentBatch[ "currentID"],
 #                                                    "timestamp" : self._currentBatch[ "timestamp" ] }} )
         
-    def startBatch(self, doc, name=None, trial=False, apikey = get_meetup_key()):
+    def startBatch(self, doc, name=None ):
         thisBatchID = self.incrementBatchID()
         
         if name is None :
@@ -171,10 +171,8 @@ class Audit( object ):
             
         self._auditCollection.insert_one( { "batchID" : thisBatchID,
                                             "start"   : datetime.now(),
-                                            "trial"   : trial,
                                             "end"     : None,
                                             "name"    : name,
-                                            "apikey"  : apikey,
                                             "info"    : doc })
         
         self._currentBatchID = thisBatchID
@@ -197,26 +195,31 @@ class Audit( object ):
     def auditCollection(self):
         return self._auditCollection
     
-    def getLastBatchID(self):
-        curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
-        if curBatch[ "currentID" ] < 2 :
-            raise ValueError( "No valid last batch")
-        else:
-            return curBatch[ "currentID"] - 1
+#     def getLastBatchID(self):
+#         curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
+#         if curBatch[ "currentID" ] < 2 :
+#             raise ValueError( "No valid last batch")
+#         else:
+#             return curBatch[ "currentID"] - 1
     
     def getCurrentValidBatchID( self ):
-        curBatch = self._auditCollection.find( { "apikey" : get_meetup_key(),
-                                                 "end"    : { "$type" : "date" }} #17 BSON type for timestamp
-                                                 ).sort( "batchID", pymongo.DESCENDING ).limit( 1 )
+        '''
+        A Valid Batch record has a start and a end field that are both types.
+        It also has "valid" field set to true.
+        '''
+        cur_batch = self._auditCollection.find( { "start" : { "$type" : "date" },
+                                                  "end"   : { "$type" : "date" }} ) #17 BSON type for timestamp
         
-        if curBatch is None :
+        results = cur_batch.sort( "batchID", pymongo.DESCENDING ).limit( 1 )
+        
+        if results is None :
             raise ValueError( "No current valid batch ID" )
         else:
             try :
-                x= curBatch.next()[ "batchID"]
+                x= results.next()[ "batchID"]
                 return x
             except StopIteration :
-                raise ValueError( "Have you set a valid API key? (APIKEY='%s')" % get_meetup_key())
+                raise ValueError( "Iterator returned no results")
             
     def getCurrentValidBatches( self, start=None, end=None ):
         

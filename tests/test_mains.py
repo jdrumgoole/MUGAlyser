@@ -17,7 +17,8 @@ class TestMains(unittest.TestCase):
             print( "Environment variable MROOT is not defined" )
             sys.exit( 2 )
         self._binPath = os.path.abspath( os.path.join( root, "bin" ))
-
+        #print( self._binPath )
+        
     def redirect_cmd(self, programArgs, output_filename ):
 
         with open( output_filename, 'w') as f:

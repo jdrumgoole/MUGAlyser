@@ -17,7 +17,7 @@ from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.members import Members, Organizers
 from mugalyser.events import UpcomingEvents, PastEvents
 from mugalyser.groups import Groups
-from mugalyser.generator_utils import printCount
+from mongodb_utils.generator_utils import printCount
 from datetime import datetime
 from utils.query import Query
 import pymongo
@@ -205,13 +205,6 @@ def main( argv=None ) :
     except pymongo.errors.ServerSelectionTimeoutError, e :
         print( "Failed to connect to MongoDB Server (server timeout): %s" % e )
         sys.exit( 2 )
-    except Exception, e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        print_exception( exc_type, exc_value, exc_traceback )
-        indent = len(__program_name__ ) * " "
-        sys.stderr.write(__program_name__ + ": " + repr(e) + "\n")
-        sys.stderr.write(indent + "  for help use --help\n")
-        return 2
     
     return 0
 

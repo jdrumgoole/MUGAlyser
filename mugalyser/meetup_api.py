@@ -49,11 +49,11 @@ class MeetupRequest( object ):
         else:
             r = requests.get( req )
             
-        logging.debug( "request( r.url='%s' )", r.url )
+        print( "request( r.url='%s' )" % r.url )
         #pprint.pprint( r.headers )
         if not "Content-Length" in r.headers:
             logging.warn( "No 'Content-Length' field, retrying once")
-            logging.warn( "url: '%s'" % r.url )
+            logging.warn( "url: '%s'", r.url )
             logging.debug( "Header: %s", r.headers )
             r = requests.get( req, params )
                         
@@ -136,7 +136,7 @@ class MeetupRequest( object ):
         
         return ( nextLink, prevLink )
     
-    def paged_request(self, req, params, reshaperFunc=None, limit=0 ):
+    def paged_request(self, req, params, reshaperFunc=None ):
         '''
         Takes a request and hands it off to the paginator API. It does this by initiating the request
         to get the first document back and then using it to look for headers.
@@ -307,7 +307,7 @@ class MeetupAPI(object):
 
     def get_groups_by_url(self, urls ):
         for i in urls:
-            yield self._meetup_api.get_group( i )
+            yield self.get_group( i )
             
     def get_past_events(self, url_name ) :
         
@@ -385,10 +385,7 @@ class MeetupAPI(object):
         
         return self._requester.paged_request( self._api + "pro/MongoDB/groups", self._params, Reshaper.reshapeGroupDoc )
     
-    def get_pro_members(self, limit=0 ):
-        '''
-        Retrieve "limit" pages or all pages if limit is 0.
-        '''
+    def get_pro_members(self ):
         
         logging.debug( "get_pro_members")
         
