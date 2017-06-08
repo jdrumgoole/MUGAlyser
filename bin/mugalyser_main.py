@@ -146,9 +146,7 @@ access to the admin APIs.
         
         batchID = audit.startBatch( { "args"    : vars( args ), 
                                       "version" : __programName__ + " " + __version__,
-                                      "collect" : args.collect },
-                                      trial=args.trialrun,
-                                      apikey=apikey )
+                                      "collect" : args.collect } )
 
         start = datetime.utcnow()
         logging.info( "Started MUG processing for batch ID: %i", batchID )
@@ -179,11 +177,11 @@ access to the admin APIs.
         
         if  "groups" in phases :
             logging.info( "processing group info for %i groups: collect=%s", len( mugList), args.collect )
-            writer.processGroups( args.collect )
+            writer.write_groups( args.collect )
             phases.remove( "groups")
         if "members" in phases :
             logging.info( "processing members info for %i groups: collect=%s", len( mugList), args.collect  )
-            writer.processMembers( args.collect )
+            writer.write_members( args.collect )
             phases.remove( "members")
             
         for i in mugList :

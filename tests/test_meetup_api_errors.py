@@ -16,7 +16,7 @@ class Test(unittest.TestCase):
         params={}
         params[ "key" ] = get_meetup_key()
         params[ "group_urlname" ] = "MongoDBGlasgow"
-        params[ "page"]    = 2
+        params[ "page"]    = 10
  
         r = requests.get( "https://api.meetup.com/2/members", params )
         print( r.url )
