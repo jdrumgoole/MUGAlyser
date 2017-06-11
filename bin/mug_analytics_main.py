@@ -359,12 +359,22 @@ class MUG_Analytics( object ):
         if self._filename != "-":
             self._files.append( self._filename )
         
-    def get_events(self, urls, filename=None):
+    def get_events(self, urls, when="past", filename=None):
+        '''
+        Get events when=past means past events. when="upcoming" means future events.
+        '''
     
-        agg = Agg( self._mdb.pastEventsCollection())
+        agg = None
+        
+        if when == "past" : 
+            agg = Agg( self._mdb.pastEventsCollection())
+
+        elif when == "upcoming" :
+            agg = Agg( self._mdb.upcomingEventsCollection())
+
         
         agg.addMatch({ "batchID"      : self._batchID,
-                       "event.status" : "past",
+                       "event.status" : when,
                        "event.group.urlname" : { "$in" : urls }} )
         
         if self._start_date or self._end_date :
@@ -593,9 +603,9 @@ def main( args ):
     
 #if __name__ == '__main__':
     
-    cmds = [ "grouptotals", "groups", "events", "rsvps", 
+    cmds = [ "grouptotals", "groups", "pastevents", "rsvps", 
             "activeusers", "newmembers", "memberhistory", "rsvphistory",
-            "totals", "rsvpevents", "collections" ]
+            "totals", "rsvpevents", "collections", "upcomingevents" ]
 
     parser = ArgumentParser( args )
         
@@ -715,8 +725,11 @@ def main( args ):
     if "newmembers" in args.stats :
         analytics.get_new_members( urls, filename=filename( "members" ))
 
-    if "events" in args.stats:
-        analytics.get_events( urls, filename=filename( "events" ))
+    if "pastevents" in args.stats:
+        analytics.get_events( urls, when="past", filename=filename( "events" ))
+        
+    if "upcomingevents" in args.stats :
+        analytics.get_events( urls, when="upcoming", filename=filename( "events" ))
         
     if "rsvps" in args.stats:
         analytics.get_rsvps( urls, filename=filename( "rsvps" ))
