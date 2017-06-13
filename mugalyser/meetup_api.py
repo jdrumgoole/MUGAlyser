@@ -49,7 +49,7 @@ class MeetupRequest( object ):
         else:
             r = requests.get( req )
             
-        print( "request( r.url='%s' )" % r.url )
+        #print( "request( r.url='%s' )" % r.url )
         #pprint.pprint( r.headers )
         if not "Content-Length" in r.headers:
             logging.warn( "No 'Content-Length' field, retrying once")
