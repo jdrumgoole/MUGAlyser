@@ -60,8 +60,7 @@ def main( ) :
                 
             if args.members :
                 print( "args.members: %s" % args.mugs )
-                for i in args.mugs:
-                    it = m.get_members( i )
+                it = m.get_members( args.mugs )
     
                 count = 0 
                 name=""

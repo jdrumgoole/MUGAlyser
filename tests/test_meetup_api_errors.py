@@ -18,7 +18,7 @@ class Test(unittest.TestCase):
         params[ "group_urlname" ] = "London-MongoDB-User-Group"
         params[ "page"]    = 10
         count = 0
-        print( "requests.get(%s, %s)" % ( "https://api.meetup.com/2/members", params )
+        print( "requests.get(%s, %s)" % ( "https://api.meetup.com/2/members", params ))
         r = requests.get( "https://api.meetup.com/2/members", params )
         count = count + 1 
         print( "requests count : %i" % count )
