@@ -144,7 +144,7 @@ access to the admin APIs.
         
         audit = Audit( mdb )
         
-        batchID = audit.startBatch( { "args"    : vars( args ), 
+        batchID = audit.start_batch( { "args"    : vars( args ), 
                                       "version" : __programName__ + " " + __version__,
                                       "collect" : args.collect } )
 
@@ -177,7 +177,7 @@ access to the admin APIs.
         
         if  "groups" in phases :
             logging.info( "processing group info for %i groups: collect=%s", len( mugList), args.collect )
-            writer.write_groups( args.collect )
+            writer.write_groups( args.collect, mugList )
             phases.remove( "groups")
         if "members" in phases :
             logging.info( "processing members info for %i groups: collect=%s", len( mugList), args.collect  )
@@ -187,7 +187,7 @@ access to the admin APIs.
         for i in mugList :
             writer.capture_snapshot( i, args.admin, phases )
         
-        audit.endBatch( batchID )
+        audit.end_batch( batchID )
         end = datetime.utcnow()
     
         elapsed = end - start

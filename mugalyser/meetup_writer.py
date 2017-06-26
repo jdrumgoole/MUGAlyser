@@ -86,22 +86,22 @@ class MeetupWriter(object):
         return self._audit.addTimestamp( groupName, doc )
         
         
-    def write_nopro_groups(self ):
-        groups = self._meetup_api.get_groups()
+    def write_nopro_groups(self, mug_list ):
+        groups = self._meetup_api.get_groups_by_url( mug_list )
         self.write( self._groups,  groups, self.updateGroup, "group" )
         
     def write_pro_groups(self):
         groups = self._meetup_api.get_pro_groups()
         self.write( self._pro_groups,  groups, self.updateGroup, "group" )
         
-    def write_groups(self, collect ):
+    def write_groups(self, collect, mug_list ):
         if collect == "nopro":
-            self.write_nopro_groups()
+            self.write_nopro_groups( mug_list )
         elif collect == "pro":
             self.write_pro_groups()
         else:
             self.write_pro_groups()
-            self.write_nopro_groups()
+            self.write_nopro_groups( mug_list )
 
         
     def write_PastEvents(self, url_name ):

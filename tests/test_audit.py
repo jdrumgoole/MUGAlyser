@@ -20,74 +20,29 @@ class Test_audit(unittest.TestCase):
         self._mdb.client().drop_database( "TEST_AUDIT" )
     
     #@unittest.skip
-    def test_incrementID(self):
-        batchID = self._audit.incrementBatchID()
-        curID = self._audit.getCurrentBatchID()
-
-        self.assertEqual( batchID, curID )
-        newID = self._audit.incrementBatchID()
-        self.assertEqual( batchID + 1, newID )
+    def test_get_current_batch_id(self):
+        self.assertFalse( self._audit.in_batch())
         
-    def test_getCurrentValidBatchID(self):
-        batchID1 = self._audit.startBatch( doc={ "test" : "doc"})
-        self._audit.endBatch(batchID1 )
-        #self.assertRaises( ValueError, self._audit.getCurrentValidBatchID )
+        batch_id = self._audit.start_batch( doc = { "test" : "doc"})
+        self.assertTrue( self._audit.in_batch())
+        self._audit.end_batch( batch_id )
         
-        batchID2 = self._audit.startBatch( {  "args" : "arg list",
-                                              "version" : __programName__ + " " + __version__ })
-        
-        self._audit.endBatch( batchID2 )
-        self.assertEqual( batchID2, self._audit.getCurrentValidBatchID())
-        
-        batchID3 = self._audit.startBatch( doc={ "test" : "doc"})
-        self._audit.endBatch(batchID3 )
-        self.assertEqual( batchID3, self._audit.getCurrentValidBatchID())
-        
-    def test_batch(self):
-        
-        batchIDs = [ x for x in self._audit.getBatchIDs()]
-        
-        thisBatchID = self._audit.startBatch( doc={ "test" : "doc"} )
-        
-        newBatchIDs = [ x for x in self._audit.getBatchIDs()]
-        
-        self.assertEqual( len( batchIDs ) + 1, len( newBatchIDs ))
-        
-        self.assertTrue( thisBatchID in newBatchIDs )
-        
-        self._audit.endBatch( thisBatchID )
+        self.assertFalse( self._audit.in_batch())
+        self.assertEqual( batch_id, self._audit.get_last_valid_batch_id())
     
-    def test_IDs(self):
-        self.assertRaises( ValueError,self._audit.getCurrentBatchID )
-        self.assertFalse( self._audit.inBatch())
-        batchID = self._audit.startBatch( {} )
-        self.assertTrue( self._audit.inBatch())
-        self.assertEquals( 1, self._audit.getCurrentBatchID())
-        self._audit.endBatch( batchID )
+    def test_get_valid_batches(self):
+        id1 = self._audit.start_batch( doc = { "test" : "doc"})
+        id2 = self._audit.start_batch( doc = { "test" : "doc"})
 
-        batch = self._audit.getBatch( batchID )
-        self.assertTrue( "start" in batch )
-        self.assertTrue( "end" in batch )
-        self.assertTrue( "info" in batch )
-        self.assertTrue( "batchID" in batch )
-        self.assertFalse( self._audit.incomplete( batchID ))
+        self.assertTrue( self._audit.in_batch())
+        self._audit.end_batch( id2 )
+        self.assertTrue( self._audit.in_batch())
+        self._audit.end_batch( id1 )
+        self.assertFalse( self._audit.in_batch())
         
-        batchID = self._audit.startBatch( {} )
-        self.assertTrue( self._audit.inBatch())
-        self.assertEquals( 2, self._audit.getCurrentBatchID())
-        self._audit.endBatch( batchID )
-        self.assertFalse( self._audit.inBatch())
-        
-    def test_start_end_batch(self):
-        
-        batchID = self._audit.startBatch({})
-        self.assertTrue( self._audit.incomplete( batchID ))
-        self._audit.endBatch( batchID )
-        self.assertFalse( self._audit.incomplete( batchID ))
-        
-    def test_get_current_valid_batches(self):
-        pass
-    
+        idlist = list( self._audit.get_valid_batch_ids())
+        self.assertTrue( id1 in idlist )
+        self.assertTrue( id2 in idlist )
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

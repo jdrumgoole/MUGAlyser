@@ -120,7 +120,7 @@ class MUG_Analytics( object ):
 
         self._view = view
         if batchID is None:
-            self._batchID = audit.getCurrentValidBatchID()
+            self._batchID = audit.get_last_valid_batch_id()
         else:
             self._batchID = batchID
             
@@ -212,7 +212,7 @@ class MUG_Analytics( object ):
         '''
         audit = Audit( self._mdb )
         
-        validBatches = list( audit.getCurrentValidBatchIDs())
+        validBatches = list( audit.get_valid_batch_ids())
                 
         agg = Agg( self._mdb.groupsCollection())
         
@@ -547,7 +547,7 @@ class MUG_Analytics( object ):
             self._files.append( self._filename )
        
  
-    def get_totals(self, urls, countries=EU_COUNTRIES ):
+    def get_totals(self, urls, countries=None ):
         '''
         Total number of members
         Total number of groups
@@ -587,7 +587,7 @@ def get_batches( mdb, start, end, limit=None ):
     
     audit = Audit( mdb )
     
-    c = CursorFormatter( audit.getCurrentValidBatches( start, end ))
+    c = CursorFormatter( audit.get_valid_batches( start, end ))
     c.output( [ "batchID" , "end", "start" ], datemap=[ "start", "end" ], limit=limit)
 
     

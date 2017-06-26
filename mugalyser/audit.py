@@ -1,4 +1,33 @@
 '''
+The audit collection is used to track a batch process that has a distinct start and finish.
+Each process has a start and end document that is linked by a batchID. BatchIDs are unique.
+
+Batch creation (specifically batch ID increment) is protected by a lock to make it thread safe.
+
+An invalid batch is any batch with a start batch and no correspoding end batch. Batch documents
+are never updated so that the atomic properties of document writes ensure that batch creation
+and batch completion are all or nothing affairs.
+
+Start Batch Document
+{ "batchID" :  13
+  "start"    : October 10, 2016 9:16 PM
+  "info"     : { "args"  : { ... }
+                 "MUGS" : { ... }
+                }
+   "version" : "mugalyser_main.py 0.7 beta"
+}
+
+End Batch Document
+{ "batchID"  :  13
+  "end"      : October 10, 2016 9:20 PM
+}
+
+There is an index on batchID.
+
+
+'''
+
+'''
 Created on 30 Sep 2016
 
 The Audit collection keeps track of all the runs of the MUGALyser tool.
@@ -53,9 +82,7 @@ have an end date field.
 
 import pymongo
 from datetime import datetime
-from mugalyser.version import __programName__, __version__, __schemaVersion__
-from mongodb_utils.agg import Agg, Sorter
-from mugalyser.apikey import get_meetup_key
+from threading import Lock
 
 class Audit( object ):
     
@@ -63,82 +90,26 @@ class Audit( object ):
     
     def __init__(self, mdb ):
         
+        self._lock = Lock()
         self._mdb = mdb
         self._auditCollection = mdb.auditCollection()
-        self._currentBatch = self._auditCollection.find_one( { "name" : "Current Batch"})
-        
-        if self._currentBatch is None:
-            self._currentBatch = {}
-            self._currentBatch[ "name"] = "Current Batch"
-            self._currentBatch[ "currentID" ] = 0
-            self._currentBatch[ "batchID" ] = 0
-            self._currentBatch[ 'valid'] = False
-            self._currentBatch[ "schemaVersion" ] = __version__
-            self._auditCollection.insert_one( self._currentBatch )
-        else:
-            # Migrate schema from version 0.7 to 0.8
-            if self._currentBatch.has_key( "ID" ):
-                self._auditCollection.update( { "_id" : self._currentBatch[ "_id"]},
-                                              { "$rename" : { "ID" : "currentID" }})
-                
-                curid = self._currentBatch[ "ID"]
-                del self._currentBatch[ "ID"]
-                self._currentBatch[ "currentID" ]= curid
-                
-            if not "batchID" in self._currentBatch :
-                self._auditCollection.update( { "_id" : self._currentBatch[ "_id"]},
-                                              { "$set" : { "batchID" : 0 }})
-            
-                self._currentBatch[ "batchID" ] = 0
-            
-            self._auditCollection.update( { "_id" : self._currentBatch[ "_id"]},
-                                          { "$set" : { "schemaVersion" : __schemaVersion__  }})
-
-        self._currentBatchID = None
+        self._open_batch_count = 0
         
     def collection(self):
         return self._auditCollection
         
     def mdb( self ):
         return self._mdb
-    
-    def inBatch(self):
-        return self._currentBatchID
+
     
     def isProBatch(self, ID ):
-        doc = self.getBatch( ID )
+        doc = self.get_batch( ID )
 
         return ( doc.has_key( "info") and 
                  doc[ "info"].has_key( "pro_account" ) and 
                  ( doc[ "info" ][ "pro_account"] == True ))
-              
-    def insertTimestamp( self, doc, ts=None ):
-        if ts :
-            doc[ "timestamp" ] = ts
-        else:
-            doc[ "timestamp" ] = datetime.utcnow()
-            
-        return doc
-    
-    def addTimestamp( self, name, doc, ts=None ):
-    
-        tsDoc = { name : doc, "timestamp" : None, "batchID": self.getCurrentBatchID()}
-        return self.insertTimestamp( tsDoc, ts )
-    
-    def addInfoTimestamp(self, doc, ts=None ):
-        return self.addTimestamp( "info", doc, ts )
-    
-    def addMemberTimestamp(self, doc, ts=None ):
-        return self.addTimestamp( "member", doc, ts )
-    
-    def addEventTimestamp(self, doc, ts=None ):
-        return self.addTimestamp( "event", doc, ts )
-    
-    def addGroupTimestamp(self, doc, ts=None ):
-        return self.addTimestamp( "group", doc, ts )
-    
-    def addAttendeeTimestamp(self, doc, ts=None ):
-        return self.addTimestamp( "attendee", doc, ts )
+
+
     
     def getBatchIDs(self):
         cursor = self._auditCollection.find( { "batchID" : { "$exists" : 1 }}, { "_id" : 0, "batchID" : 1})
@@ -146,51 +117,61 @@ class Audit( object ):
             if i[ "batchID"] == 0 :
                 continue
             yield i[ 'batchID' ]
+        
+    def start_batch(self, doc, name=None ):
+
+        with self._lock :
+            self._open_batch_count = self._open_batch_count + 1
             
-    def incrementBatchID(self):
-        #
-        # We can have multiple batches running in parallel as long as each has a unique
-        # batch ID. Find And Modify ensures that each batch ID is unique.
-        curBatch = self._auditCollection.find_and_modify( { "name" : "Current Batch" },
-                                                          update= { "$inc" : { "currentID" : 1 },
-                                                                    "$set" : { "timestamp" : datetime.now() }},
-                                                         new = True )
+            last_id = self.get_last_valid_batch_id()
+            if last_id is None :
+                last_id = 0
+            new_batch_id = last_id + self._open_batch_count
         
-        return curBatch[ "currentID" ]
-#         self._currentBatch[ "currentID" ] = self.getCurrentBatchID()  + 1
-#         self._currentBatch[ "timestamp" ] = datetime.now()
-#         self._auditCollection.update( { "name" : "Current Batch" }, 
-#                                       { "$set" : { "currentID" : self._currentBatch[ "currentID"],
-#                                                    "timestamp" : self._currentBatch[ "timestamp" ] }} )
-        
-    def startBatch(self, doc, name=None ):
-        thisBatchID = self.incrementBatchID()
-        
-        if name is None :
-            name = "Standard Batch: %i" % thisBatchID
-            
-        self._auditCollection.insert_one( { "batchID" : thisBatchID,
+        self._auditCollection.insert_one( { "batchID" : new_batch_id,
                                             "start"   : datetime.now(),
-                                            "end"     : None,
                                             "name"    : name,
                                             "info"    : doc })
         
-        self._currentBatchID = thisBatchID
+            
+        return new_batch_id
+    
+    def end_batch(self, batchID ):
         
-        return thisBatchID
+        with self._lock :
+            self._open_batch_count = self._open_batch_count - 1 
+            
+        if not self.is_batch( batchID):
+            raise ValueError( "BatchID does not exist: %s" % batchID )
         
-    def getBatch(self, batchID ):
+        self._auditCollection.insert_one( { "batchID" : batchID,
+                                            "end"     : datetime.utcnow()})
+        
+        return batchID   
+    
+    def in_batch(self):
+        with self._lock :
+            return self._open_batch_count > 0 
+             
+    def get_batch(self, batchID ):
+        batch = self._auditCollection.find_one( { "batchID" : batchID })
+        if batch is None:
+            raise ValueError( "BatchID does not exist: %s" % batchID )
+    
+    def is_batch(self, batchID ):
         return self._auditCollection.find_one( { "batchID" : batchID })
     
+    def complete(self, batchID ):
+        if self._auditCollection.find_one( { "batchID" : batchID } ) is None:
+            raise ValueError( "BatchID does not exist: %s" % batchID )
+        else:
+            return self._auditCollection.find_one( { "batchID" : batchID, "end" : { "$exists" : 1 }})
+        
+        
     def incomplete(self, batchID ):
-        return self.getBatch( batchID )[ "end" ] == None
+        return not self.complete( batchID )
         
-    def endBatch(self, batchID ):
-        self._auditCollection.update( { "batchID" : batchID },
-                                      { "$set" : { "end"  : datetime.now(), 
-                                                  "valid" : True }})
-        
-        self._currentBatchID = None
+
         
     def auditCollection(self):
         return self._auditCollection
@@ -202,57 +183,49 @@ class Audit( object ):
 #         else:
 #             return curBatch[ "currentID"] - 1
     
-    def getCurrentValidBatchID( self ):
+    def get_current_batch( self ):
         '''
         A Valid Batch record has a start and a end field that are both types.
         It also has "valid" field set to true.
         '''
-        cur_batch = self._auditCollection.find( { "start" : { "$type" : "date" },
-                                                  "end"   : { "$type" : "date" }} ) #17 BSON type for timestamp
         
-        results = cur_batch.sort( "batchID", pymongo.DESCENDING ).limit( 1 )
+        results = self.get_valid_batches()
         
         if results is None :
             raise ValueError( "No current valid batch ID" )
-        else:
-            try :
-                x= results.next()[ "batchID"]
-                return x
-            except StopIteration :
-                raise ValueError( "Iterator returned no results")
+        for i in results:
+            return i
             
-    def getCurrentValidBatches( self, start=None, end=None ):
-        
-        agg = Agg( self._auditCollection )
-        agg.addMatch({ "apikey" : get_meetup_key(),
-                       "end"    : { "$ne" : None },
-                       "trial"  : False }  )
-        
-        agg.addRangeMatch( "start", start, end)
-        agg.addSort( Sorter( batchID = pymongo.DESCENDING ))
-        
-#         cursor = self._auditCollection.find( { "apikey" : get_meetup_key(),
-#                                                "end"    : { "$ne" : None },
-#                                                "trial"  : False } ).sort( "batchID", pymongo.DESCENDING )
-                                         
-        return agg
+    def get_valid_batches( self, start=None, end=None):
 
+        if start and not isinstance( datetime, start ):
+            raise ValueError( "start is not a datetime object")
+        if end and not isinstance( datetime, end ):
+            raise ValueError( "end is not a datetime object")
+        
+        batches = self._auditCollection.find( { "end" : { "$exists" : 1 }}).sort( "end", pymongo.DESCENDING )
+        
+        for i in batches:
+            batch_date = i[ 'end']
             
-    def getCurrentValidBatchIDs( self ):
-        for i in self.getCurrentValidBatches().aggregate():
+            if start and end :
+                if batch_date >= start and batch_date <= end :
+                    yield i
+            elif start:
+                if batch_date >= start:
+                    yield i
+            elif end:
+                if batch_date <= end :
+                    yield i
+            else:
+                yield i
+            
+    def get_valid_batch_ids( self ):
+        for i in self.get_valid_batches():
             yield i[ "batchID" ]
             
-    def getCurrentBatch( self ) :
-        return self._auditCollection.find_one( { "name" : 'Current Batch'} )
-    
-    def getCurrentBatchID(self ):
-        if self._currentBatchID :
-            return self._currentBatchID
-        else:
-            curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
-            
-            if curBatch[ "currentID" ] == 0 :
-                raise ValueError( "No batches in database" )
-            else:
-                return curBatch[ "currentID" ]
+    def get_last_valid_batch_id(self):
+        ids = self.get_valid_batch_ids()
+        for i in ids:
+            return i
     

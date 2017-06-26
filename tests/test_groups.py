@@ -22,7 +22,7 @@ class Test_groups(unittest.TestCase):
         pass
 
     def test_get_groups(self):
-        g = self._groups.get_group( "DublinMUG")
+        g = self._groups.get_group( "DublinMUG" )
         self.assertEqual( g[ "group"][ "urlname"], "DublinMUG" )
         
     def test_get_country(self):
