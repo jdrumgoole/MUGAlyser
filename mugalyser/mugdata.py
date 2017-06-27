@@ -46,7 +46,7 @@ class MUGData( object ):
                 yield i
         
     def find_one(self, query=None ):
-        batch_query = { "batchID" : self._audit.getCurrentBatchID() }
+        batch_query = { "batchID" : self._audit.get_last_valid_batch_id() }
         if query is not None:
             batch_query.update( query )
         
@@ -55,7 +55,7 @@ class MUGData( object ):
         
     def find(self, q=None, *args, **kwargs ):
         
-        query = { "batchID" : self._audit.getCurrentValidBatchID() } 
+        query = { "batchID" : self._audit.get_last_valid_batch_id() } 
         if q :
             query.update( q )
             

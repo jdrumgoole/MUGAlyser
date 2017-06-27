@@ -15,9 +15,10 @@ class TestMains(unittest.TestCase):
         root = os.getenv( "MROOT", "")
         if root == "" :
             print( "Environment variable MROOT is not defined" )
-            sys.exit( 2 )
-        self._binPath = os.path.abspath( os.path.join( root, "bin" ))
-        #print( self._binPath )
+            root = os.getenv( "HOME", "")
+            root = os.path.join( root, "GIT", "MUGAlyser")
+            
+        self._binPath =os.path.join( root, "bin" )
         
     def redirect_cmd(self, programArgs, output_filename ):
 

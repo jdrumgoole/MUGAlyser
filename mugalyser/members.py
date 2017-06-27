@@ -8,9 +8,7 @@ import itertools
 import pymongo
 
 from mongodb_utils.agg import Agg, Sorter
-from mugalyser.feedback import Feedback
 from mugalyser.mugdata import MUGData
-from mugalyser.audit import Audit
 
 class Members(MUGData):
     '''
@@ -28,26 +26,7 @@ class Members(MUGData):
         self._membersAgg.addGroup( { "_id" : "$name" , "occurences" : { "$sum" : 1 }})
         self._membersAgg.addSort( Sorter( occurences = pymongo.DESCENDING  )) # largest first
         self._memberCount = 0
-        self._feedback = Feedback()
-        self._audit = Audit( mdb )
         
-    def get_group_members(self, url_name, q=None ):
-        '''
-        returns a MongoDB cursor.
-        '''
-        query = { "member.chapters" : { "$elemMatch" : { "urlname" : url_name }}}
-        if q :
-            query.update( q )
-
-        return self.find( query )
-        
-    def get_many_group_members(self, groups, query=None):
-        '''
-        returns a generator
-        '''
-        
-        return itertools.chain( *[ self.get_group_members( i, query ) for i in groups ] )
-
     def count_members(self, groups ):
         
         total = 0 
@@ -63,8 +42,7 @@ class Members(MUGData):
         '''
         return self.find( query )
         
-    def distinct_members(self ):
-        return self._collection.distinct( "member.member_name")
+
     
     def get_by_name(self, name ):
         member = self.find_one( { "member.member_name" : name })
@@ -89,7 +67,7 @@ class Members(MUGData):
     def joined_by_year(self):
         
         agg_pipe = Agg( self._collection )    
-        agg_pipe.addMatch( { "batchID" : self._audit.getCurrentBatchID() } )
+        agg_pipe.addMatch( { "batchID" : self._audit.get_last_valid_batch_id() } )
         agg_pipe.addProject( { "_id" : 0, 
                                "member_id" : "$member.member_id",
                                "member_name" : "$member.member_name",
@@ -99,6 +77,8 @@ class Members(MUGData):
         
         return agg_pipe.aggregate()
         
+    def distinct_members(self ):
+        return self._collection.distinct( "member.name")
         
     def get_members(self):
         return self._membersAgg.aggregate()
@@ -113,7 +93,53 @@ class Members(MUGData):
                                        doc[ "member" ][ "member_id"] )
 
     
+
+class Pro_Members( Members ):
+    
+    def __init__(self, mdb ):
+        '''
+        Constructor
+        '''
+        super( Members, self ).__init__( mdb, "pro_members" ) 
+        self._membersAgg = Agg( self._collection )
+        self._membersAgg.addMatch({ "member.member_name": { "$exists" : 1 }})
+        self._membersAgg.addProject( { "_id" : 0, "name" : "$member.member_name" })
+        self._membersAgg.addGroup( { "_id" : "$name" , "occurences" : { "$sum" : 1 }})
+        self._membersAgg.addSort( Sorter( occurences = pymongo.DESCENDING  )) # largest first
+        self._memberCount = 0
         
+    def get_group_members(self, url_name, q=None ):
+        '''
+        returns a MongoDB cursor.
+        '''
+        query = { "member.chapters" : { "$elemMatch" : { "urlname" : url_name }}}
+        if q :
+            query.update( q )
+
+        return self.find( query )
+        
+    def get_many_group_members(self, groups, query=None):
+        '''
+        returns a generator
+        '''        
+        return itertools.chain( *[ self.get_group_members( i, query ) for i in groups ] )
+    
+    def joined_by_year(self):
+        
+        agg_pipe = Agg( self._collection )    
+        agg_pipe.addMatch( { "batchID" : self._audit.get_last_valid_batch_id() } )
+        agg_pipe.addProject( { "_id" : 0, 
+                               "member_id" : "$member.member_id",
+                               "member_name" : "$member.member_name",
+                               "year" : { "$year" : "$member.join_time" },
+                              })
+        agg_pipe.addGroup( { "_id" : "$year","total_registered" : { "$sum" : 1 }})
+        
+        return agg_pipe.aggregate()
+    
+    def distinct_members(self ):
+        return self._collection.distinct( "member.member_name")
+    
 class Organizers( Members ):
     
     def get_organizers(self):

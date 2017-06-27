@@ -31,7 +31,7 @@ class Test_groups(unittest.TestCase):
         
     def testGroups(self):
         groups = self._groups.get_all_groups()
-        self.assertEqual( len( [ x for x in groups ]), 114 )
+        self.assertGreaterEqual( len( [ x for x in groups ]), 114 )
 
         groups = self._groups.get_all_groups( region=[ 'USA'] )
         
@@ -42,10 +42,10 @@ class Test_groups(unittest.TestCase):
         
     def test_get_region_urlnames(self):
         eu_groups = self._groups.get_region_group_urlnames()
-        self.assertEqual( len( eu_groups ), 114 )
+        self.assertGreaterEqual( len( eu_groups ), 114 )
         
         eu_groups = self._groups.get_region_group_urlnames( regions=EU_COUNTRIES )
-        self.assertEqual( len( eu_groups ), 40 )
+        self.assertGreaterEqual( len( eu_groups ), 40 )
         
         self.assertRaises(ValueError, self._groups.get_region_group_urlnames, 27 )
 

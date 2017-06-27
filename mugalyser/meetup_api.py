@@ -12,8 +12,6 @@ import pprint
 
 from copy import deepcopy
 
-from mugalyser.apikey import get_meetup_key
-
 def returnData( r ):
     #print( r.text )
     if r.raise_for_status() is None:
@@ -290,7 +288,7 @@ class MeetupAPI(object):
             
         return url
     
-    def __init__(self, apikey = get_meetup_key(), items=500):
+    def __init__(self, apikey, items=500):
         '''
         Constructor
         '''

@@ -121,32 +121,26 @@ class Audit( object ):
     def start_batch(self, doc, name=None ):
 
         with self._lock :
-            self._open_batch_count = self._open_batch_count + 1
-            
-            last_id = self.get_last_valid_batch_id()
+            last_id = self.get_last_batch_id()
             if last_id is None :
                 last_id = 0
-            new_batch_id = last_id + self._open_batch_count
+            new_batch_id = last_id + 1
+            self._open_batch_count = self._open_batch_count + 1
+            self._auditCollection.insert_one( { "batchID" : new_batch_id,
+                                                "start"   : datetime.now(),
+                                                "name"    : name,
+                                                "info"    : doc })
         
-        self._auditCollection.insert_one( { "batchID" : new_batch_id,
-                                            "start"   : datetime.now(),
-                                            "name"    : name,
-                                            "info"    : doc })
-        
-            
         return new_batch_id
     
     def end_batch(self, batchID ):
-        
-        with self._lock :
-            self._open_batch_count = self._open_batch_count - 1 
             
         if not self.is_batch( batchID):
             raise ValueError( "BatchID does not exist: %s" % batchID )
         
         self._auditCollection.insert_one( { "batchID" : batchID,
                                             "end"     : datetime.utcnow()})
-        
+        self._open_batch_count = self._open_batch_count - 1
         return batchID   
     
     def in_batch(self):
@@ -157,6 +151,8 @@ class Audit( object ):
         batch = self._auditCollection.find_one( { "batchID" : batchID })
         if batch is None:
             raise ValueError( "BatchID does not exist: %s" % batchID )
+        
+        return batch
     
     def is_batch(self, batchID ):
         return self._auditCollection.find_one( { "batchID" : batchID })
@@ -183,7 +179,30 @@ class Audit( object ):
 #         else:
 #             return curBatch[ "currentID"] - 1
     
-    def get_current_batch( self ):
+    def get_batches(self):
+        
+        batches = self._auditCollection.find( { "batchID" : { "$exists" : 1 },
+                                                "start"   : { "$exists" : 1 }}).sort( "start", pymongo.DESCENDING )
+        for i in batches:
+            yield i
+            
+    def get_batch_ids(self):
+        for i in self.get_batches():
+            yield i[ "batchID" ]
+            
+            
+    def get_last_batch_id(self):
+        '''
+        There may be incomplete batches int he mix. We make sure the next batch ID we select
+        does not overlap with an incomplete batch ID.
+        '''
+        
+        results = self.get_batch_ids()
+        
+        for i in results :
+            return i
+        
+    def get_current_batch( self ):  
         '''
         A Valid Batch record has a start and a end field that are both types.
         It also has "valid" field set to true.
@@ -228,4 +247,5 @@ class Audit( object ):
         ids = self.get_valid_batch_ids()
         for i in ids:
             return i
+        
     

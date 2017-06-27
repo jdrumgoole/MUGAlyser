@@ -89,7 +89,6 @@ access to the admin APIs.
 
         parser.add_argument( '--host', default="mongodb://localhost:27017/MUGS", help='URI to connect to : [default: %(default)s]')
 
-        parser.add_argument( "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         parser.add_argument( "-v", "--version", action='version', version=__programName__ + " " + __version__ )
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
      
@@ -116,8 +115,6 @@ access to the admin APIs.
             apikey = args.apikey
         else:
             apikey = get_meetup_key()
-        
-        verbose = args.verbose
 
         format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format_string, level=LoggingLevel( args.loglevel ))
@@ -125,20 +122,6 @@ access to the admin APIs.
         # Turn off logging for requests
         logging.getLogger("requests").setLevel(logging.WARNING)
         logging.getLogger("urllib3").setLevel(logging.WARNING)
-
-        if verbose > 0:
-            logging.info("Verbose mode on")
-            
-        if args.urlfile :
-            if not os.path.isfile( args.urlfile ):
-                print( "No such file --urlfile '%s'" % args.urlfile )
-                sys.exit( 1 )
-                
-        if args.mugs:
-            mugList = args.mugs
-        else:
-            mugList = []
-
             
         mdb = MUGAlyserMongoDB( args.host )
         
@@ -151,29 +134,37 @@ access to the admin APIs.
         start = datetime.utcnow()
         logging.info( "Started MUG processing for batch ID: %i", batchID )
         logging.info( "Writing to database : '%s'", mdb.database().name )
-        if args.collect in [ "nopro", "all" ] :
+        
+        if args.collect in [ "pro", "all"]:
+            '''
+            Ignore the --urlfile argument and get the groups from the pro accoubt
+            '''
+            logging.info( "Using pro API calls (pro account API key)")
+            mugList = list( MeetupAPI( apikey ).get_pro_group_names())
+        elif args.collect in [ "nopro" ] :
             if args.urlfile:
                 urlfile = os.path.abspath( args.urlfile )
                 logging.info( "Reading groups from: '%s'", urlfile )
                 with open( urlfile ) as f:
                     mugList = f.read().splitlines()
             else:
-                logging.warning( "No urlfile specified: No groups will be analysed in nopro mode")
-                
-        elif args.collect == "pro":
-            logging.info( "Using pro API calls (pro account API key)")
-            
-        if args.collect == "pro":
-            mugList = list( MeetupAPI().get_pro_group_names())
-        
-        writer = MeetupWriter( audit, mdb, mugList,  apikey )
+                mugList = args.mugs
+
+        if args.admin:
+            logging.info( "Using admin account")
+
+        writer = MeetupWriter( apikey, batchID, mdb, mugList )
             
         if "all" in args.phases :
             phases = [ "groups", "members", "upcomingevents", "pastevents"]
             if args.admin:
                 phases.append( "attendees" )
+            else:
+                logging.info( "No --admin : we will not collect attendee info")
         else:
             phases = args.phases
+            
+        logging.info( "Processing phases: %s", phases )
         
         if  "groups" in phases :
             logging.info( "processing group info for %i groups: collect=%s", len( mugList), args.collect )

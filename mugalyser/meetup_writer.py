@@ -7,6 +7,7 @@ Created on 21 Nov 2016
 from mongodb_utils.batchwriter import BatchWriter
 from requests import HTTPError
 import logging
+from datetime import datetime
 #import pprint
 from mugalyser.apikey import get_meetup_key
 from mugalyser.meetup_api import MeetupAPI
@@ -29,14 +30,21 @@ class MeetupWriter(object):
     embedded document with the key "newFieldname".
     
     '''
-    def __init__(self, audit, mdb, urls, apikey= get_meetup_key(), unordered=True ):
+    
+    
+    def _addTimestamp( self, name, doc ):
+    
+        return { name : doc, "timestamp" : datetime.utcnow(), "batchID": self._batch_ID }
+  
+    
+    def __init__(self, apikey, batch_ID, mdb, urls, unordered=True ):
         '''
         Write contents of meetup API to MongoDB
         '''
 
-        self._mdb = mdb
+        self._mdb = mdb 
         self._meetup_api = MeetupAPI( apikey )
-        self._audit = audit
+        self._batch_ID = batch_ID
         self._groups = self._mdb.groupsCollection()
         self._pro_groups = self._mdb.proGroupsCollection()
         self._members = self._mdb.membersCollection()
@@ -73,17 +81,17 @@ class MeetupWriter(object):
         writer = self._meetup_api.get_attendees( group )
         
         newWriter = mergeEvents( writer )
-        self.write( self._attendees, newWriter, self._audit.addTimestamp, "info"  )
+        self.write( self._attendees, newWriter, self._addTimestamp, "info"  )
         
     def write_group(self, url_name, groupName="group"):
         group = self._meetup_api.get_group( url_name )
-        newDoc = self._audit.addTimestamp( groupName, group )
+        newDoc = self._addTimestamp( groupName, group )
         self._groups.insert_one( newDoc )
         return newDoc
 
     def updateGroup(self, groupName, doc ):
         self._mugs.append( doc[ "urlname" ])
-        return self._audit.addTimestamp( groupName, doc )
+        return self._addTimestamp( groupName, doc )
         
         
     def write_nopro_groups(self, mug_list ):
@@ -106,19 +114,19 @@ class MeetupWriter(object):
         
     def write_PastEvents(self, url_name ):
         pastEvents = self._meetup_api.get_past_events( url_name )
-        self.write( self._pastEvents, pastEvents, self._audit.addTimestamp, "event" )
+        self.write( self._pastEvents, pastEvents, self._addTimestamp, "event" )
    
     def write_UpcomingEvents(self, url_name ):
         upcomingEvents = self._meetup_api.get_upcoming_events( url_name )
-        self.write( self._upcomingEvents, upcomingEvents, self._audit.addTimestamp, "event" )
+        self.write( self._upcomingEvents, upcomingEvents, self._addTimestamp, "event" )
         
     def write_pro_members(self):
         members = self._meetup_api.get_pro_members()
-        self.write( self._pro_members, members, self._audit.addTimestamp, "member" )
+        self.write( self._pro_members, members, self._addTimestamp, "member" )
     
     def write_nopro_members(self):
-        members = self._meetup_api.get_members( ["DublinMUG", "London-MongoDB-User-Group" ] )
-        self.write( self._members, members, self._audit.addTimestamp, "member" )
+        members = self._meetup_api.get_members( self._urls )
+        self.write( self._members, members, self._addTimestamp, "member" )
         
     def write_members( self, collect ):
         if collect == "nopro":
@@ -137,7 +145,7 @@ class MeetupWriter(object):
     def capture_snapshot(self, url_name,  admin_arg, phases ):
 
         try :
-        
+
             for i in phases:
                 if i == "pastevents" :
                     logging.info( "process past events for      : '%s'", url_name )
@@ -152,7 +160,7 @@ class MeetupWriter(object):
                     else:
                         logging.warn( "You have not specified the admin arg")
                         logging.warn( "You must be a meetup admin user to request attendees")
-                        logging.warn( "Ignoring phase 'attendees")
+                        logging.warn( "Ignoring phase 'attendeesx'")
             
                 else:
                     logging.warn( "ignoring phase '%s': not a valid execution phase", i )

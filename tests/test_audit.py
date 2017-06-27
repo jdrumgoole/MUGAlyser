@@ -27,6 +27,8 @@ class Test_audit(unittest.TestCase):
         self.assertTrue( self._audit.in_batch())
         self._audit.end_batch( batch_id )
         
+        self.assertTrue( self._audit.get_batch( batch_id ))
+        
         self.assertFalse( self._audit.in_batch())
         self.assertEqual( batch_id, self._audit.get_last_valid_batch_id())
     
@@ -43,6 +45,18 @@ class Test_audit(unittest.TestCase):
         idlist = list( self._audit.get_valid_batch_ids())
         self.assertTrue( id1 in idlist )
         self.assertTrue( id2 in idlist )
+        
+    def test_get_last_batch_id(self):
+        id1 = self._audit.start_batch( doc = { "test" : "doc"})
+        id2 = self._audit.start_batch( doc = { "test" : "doc"})
+        self.assertEqual( 2, self._audit.get_last_batch_id())
+        self._audit.end_batch( id2 )
+        self.assertEqual( 2, self._audit.get_last_batch_id())
+        self._audit.end_batch( id1 )
+        
+        id1 = self._audit.start_batch( doc = { "test" : "doc"})
+        self.assertEqual( 3, self._audit.get_last_batch_id())
+        self._audit.end_batch( id1 )
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

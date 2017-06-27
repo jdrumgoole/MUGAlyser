@@ -9,7 +9,6 @@ from feedback import Feedback
 from pprint import pprint
 from mugdata import MUGData
 import itertools
-from utils.query import Query
 
 class Events(MUGData):
     '''

@@ -6,12 +6,14 @@ Created on 26 Nov 2016
 '''
 import unittest
 from mugalyser.meetup_api import MeetupAPI
+from mugalyser.apikey import get_meetup_key
 import types
 
 class Test_meetup_api(unittest.TestCase):
 
     def setUp(self):
-        self._api = MeetupAPI()
+        apikey = get_meetup_key()
+        self._api = MeetupAPI( apikey )
 
 
     def tearDown(self):
