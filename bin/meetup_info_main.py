@@ -15,6 +15,7 @@ import logging
 from mugalyser.meetup_api import MeetupAPI
 from traceback import print_exception
 from mugalyser.mugdata import printCursor
+from mugalyser.apikey import get_meetup_key
     
 program_name = "meetup_info_main"
     
@@ -41,7 +42,7 @@ def main( ) :
         format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format_string, level=logging.INFO )
         if args.apikey == "" :
-            m = MeetupAPI()
+            m = MeetupAPI( apikey= get_meetup_key())
         else:
             m = MeetupAPI( apikey = args.apikey )
             

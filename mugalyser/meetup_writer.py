@@ -6,18 +6,27 @@ Created on 21 Nov 2016
 
 from mongodb_utils.batchwriter import BatchWriter
 from requests import HTTPError
-import logging
+from mugalyser.logger import Logger
+
 from datetime import datetime
 #import pprint
-from mugalyser.apikey import get_meetup_key
-from mugalyser.meetup_api import MeetupAPI
 
+from mugalyser.meetup_api import MeetupAPI
+from mugalyser.version import __programName__
 
 def mergeEvents( writer ):
     for attendee, event in writer:
         doc = { u"attendee" : attendee,
                 u"event" : event }
         yield doc 
+        
+def feedback( doc ):
+    print( ".")
+    logger = Logger( __programName__ ).log()
+    if doc.has_key( "name") :
+        logger.info( "Processing: %s", doc[ 'name' ])
+    else:
+        logger.info( "Processing: ." )
         
 class MeetupWriter(object):
     '''
@@ -37,7 +46,7 @@ class MeetupWriter(object):
         return { name : doc, "timestamp" : datetime.utcnow(), "batchID": self._batch_ID }
   
     
-    def __init__(self, apikey, batch_ID, mdb, urls, unordered=True ):
+    def __init__(self, apikey, batch_ID, mdb, unordered=True ):
         '''
         Write contents of meetup API to MongoDB
         '''
@@ -52,9 +61,10 @@ class MeetupWriter(object):
         self._attendees = self._mdb.attendeesCollection()
         self._pastEvents = self._mdb.pastEventsCollection()
         self._upcomingEvents = self._mdb.upcomingEventsCollection()
-        self._mugs = []
+#         self._mugs = []
         self._unordered = unordered
-        self._urls = urls
+        
+        self._logger = Logger( __programName__ ).log()
         
         
     def write(self, collection, retrievalGenerator, processFunc, newFieldName ):
@@ -68,13 +78,12 @@ class MeetupWriter(object):
         is reached and then writes them as a batch using BatchWriter.
         
         '''
-        bw = BatchWriter( collection, processFunc, newFieldName, self._unordered )
+        bw = BatchWriter( collection, processFunc, newFieldName, feedback )
         
-        writer = bw.bulkWrite( writeLimit=1)
+        writer = bw.bulkWrite()
         
         for i in retrievalGenerator :
             writer.send( i )
-
     
     def write_Attendees( self, group ):
         
@@ -83,33 +92,33 @@ class MeetupWriter(object):
         newWriter = mergeEvents( writer )
         self.write( self._attendees, newWriter, self._addTimestamp, "info"  )
         
-    def write_group(self, url_name, groupName="group"):
-        group = self._meetup_api.get_group( url_name )
-        newDoc = self._addTimestamp( groupName, group )
-        self._groups.insert_one( newDoc )
-        return newDoc
+#     def write_group(self, url_name, groupName="group"):
+#         group = self._meetup_api.get_group( url_name )
+#         newDoc = self._addTimestamp( groupName, group )
+#         self._groups.insert_one( newDoc )
+#         return newDoc
 
-    def updateGroup(self, groupName, doc ):
-        self._mugs.append( doc[ "urlname" ])
-        return self._addTimestamp( groupName, doc )
-        
+#     def updateGroup(self, groupName, doc ):
+#         self._mugs.append( doc[ "urlname" ])
+#         
+#         return self._addTimestamp( groupName, doc )
         
     def write_nopro_groups(self, mug_list ):
         groups = self._meetup_api.get_groups_by_url( mug_list )
-        self.write( self._groups,  groups, self.updateGroup, "group" )
+        self.write( self._groups,  groups, self._addTimestamp, "group" )
         
     def write_pro_groups(self):
         groups = self._meetup_api.get_pro_groups()
-        self.write( self._pro_groups,  groups, self.updateGroup, "group" )
+        self.write( self._pro_groups,  groups, self._addTimestamp, "group" )
         
-    def write_groups(self, collect, mug_list ):
+    def write_groups(self, collect, urls ):
         if collect == "nopro":
-            self.write_nopro_groups( mug_list )
+            self.write_nopro_groups( urls )
         elif collect == "pro":
             self.write_pro_groups()
         else:
             self.write_pro_groups()
-            self.write_nopro_groups( mug_list )
+            self.write_nopro_groups( urls )
 
         
     def write_PastEvents(self, url_name ):
@@ -124,52 +133,58 @@ class MeetupWriter(object):
         members = self._meetup_api.get_pro_members()
         self.write( self._pro_members, members, self._addTimestamp, "member" )
     
-    def write_nopro_members(self):
-        members = self._meetup_api.get_members( self._urls )
+    def write_nopro_members(self, urls ):
+        members = self._meetup_api.get_members( urls )
         self.write( self._members, members, self._addTimestamp, "member" )
         
-    def write_members( self, collect ):
+    def write_members( self, collect, urls  ):
         if collect == "nopro":
-            self.write_nopro_members()
+            self.write_nopro_members( urls )
         elif collect == "pro":
             self.write_pro_members()
         else:
             self.write_pro_members()
-            self.write_nopro_members() 
+            self.write_nopro_members( urls ) 
         
             
-    def mug_list(self):
-        return self._mugs
-    
-    
+#     def mug_list(self):
+#         return self._mugs
+        
     def capture_snapshot(self, url_name,  admin_arg, phases ):
 
         try :
-
             for i in phases:
                 if i == "pastevents" :
-                    logging.info( "process past events for      : '%s'", url_name )
+                    self._logger.info( "process past events for      : '%s'", url_name )
                     self.write_PastEvents( url_name )
                 elif i == "upcomingevents" :
-                    logging.info( "process upcoming events for  : '%s'", url_name )
+                    self._logger.info( "process upcoming events for  : '%s'", url_name )
                     self.write_UpcomingEvents( url_name )
                 elif i == "attendees" :
                     if admin_arg:
-                        logging.info( "process attendees            : '%s'", url_name )
+                        self._logger.info( "process attendees            : '%s'", url_name )
                         self.write_Attendees( url_name )
                     else:
-                        logging.warn( "You have not specified the admin arg")
-                        logging.warn( "You must be a meetup admin user to request attendees")
-                        logging.warn( "Ignoring phase 'attendeesx'")
+                        self._logger.warn( "You have not specified the admin arg")
+                        self._logger.warn( "You must be a meetup admin user to request attendees")
+                        self._logger.warn( "Ignoring phase 'attendeesx'")
             
                 else:
-                    logging.warn( "ignoring phase '%s': not a valid execution phase", i )
+                    self._logger.warn( "ignoring phase '%s': not a valid execution phase", i )
     
         except HTTPError, e :
-            logging.fatal( "Stopped processing: %s", e )
+            self._logger.fatal( "Stopped processing: %s", e )
             raise
 
-
-
+class Meetup_Writer(object):
+    
+    def read(self, urls):
+        pass
+    
+    def write(self, generator ):
+        pass
+    
+    def feedback(self, doc ):
+        pass
 
 

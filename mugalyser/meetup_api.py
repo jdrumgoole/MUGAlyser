@@ -9,6 +9,7 @@ import logging
 import datetime
 import time
 import pprint
+import json
 
 from copy import deepcopy
 
@@ -28,14 +29,6 @@ class MeetupRequest( object ):
         self._items = items
         self._logger = logging.getLogger( __programName__)
         
-#     def request(self, req, params ):
-#         logger = self._logger.getLogger( __programName__ )
-#         level = logger.getEffectiveLevel()
-#         logger.setLevel( logging.WARN )
-#         r = requests.get( req, params )        
-#         logger.setLevel( level )
-#         
-#         return r
          
     def simple_request(self, req, params=None ):
         '''
@@ -44,58 +37,32 @@ class MeetupRequest( object ):
         one time and then give up.
         '''
         
+        json_data = {}
         if params :
-            r = requests.get( req, params )
+            r = requests.get( req, params, stream=True )
         else:
-            r = requests.get( req )
+            r = requests.get( req, stream=True )
             
-        #print( "request( r.url='%s' )" % r.url )
-        #pprint.pprint( r.headers )
-        if not "Content-Length" in r.headers:
-            self._logger.warn( "No 'Content-Length' field, retrying once")
-            self._logger.warn( "url: '%s'", r.url )
-            self._logger.warn( "Header: %s", r.headers )
-            self._logger.warn( "text: %s", r.text )
-            
-            r = requests.get( req, params )
-                        
-        elif int( r.headers['Content-Length' ]) == 0 :
-            self._logger.warn( "'Content-Length'=0, retrying once")
-            self._logger.warn( "Header: %s", r.headers )
-            self._logger.warn( "text: %s", r.text )
-            r = requests.get( req, params )
-        
-            
- 
-        #self._logger.debug( "request URL   :'%s'", r.url )
-        #self._logger.debug( "request header: '%s'", r.headers )
-        #print( "url: '%s'" % r.url )
-        #print( "text: %s" % r.text )
-        #print( "headers: %s" % r.headers )
-
         try:
-
-            data = returnData( r )
+    
+            if r.raise_for_status() is None:
+    
+                for req_data in r.iter_lines():
+                    if req_data:
+                        print( "req_data")
+                        #pprint.pprint( req_data )
+                        json_data = json.loads(req_data)
+            
             '''
             Rate limiting
             '''
-            remaining = int( data[0][ "X-RateLimit-Remaining"] )
-            resetDelay = int( data[0][ "X-RateLimit-Reset"] )
+            remaining = int( r.headers[ "X-RateLimit-Remaining"] )
+            resetDelay = int( r.headers[ "X-RateLimit-Reset"] )
             if remaining <= 1 and resetDelay > 0 :
                 self._logger.debug( "Sleeping for : %i", resetDelay )
                 time.sleep( resetDelay )
                 
-            
-#             for k,v in data[1].items():
-#     
-#                 if type( v ) is unicode :
-#                     x[ k ] = v
-#                     print( "unicode")
-#                 else:
-#                     x[ k ] = str( v ).encode( 'utf8')
-#                     print( "encoded")
-#             #self._logger.debug( "return value: %s", data )
-            return data
+            return ( r.headers, json_data )
         
         except ValueError :
             self._logger.error( "ValueError in makeRequests:")
@@ -110,7 +77,6 @@ class MeetupRequest( object ):
             self._logger.error( "HTTP Error  : %s:", e )
             raise
 
-            
     def getHref( self, s ):
         ( link, direction ) = s.split( ";", 2 )
         link = link[ 1:-1]
@@ -147,7 +113,11 @@ class MeetupRequest( object ):
 
         #print( "Intiate paginated request")    
         (header, body) = self.simple_request( req, params )
-
+        
+        print( "header" )
+        pprint.pprint( header )
+        print( "body")
+        pprint.pprint( body[ "meta"] )
         #print( "Paginator")
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
@@ -172,7 +142,7 @@ class MeetupRequest( object ):
         if func is None:
             func = Reshaper.noop
             
-        data = body
+
         #pprint.pprint( data )
         
         # old style format 
@@ -181,20 +151,21 @@ class MeetupRequest( object ):
                 yield func( i )
         
             count = 0
-            while ( data[ 'meta' ][ "next" ] != ""  ) :
+            while ( body[ 'meta' ][ "next" ] != ""  ) :
 
                 #print( "makeRequest (old): %i" % count )
-                data = self.simple_request( data['meta'][ 'next' ] )[1]
+                ( _, nested_body ) = self.simple_request( body['meta'][ 'next' ] )[1]
                 count = count + 1
 
-            
-                for i in data[ "results"]:
-                    yield  func( i )
+                if nested_body:
+                    for i in nested_body[ "results"]:
+                        yield  func( i )
     
                     
         elif ( "Link" in headers ) : #new style pagination
-            for i in data :
-                yield func( i )
+            for i in body :
+                if i:
+                    yield func( i )
                
             count = 0 
             ( nxt, _) = self.getNextPrev(headers)
@@ -212,8 +183,17 @@ class MeetupRequest( object ):
                     yield  func( i )
     
         else: # new style but we have all the data
-            for i in data:
+            for i in body:
                 yield func( i )
+                
+    @staticmethod
+    def makeRequestURL( *args ):
+        url = "https://api.meetup.com"
+        
+        for i in args:
+            url = url + "/" + i
+            
+        return url
 
 def epochToDatetime( ts ):
     return datetime.datetime.fromtimestamp( ts /1000 )
@@ -264,19 +244,19 @@ class Reshaper( object ):
                                      [ "created", "pro_join_date", "founded_date", "last_event" ])
         
     
-def getHeaderLink( header ):
-    #print( "getHeaderLink( %s)" % header )
-
-    if "," in header:
-        ( nxt, _ ) = header.split( ",", 2 )
-    else:
-        nxt = header
-        
-    ( link, relParam ) = nxt.split( ";", 2 )
-    ( _, relVal ) = relParam.split( "=", 2 )
-    link = link[1:-1] # strip angle brackets off link
-    relVal = relVal[ 1:-1] # strip off quotes
-    return ( link, relVal )
+# def getHeaderLink( header ):
+#     #print( "getHeaderLink( %s)" % header )
+# 
+#     if "," in header:
+#         ( nxt, _ ) = header.split( ",", 2 )
+#     else:
+#         nxt = header
+#         
+#     ( link, relParam ) = nxt.split( ";", 2 )
+#     ( _, relVal ) = relParam.split( "=", 2 )
+#     link = link[1:-1] # strip angle brackets off link
+#     relVal = relVal[ 1:-1] # strip off quotes
+#     return ( link, relVal )
 
 
         
@@ -284,14 +264,7 @@ class MeetupAPI(object):
     '''
     classdocs
     '''
-    @staticmethod
-    def makeRequestURL( *args ):
-        url = "https://api.meetup.com"
-        
-        for i in args:
-            url = url + "/" + i
-            
-        return url
+
     
     def __init__(self, apikey, items=500):
         '''
@@ -343,7 +316,7 @@ class MeetupAPI(object):
     def get_event_attendees(self, eventID, url_name ):
         
         #https://api.meetup.com/DublinMUG/events/62760772/attendance?&sign=true&photo-host=public&page=20
-        reqURL = self.makeRequestURL( url_name, "events", str( eventID ), "attendance")
+        reqURL = MeetupRequest.makeRequestURL( url_name, "events", str( eventID ), "attendance")
         return self._requester.paged_request( reqURL, self._params )
     
     def get_upcoming_events(self, url_name ):
@@ -384,19 +357,18 @@ class MeetupAPI(object):
         '''
         Get all groups associated with this API key.
         '''
-        
         self._logger.debug( "get_pro_groups")
         
         return self._requester.paged_request( self._api + "pro/MongoDB/groups", self._params, Reshaper.reshapeGroupDoc )
     
+    def get_pro_group_names( self ):
+        for i in self.get_pro_groups() :
+            yield i[ "urlname" ]
+            
     def get_pro_members(self ):
         
         self._logger.debug( "get_pro_members")
         
         return self._requester.paged_request( self._api + "pro/MongoDB/members", self._params, Reshaper.reshapeMemberDoc)
 
-    
-    def get_pro_group_names( self ):
-        for i in self.get_pro_groups() :
-            yield i[ "urlname" ]
     

@@ -19,9 +19,8 @@ from mugalyser.events import UpcomingEvents, PastEvents
 from mugalyser.groups import Groups
 from mongodb_utils.generator_utils import printCount
 from datetime import datetime
-from utils.query import Query
+from mongodb_utils.query import Query
 import pymongo
-from traceback import print_exception
 
 from mugalyser.version import __programName__, __version__
 

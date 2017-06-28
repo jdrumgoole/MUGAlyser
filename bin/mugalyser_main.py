@@ -24,9 +24,9 @@ from mugalyser.apikey import get_meetup_key
 from mugalyser.meetup_api import MeetupAPI
 from mugalyser.audit import Audit
 from mugalyser.mongodb import MUGAlyserMongoDB
-from mugalyser.meetup_writer import MeetupWriter
+from mugalyser.meetup_writer import MeetupWriter, feedback
 from mugalyser.version import __programName__, __version__
-
+from mugalyser.logger import Logger
 DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
@@ -114,19 +114,11 @@ access to the admin APIs.
         else:
             apikey = get_meetup_key()
 
-        formatter = logging.Formatter( '%(asctime)s - %(name)s - %(levelname)s - %(message)s' )
-        logger = logging.getLogger( __programName__)
-        logger.setLevel( LoggingLevel( args.loglevel ))
-        sh = logging.StreamHandler()
-        fh = logging.FileHandler( __programName__ + ".log" )
+        mugalyser_logger = Logger( __programName__ )
+        mugalyser_logger.add_stream_handler()
+        mugalyser_logger.add_file_handler( "mugalyser.log" )
         
-        sh.setFormatter( formatter )
-        fh.setFormatter( formatter )
-        sh.setLevel( LoggingLevel( args.loglevel ))
-        fh.setLevel( LoggingLevel( args.loglevel ))
-        
-        logger.addHandler( sh )
-        logger.addHandler( fh )
+        logger = mugalyser_logger.log()
         
         # Turn off logging for requests
         logging.getLogger("requests").setLevel(logging.WARNING)
@@ -162,7 +154,7 @@ access to the admin APIs.
         if args.admin:
             logger.info( "Using admin account")
 
-        writer = MeetupWriter( apikey, batchID, mdb, mugList )
+        writer = MeetupWriter( apikey, batchID, mdb, feedback )
             
         if "all" in args.phases :
             phases = [ "groups", "members", "upcomingevents", "pastevents"]
@@ -181,7 +173,7 @@ access to the admin APIs.
             phases.remove( "groups")
         if "members" in phases :
             logger.info( "processing members info for %i groups: collect=%s", len( mugList), args.collect  )
-            writer.write_members( args.collect )
+            writer.write_members( args.collect, mugList )
             phases.remove( "members")
             
         for i in mugList :

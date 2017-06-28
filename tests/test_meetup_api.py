@@ -19,7 +19,7 @@ class Test_meetup_api(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_get_group( self):
+    def xtest_get_group( self):
         
         g = self._api.get_group( "DublinMUG" )
         self.assertTrue( "city" in g and g["city"] == u"Dublin" )
@@ -30,13 +30,13 @@ class Test_meetup_api(unittest.TestCase):
         #pprint.pprint( g )
         self.assertTrue( "location"  in g )
         
-    def test_get_pro_groups(self):
+    def xtest_get_pro_groups(self):
         
         g = self._api.get_pro_groups()
         groups = list( g )
         self.assertGreaterEqual(len( groups ), 114 )
 
-    def test_get_past_events(self ):
+    def xtest_get_past_events(self ):
         
         g = self._api.get_past_events("DublinMUG" )
         events = list( g )
@@ -46,7 +46,7 @@ class Test_meetup_api(unittest.TestCase):
         #self.assertEqual( event[ "created"], 1335802792000 )
         self.assertEqual( event[ "event_url"], u'https://www.meetup.com/DublinMUG/events/62760772/' )
 
-    def test_get_all_attendees( self ):
+    def xtest_get_all_attendees( self ):
         attendees = self._api.get_all_attendees( [ "DublinMUG", "London-MongoDB-User-Group" ] )
         attendees = list( attendees )
         self.assertGreaterEqual(len( attendees ), 1306 )
@@ -60,24 +60,36 @@ class Test_meetup_api(unittest.TestCase):
         self.assertTrue( u"name" in event )
         self.assertEqual( event[ "rsvp_limit"], 80 )
 
-    def test_get_member_by_id(self):
+    def xtest_get_member_by_id(self):
         member = self._api.get_member_by_id( 210984049 )
         self.assertEqual( member[ "name"], u"Julio Román" )
         #print( member[ "name"] )
         self.assertEqual( type(member[ "name"] ), types.UnicodeType )
         
-    def test_get_member_by_url(self):
+    def xtest_get_member_by_url(self):
         
         members = self._api.get_members( [ "DublinMUG", "London-MongoDB-User-Group"])
         self.assertGreaterEqual( ( sum( 1 for _ in  members )), 2465 )
         
     def test_get_members(self ):
         
-        members = self._api.get_members( ["London-MongoDB-User-Group" ] )
+        members = self._api.get_members( ["London-MongoDB-User-Group" , "DublinMUG" ] )
         self.assertGreater( ( sum( 1 for _ in  members )),  1600 )
         
         members = list( self._api.get_pro_members())
         self.assertGreaterEqual( ( sum( 1 for _ in  members )) , 17400 )
+        
+    def xtest_get_groups(self):
+        
+        groups = self._api.get_pro_group_names()
+        urls = list( groups )
+        self.assertGreaterEqual( urls, 116 )
+        
+        count = 0
+        for _ in self._api.get_groups_by_url( urls ):
+            count = count + 1
+          
+        self.assertGreaterEqual( count, 116 )  
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
