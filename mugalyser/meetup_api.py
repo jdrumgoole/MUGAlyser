@@ -12,6 +12,7 @@ import pprint
 
 from copy import deepcopy
 
+from mugalyser.version import __programName__
 def returnData( r ):
     #print( r.text )
     if r.raise_for_status() is None:
@@ -25,9 +26,10 @@ class MeetupRequest( object ):
         No of items to return per page for paged requests is specified by items
         '''
         self._items = items
+        self._logger = logging.getLogger( __programName__)
         
 #     def request(self, req, params ):
-#         logger = logging.getLogger( __programName__ )
+#         logger = self._logger.getLogger( __programName__ )
 #         level = logger.getEffectiveLevel()
 #         logger.setLevel( logging.WARN )
 #         r = requests.get( req, params )        
@@ -50,20 +52,23 @@ class MeetupRequest( object ):
         #print( "request( r.url='%s' )" % r.url )
         #pprint.pprint( r.headers )
         if not "Content-Length" in r.headers:
-            logging.warn( "No 'Content-Length' field, retrying once")
-            logging.warn( "url: '%s'", r.url )
-            logging.debug( "Header: %s", r.headers )
+            self._logger.warn( "No 'Content-Length' field, retrying once")
+            self._logger.warn( "url: '%s'", r.url )
+            self._logger.warn( "Header: %s", r.headers )
+            self._logger.warn( "text: %s", r.text )
+            
             r = requests.get( req, params )
                         
         elif int( r.headers['Content-Length' ]) == 0 :
-            logging.warn( "'Content-Length'=0, retrying once")
-            logging.debug( "Header: %s", r.headers )
+            self._logger.warn( "'Content-Length'=0, retrying once")
+            self._logger.warn( "Header: %s", r.headers )
+            self._logger.warn( "text: %s", r.text )
             r = requests.get( req, params )
         
             
  
-        #logging.debug( "request URL   :'%s'", r.url )
-        #logging.debug( "request header: '%s'", r.headers )
+        #self._logger.debug( "request URL   :'%s'", r.url )
+        #self._logger.debug( "request header: '%s'", r.headers )
         #print( "url: '%s'" % r.url )
         #print( "text: %s" % r.text )
         #print( "headers: %s" % r.headers )
@@ -77,7 +82,7 @@ class MeetupRequest( object ):
             remaining = int( data[0][ "X-RateLimit-Remaining"] )
             resetDelay = int( data[0][ "X-RateLimit-Reset"] )
             if remaining <= 1 and resetDelay > 0 :
-                logging.debug( "Sleeping for : %i", resetDelay )
+                self._logger.debug( "Sleeping for : %i", resetDelay )
                 time.sleep( resetDelay )
                 
             
@@ -89,20 +94,20 @@ class MeetupRequest( object ):
 #                 else:
 #                     x[ k ] = str( v ).encode( 'utf8')
 #                     print( "encoded")
-#             #logging.debug( "return value: %s", data )
+#             #self._logger.debug( "return value: %s", data )
             return data
         
         except ValueError :
-            logging.error( "ValueError in makeRequests:")
-            logging.error( "request: '%s'", r.url)
-            logging.error( "headers" )
-            pprint.pprint( r.headers )
-            logging.error( "text" )
-            pprint.pprint( r.text )
+            self._logger.error( "ValueError in makeRequests:")
+            self._logger.error( "request: '%s'", r.url)
+            self._logger.error( "headers:" )
+            self._logger.error( pprint.pformat( r.headers ))
+            self._logger.error( "text:" )
+            self._logger.error( r.text )
             raise
         
         except requests.HTTPError, e :
-            logging.error( "HTTP Error  : %s:", e )
+            self._logger.error( "HTTP Error  : %s:", e )
             raise
 
             
@@ -293,6 +298,7 @@ class MeetupAPI(object):
         Constructor
         '''
         
+        self._logger = logging.getLogger( __programName__)
         self._api = "https://api.meetup.com/"
         self._params = {}
         self._params[ "key" ] = apikey
@@ -371,7 +377,7 @@ class MeetupAPI(object):
         '''
         Get all groups associated with this API key.
         '''
-        logging.debug( "get_groups")
+        self._logger.debug( "get_groups")
         return self._requester.paged_request(self._api + "self/groups",  self._params )
     
     def get_pro_groups(self  ):
@@ -379,13 +385,13 @@ class MeetupAPI(object):
         Get all groups associated with this API key.
         '''
         
-        logging.debug( "get_pro_groups")
+        self._logger.debug( "get_pro_groups")
         
         return self._requester.paged_request( self._api + "pro/MongoDB/groups", self._params, Reshaper.reshapeGroupDoc )
     
     def get_pro_members(self ):
         
-        logging.debug( "get_pro_members")
+        self._logger.debug( "get_pro_members")
         
         return self._requester.paged_request( self._api + "pro/MongoDB/members", self._params, Reshaper.reshapeMemberDoc)
 

@@ -25,9 +25,7 @@ from mugalyser.meetup_api import MeetupAPI
 from mugalyser.audit import Audit
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.meetup_writer import MeetupWriter
-
-__programName__ = "MUGAlyser"
-__version__ = "0.8 beta"
+from mugalyser.version import __programName__, __version__
 
 DEBUG = 1
 TESTRUN = 0
@@ -116,9 +114,20 @@ access to the admin APIs.
         else:
             apikey = get_meetup_key()
 
-        format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        logging.basicConfig(format=format_string, level=LoggingLevel( args.loglevel ))
-            
+        formatter = logging.Formatter( '%(asctime)s - %(name)s - %(levelname)s - %(message)s' )
+        logger = logging.getLogger( __programName__)
+        logger.setLevel( LoggingLevel( args.loglevel ))
+        sh = logging.StreamHandler()
+        fh = logging.FileHandler( __programName__ + ".log" )
+        
+        sh.setFormatter( formatter )
+        fh.setFormatter( formatter )
+        sh.setLevel( LoggingLevel( args.loglevel ))
+        fh.setLevel( LoggingLevel( args.loglevel ))
+        
+        logger.addHandler( sh )
+        logger.addHandler( fh )
+        
         # Turn off logging for requests
         logging.getLogger("requests").setLevel(logging.WARNING)
         logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -132,26 +141,26 @@ access to the admin APIs.
                                       "collect" : args.collect } )
 
         start = datetime.utcnow()
-        logging.info( "Started MUG processing for batch ID: %i", batchID )
-        logging.info( "Writing to database : '%s'", mdb.database().name )
+        logger.info( "Started MUG processing for batch ID: %i", batchID )
+        logger.info( "Writing to database : '%s'", mdb.database().name )
         
         if args.collect in [ "pro", "all"]:
             '''
             Ignore the --urlfile argument and get the groups from the pro accoubt
             '''
-            logging.info( "Using pro API calls (pro account API key)")
+            logger.info( "Using pro API calls (pro account API key)")
             mugList = list( MeetupAPI( apikey ).get_pro_group_names())
         elif args.collect in [ "nopro" ] :
             if args.urlfile:
                 urlfile = os.path.abspath( args.urlfile )
-                logging.info( "Reading groups from: '%s'", urlfile )
+                logger.info( "Reading groups from: '%s'", urlfile )
                 with open( urlfile ) as f:
                     mugList = f.read().splitlines()
             else:
                 mugList = args.mugs
 
         if args.admin:
-            logging.info( "Using admin account")
+            logger.info( "Using admin account")
 
         writer = MeetupWriter( apikey, batchID, mdb, mugList )
             
@@ -160,18 +169,18 @@ access to the admin APIs.
             if args.admin:
                 phases.append( "attendees" )
             else:
-                logging.info( "No --admin : we will not collect attendee info")
+                logger.info( "No --admin : we will not collect attendee info")
         else:
             phases = args.phases
             
-        logging.info( "Processing phases: %s", phases )
+        logger.info( "Processing phases: %s", phases )
         
         if  "groups" in phases :
-            logging.info( "processing group info for %i groups: collect=%s", len( mugList), args.collect )
+            logger.info( "processing group info for %i groups: collect=%s", len( mugList), args.collect )
             writer.write_groups( args.collect, mugList )
             phases.remove( "groups")
         if "members" in phases :
-            logging.info( "processing members info for %i groups: collect=%s", len( mugList), args.collect  )
+            logger.info( "processing members info for %i groups: collect=%s", len( mugList), args.collect  )
             writer.write_members( args.collect )
             phases.remove( "members")
             
@@ -183,7 +192,7 @@ access to the admin APIs.
     
         elapsed = end - start
             
-        logging.info( "MUG processing took %s for BatchID : %i", elapsed, batchID )
+        logger.info( "MUG processing took %s for BatchID : %i", elapsed, batchID )
 
     except KeyboardInterrupt:
         print("Keyboard interrupt : Exiting...")
