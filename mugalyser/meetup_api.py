@@ -42,7 +42,7 @@ class MeetupRequest( object ):
             r = requests.get( req, params, stream=True )
         else:
             r = requests.get( req, stream=True )
-            
+            print( "request")
         try:
     
             if r.raise_for_status() is None:
@@ -110,6 +110,8 @@ class MeetupRequest( object ):
         Takes a request and hands it off to the paginator API. It does this by initiating the request
         to get the first document back and then using it to look for headers.
         '''
+        
+        print( "request: %s, %s" % ( req, params ))
 
         #print( "Intiate paginated request")    
         (header, body) = self.simple_request( req, params )
@@ -117,7 +119,7 @@ class MeetupRequest( object ):
         print( "header" )
         pprint.pprint( header )
         print( "body")
-        pprint.pprint( body[ "meta"] )
+        pprint.pprint( body )
         #print( "Paginator")
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
@@ -151,12 +153,14 @@ class MeetupRequest( object ):
                 yield func( i )
         
             count = 0
-            while ( body[ 'meta' ][ "next" ] != ""  ) :
+            nested_body = body
+            while ( nested_body[ 'meta' ][ "next" ] != ""  ) :
 
-                #print( "makeRequest (old): %i" % count )
-                ( _, nested_body ) = self.simple_request( body['meta'][ 'next' ] )[1]
+                print( "makeRequest( %s )" %  body['meta'][ 'next' ] )
+                ( _, nested_body ) = self.simple_request( nested_body['meta'][ 'next' ] )
                 count = count + 1
-
+                print( "Nested Body")
+                print( nested_body )
                 if nested_body:
                     for i in nested_body[ "results"]:
                         yield  func( i )
