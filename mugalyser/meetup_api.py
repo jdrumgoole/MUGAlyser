@@ -154,10 +154,12 @@ class MeetupRequest( object ):
             while ( body[ 'meta' ][ "next" ] != ""  ) :
 
                 #print( "makeRequest (old): %i" % count )
-                ( _, nested_body ) = self.simple_request( body['meta'][ 'next' ] )[1]
+                ( _, nested_body ) = self.simple_request( body['meta'][ 'next' ] )
                 count = count + 1
 
                 if nested_body:
+                    print( "nested_body")
+                    pprint.pprint( nested_body )
                     for i in nested_body[ "results"]:
                         yield  func( i )
     
