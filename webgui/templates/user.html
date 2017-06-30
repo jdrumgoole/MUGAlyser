@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ user.member.name }}</title>
+</head>
+<body>
+	<a href = "/members"> Back </a>
+	<p><img src = "{{ user.member.photo.photo_link }}"></p>
+	<ul>
+	<li><a href="https://www.meetup.com/members/{{ user.member.id }}/"><b>Meetup</b></a></li>
+	<li>{{ user.member.name }}</li>
+	<li>{{ user.member.city }}</li>
+	<li>{{ user.member|tojson }} </li>
+	</ul>
+</body>
+</html>

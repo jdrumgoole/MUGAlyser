@@ -8,7 +8,7 @@ Make an API key file
 
 cd MUGALyser/mugalyser
 
-python apps/makeapikeyfile_main.py -a <API_KEY>
+python bin/makeapikeyfile_main.py -a <API_KEY>
 
 Install the mongodb driver for Python
 

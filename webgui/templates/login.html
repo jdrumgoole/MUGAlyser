@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Login</title>
+    <style type="text/css">
+      .label {text-align: right}
+      .error {color: red}
+      .succ {color: green}
+    </style>
+
+  </head>
+
+  <body>
+  <a href="/">Home</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="members">Member List</a>&emsp;<a href="members">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>&emsp;<a href="logout">Logout</a>
+    <h2>Login</h2>
+    <form method="post">
+      <table>
+        <tr>
+          <td class="label">
+            Username
+          </td>
+          <td>
+            <input type="text" name="username" value="{{username}}">
+          </td>
+          <td class="error">
+          </td>
+        </tr>
+
+        <tr>
+          <td class="label">
+            Password
+          </td>
+          <td>
+            <input type="password" name="password" value="">
+          </td>
+          <td class="error">
+	    {{login_error}}
+      <div class = "succ"> {{succ}} </div>
+            
+          </td>
+        </tr>
+
+      </table>
+
+      <input type="submit">
+    </form>
+  </body>
+
+</html>

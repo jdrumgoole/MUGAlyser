@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Groups</title>
+    <style type="text/css">
+      .group-list {
+        list-style-position: inside;
+        margin-left:0;
+        padding: 0;
+        line-height: 150%;
+    }
+  </style>
+  </head>
+
+  <body>
+      Already a user? <a href="/login">Login</a>&emsp;<a href="/">Home</a>&emsp;<a href="members">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>&emsp;<a href="logout">Logout</a>
+      <p>
+      <ul class="group-list">
+      {% for group in groups %}
+        <li>{{ group }} </li>
+      {% endfor %}
+      </ul>
+  </body>
+
+</html>
