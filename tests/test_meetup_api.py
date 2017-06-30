@@ -19,7 +19,7 @@ class Test_meetup_api(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def xtest_get_group( self):
+    def test_get_group( self):
         
         g = self._api.get_group( "DublinMUG" )
         self.assertTrue( "city" in g and g["city"] == u"Dublin" )
@@ -30,13 +30,13 @@ class Test_meetup_api(unittest.TestCase):
         #pprint.pprint( g )
         self.assertTrue( "location"  in g )
         
-    def xtest_get_pro_groups(self):
+    def test_get_pro_groups(self):
         
         g = self._api.get_pro_groups()
         groups = list( g )
-        self.assertGreaterEqual(len( groups ), 114 )
+        self.assertGreaterEqual(len( groups ), 116 )
 
-    def xtest_get_past_events(self ):
+    def test_get_past_events(self ):
         
         g = self._api.get_past_events("DublinMUG" )
         events = list( g )
@@ -46,7 +46,7 @@ class Test_meetup_api(unittest.TestCase):
         #self.assertEqual( event[ "created"], 1335802792000 )
         self.assertEqual( event[ "event_url"], u'https://www.meetup.com/DublinMUG/events/62760772/' )
 
-    def xtest_get_all_attendees( self ):
+    def test_get_all_attendees( self ):
         attendees = self._api.get_all_attendees( [ "DublinMUG", "London-MongoDB-User-Group" ] )
         attendees = list( attendees )
         self.assertGreaterEqual(len( attendees ), 1306 )
@@ -60,13 +60,13 @@ class Test_meetup_api(unittest.TestCase):
         self.assertTrue( u"name" in event )
         self.assertEqual( event[ "rsvp_limit"], 80 )
 
-    def xtest_get_member_by_id(self):
+    def test_get_member_by_id(self):
         member = self._api.get_member_by_id( 210984049 )
         self.assertEqual( member[ "name"], u"Julio Román" )
         #print( member[ "name"] )
         self.assertEqual( type(member[ "name"] ), types.UnicodeType )
         
-    def xtest_get_member_by_url(self):
+    def test_get_member_by_url(self):
         
         members = self._api.get_members( [ "DublinMUG", "London-MongoDB-User-Group"])
         self.assertGreaterEqual( ( sum( 1 for _ in  members )), 2465 )
@@ -77,14 +77,14 @@ class Test_meetup_api(unittest.TestCase):
         count = 0
         for i in members:
             count = count + 1 
-            print( "%i" % count )
-            print( i )
-        #self.assertGreater( ( sum( 1 for _ in  members )),  1600 )
+            #print( "%i %s" % (count, i ))
+            #print( i )
+        self.assertGreaterEqual( count,  844 )
         
-        #members = list( self._api.get_pro_members())
-        #self.assertGreaterEqual( ( sum( 1 for _ in  members )) , 17400 )
+        members = list( self._api.get_pro_members())
+        self.assertGreaterEqual( ( sum( 1 for _ in  members )) , 17400 )
         
-    def xtest_get_groups(self):
+    def test_get_groups(self):
         
         groups = self._api.get_pro_group_names()
         urls = list( groups )
