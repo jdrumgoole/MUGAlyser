@@ -12,8 +12,10 @@ from pymongo import MongoClient
 from cgi import escape
 from hashlib import sha512
 from os import urandom
+from datetime import datetime
 import os
 import boto3
+import webbrowser
 
 app = Flask(__name__)
 if os.getenv('SECRET_KEY') is not None:
@@ -34,7 +36,16 @@ currentType = "groups"
 connection = MongoClient('localhost')
 db = connection.MUGS
 userColl = db.users
+resetColl = db.resets
 
+def create_account(user, password, email):
+    salt = urandom(16).encode('hex')
+    hashPwd = sha512(password + salt).hexdigest()
+    if email is not None:
+        userColl.insert({'_id': user, 'salt': salt, 'pass': hashPwd, 'email': email, 'signup_ip' : request.remote_addr, 'reset_ip': ''})
+    else:
+        userColl.update({'_id': user}, {"$set": {'salt': salt, 'pass': hashPwd, 'reset_ip': request.remote_addr}})
+    session['username'] = user
      
 @app.route('/')
 def index():
@@ -120,15 +131,14 @@ def get_signup():
     email = escape(request.form.get('email'))
     if userColl.find({'_id':user}).count() != 0 or len(user) < 1:
         return render_template("signup.html", username_error = "User with that name already exists. Please try a different name.")
+    if userColl.find({'email':email}).count() != 0:
+        return render_template("signup.html", email_error = "That email is already in use. Please try a different name.")
     if len(password) < 5:
         return render_template("signup.html", username = user, email = email, password_error = "Passwords must be over 4 characters long")
     if vpassword != password:
         return render_template("signup.html", username = user, email = email, password_error = "Passwords don't match")
     print "Account created with username", user
-    salt = urandom(16).encode('hex')
-    hashPwd = sha512(password + salt).hexdigest()
-    userColl.insert({'_id': user, 'salt': salt, 'pass': hashPwd, 'email': email, 'signup_ip' : request.remote_addr})
-    session['username'] = user
+    create_account(user, password, email)
     return render_template("signup.html", done = "Account created!")
 
 @app.route('/login')
@@ -152,6 +162,47 @@ def get_login():
 @app.route('/logout')
 def logout():
     session.pop('username')
+    return redirect(url_for('index'))
+
+@app.route('/forgotpw', methods=['GET', 'POST'])
+def forgot_pw():
+    if request.method == 'GET':
+        return render_template('forgotpw.html')
+    email = escape(request.form.get('email'))
+    if userColl.find({'email':email}).count() == 0:
+        return render_template('forgotpw.html', email_error = "Can't find that email. Please try a different one.")
+    user = userColl.find_one({'email':email})['_id']
+    if resetColl.find({'user': user}).count() != 0:
+        resetCol.remove({'user': user})
+    resetID = urandom(16).encode('hex')
+    resetColl.insert({'_id': resetID, 'requestDate': datetime.utcnow(), 'user': user})
+    webbrowser.get('open -a /Applications/Google\ Chrome.app %s').open_new_tab('http://127.0.0.1:5000/resetpw/'+resetID)
+    return """
+    <a href="/">Home</a>
+    <h3> Reset email sent! Please check your inbox.</h3>
+    """
+
+@app.route('/resetpw/<ID>')
+def show_reset(ID):
+    if resetColl.find_one({'_id': ID}):
+        return render_template("reset.html", error = "Please enter a new password.")
+    return """
+    <a href="/">Home</a>
+    <p>Reset link is invalid."""
+    
+@app.route('/resetpw/<ID>', methods=['POST'])
+def reset_pw(ID):
+    password = escape(request.form.get('password'))
+    vpassword = escape(request.form.get('verify'))
+    doc = resetColl.find_one({'_id': ID})
+    if len(password) < 5:
+        return render_template("reset.html", error = "Please enter a new password.", password_error = "Passwords must be over 4 characters long")
+    if vpassword != password:
+        return render_template("reset.html", error = "Please enter a new password.", password_error = "Passwords don't match")
+    if doc:
+        user = doc['user']
+        create_account(user, password, None)
+        resetColl.remove({'_id' : ID})
     return redirect(url_for('index'))
 
 if __name__ == "__main__":
