@@ -54,7 +54,7 @@ By default the data is written to the `MUGS` database. To change this
 default specify a different database via the [MongoDB URI](https://docs.mongodb.com/manual/reference/connection-string/) passed to the
 `--host` argument.
 
-## bin/maekapikeyfile.py
+## bin/makeapikeyfile.py
 
 This creates a file callled `apikey.py` which contains the API key for
 the applcation. The API key can be passed in on the command line or
