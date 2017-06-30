@@ -67,7 +67,7 @@ to prevent they key from being compromised.
 
 
 ```
-JD10Gen-old:mugalyser jdrumgoole$ python mugalyser_main.py -h
+JD10Gen-old:mugalyser jdrumgoole$ python bin/mugalyser_main.py -h
 usage: mugalyser_main.py [-h] [--database DATABASE] [--host HOST]
                          [--port PORT] [--username USERNAME]
                          [--password PASSWORD] [--replset REPLSET]
