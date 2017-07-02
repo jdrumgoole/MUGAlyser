@@ -101,7 +101,7 @@ class MeetupRequest( object ):
         #print( "Intiate paginated request") 
  
         (header, body) = self.simple_request( req, params )
-        
+    
 #         print( "header" )
 #         pprint.pprint( header )
 #         print( "body")

@@ -12,11 +12,8 @@ class TestMains(unittest.TestCase):
 
 
     def setUp(self):
-        root = os.getenv( "MROOT", "")
-        if root == "" :
-            print( "Environment variable MROOT is not defined" )
-            root = os.getenv( "HOME", "")
-            root = os.path.join( root, "GIT", "MUGAlyser")
+        root = os.getenv( "HOME", "")
+        root = os.path.join( root, "GIT", "MUGAlyser")
             
         self._binPath =os.path.join( root, "bin" )
         

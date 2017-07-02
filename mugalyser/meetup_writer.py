@@ -16,9 +16,8 @@ from mugalyser.version import __programName__
 
 def mergeEvents( writer ):
     for attendee, event in writer:
-        doc = { u"attendee" : attendee,
-                u"event" : event }
-        yield doc 
+        yield { u"attendee" : attendee,
+                u"event" : event } 
         
 def feedback( doc ):
     print( ".")

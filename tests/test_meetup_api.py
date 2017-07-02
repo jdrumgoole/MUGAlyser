@@ -5,7 +5,7 @@ Created on 26 Nov 2016
 @author: jdrumgoole
 '''
 import unittest
-from mugalyser.meetup_api_v2 import MeetupAPI
+from mugalyser.meetup_api import MeetupAPI
 from mugalyser.apikey import get_meetup_key
 import types
 

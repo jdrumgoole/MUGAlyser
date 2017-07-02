@@ -27,22 +27,13 @@ class Members(MUGData):
         self._membersAgg.addSort( Sorter( occurences = pymongo.DESCENDING  )) # largest first
         self._memberCount = 0
         
-    def count_members(self, groups ):
-        
-        total = 0 
-        for i in groups:
-            count = self.get_group_members( i ).count()
-            total = total + count
-            
-        return count
+
     
     def get_all_members(self, query=None ):
         '''
         Query meetup API for multiple groups.
         '''
         return self.find( query )
-        
-
     
     def get_by_name(self, name ):
         member = self.find_one( { "member.member_name" : name })
@@ -100,7 +91,7 @@ class Pro_Members( Members ):
         '''
         Constructor
         '''
-        super( Members, self ).__init__( mdb, "pro_members" ) 
+        super( Pro_Members, self ).__init__( mdb, "pro_members" ) 
         self._membersAgg = Agg( self._collection )
         self._membersAgg.addMatch({ "member.member_name": { "$exists" : 1 }})
         self._membersAgg.addProject( { "_id" : 0, "name" : "$member.member_name" })
@@ -118,6 +109,14 @@ class Pro_Members( Members ):
 
         return self.find( query )
         
+    def count_members(self, groups ):
+        
+        total = 0 
+        for i in groups:
+            count = self.get_group_members( i ).count()
+            total = total + count   
+        return count
+    
     def get_many_group_members(self, groups, query=None):
         '''
         returns a generator

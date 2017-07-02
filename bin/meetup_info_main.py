@@ -36,23 +36,21 @@ def main( ) :
         parser.add_argument( "--upcomingevents", nargs="+", default=[], help="Get upcoming events for MUG")
         parser.add_argument( "--attendees", nargs="+", default=[], help="Get attendees for list of groups")
         parser.add_argument( "--loop", type=int, default=1, help="Loop call for --loop times")
+        parser.add_argument( "--reshape", default=False, action="store_true", help="Reshape output for BSON" )
         # Process arguments
         args = parser.parse_args()
         
         format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         logging.basicConfig(format=format_string, level=logging.INFO )
         if args.apikey == "" :
-            m = MeetupAPI( apikey= get_meetup_key())
+            m = MeetupAPI( apikey= get_meetup_key(), reshape=args.reshape )
         else:
-            m = MeetupAPI( apikey = args.apikey )
+            m = MeetupAPI( apikey = args.apikey, reshape=args.reshape )
             
         for i in range( args.loop ):
             if args.member_id :
                 member = m.get_member_by_id( args.member_id )
-                if member.has_key( "name"):
-                    print( member[ "name"] )
-                else:
-                    print( member[ "member_name"])
+                pprint.pprint( member )
                 
             if args.groups :
                 for i in args.mugs:
