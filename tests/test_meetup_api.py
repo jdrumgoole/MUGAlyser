@@ -10,12 +10,11 @@ from mugalyser.apikey import get_meetup_key
 import types
 
 class Test_meetup_api(unittest.TestCase):
-
+        
     def setUp(self):
         apikey = get_meetup_key()
-        self._api = MeetupAPI( apikey )
-
-
+        self._api = MeetupAPI( apikey, reshape=True  )
+    
     def tearDown(self):
         pass
 

@@ -54,60 +54,11 @@ By default the data is written to the `MUGS` database. To change this
 default specify a different database via the [MongoDB URI](https://docs.mongodb.com/manual/reference/connection-string/) passed to the
 `--host` argument.
 
-## bin/maekapikeyfile.py
+## bin/makeapikeyfile.py
 
 This creates a file callled `apikey.py` which contains the API key for
 the applcation. The API key can be passed in on the command line or
 read from `MEETUP_API_KEY`. `apikey.py` is not checked into github
 to prevent they key from being compromised.
 
-
-
-
-
-
-```
-JD10Gen-old:mugalyser jdrumgoole$ python mugalyser_main.py -h
-usage: mugalyser_main.py [-h] [--database DATABASE] [--host HOST]
-                         [--port PORT] [--username USERNAME]
-                         [--password PASSWORD] [--replset REPLSET]
-                         [--admindb ADMINDB] [--ssl] [--multi] [--verbose]
-                         [-v] [--wait WAIT] [--trialrun]
-                         [--mugs MUGS [MUGS ...]]
-                         [--attendees ATTENDEES [ATTENDEES ...]]
-                         [--loglevel LOGLEVEL]
-
-A program to read data from the Meetup API into MongoDB
-
-  Licensed under the AFGPL
-  https://www.gnu.org/licenses/agpl-3.0.en.html
-
-  Distributed on an "AS IS" basis without warranties
-  or conditions of any kind, either express or implied.
-
-USAGE
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --database DATABASE   specify the database name [default: MUGS]
-  --host HOST           hostname [default: localhost]
-  --port PORT           port name [default: 27017]
-  --username USERNAME   username to login to database
-  --password PASSWORD   password to login to database
-  --replset REPLSET     replica set to use [default: ]
-  --admindb ADMINDB     Admin database used for authentication [default:
-                        admin]
-  --ssl                 use SSL for connections
-  --multi               use multi-processing
-  --verbose             set verbosity level [default: None]
-  -v, --version         show program's version number and exit
-  --wait WAIT           How long to wait between processing the next parallel
-                        MUG request [default: 5]
-  --trialrun            Trial run, no updates [default: False]
-  --mugs MUGS [MUGS ...]
-                        Process MUGs list list mugs by name or use "all"
-  --attendees ATTENDEES [ATTENDEES ...]
-                        Capture attendees for these groups
-  --loglevel LOGLEVEL   Logging level [default: INFO]
-JD10Gen-old:mugalyser jdrumgoole$ 
-```
+## 

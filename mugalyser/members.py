@@ -15,11 +15,15 @@ class Members(MUGData):
     classdocs
     '''
     
-    def __init__(self, mdb ):
+    def __init__(self, mdb, collection_name = None ):
         '''
         Constructor
         '''
-        super( Members, self ).__init__( mdb, "members" ) 
+        
+        if collection_name is None:
+            collection_name = "members" 
+            
+        super( Members, self ).__init__( mdb, collection_name ) 
         self._membersAgg = Agg( self._collection )
         self._membersAgg.addMatch({ "member.name": { "$exists" : 1 }})
         self._membersAgg.addProject( { "_id" : 0, "name" : "$member.name" })
