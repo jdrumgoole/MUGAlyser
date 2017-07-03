@@ -77,7 +77,7 @@ class MeetupWriter(object):
         is reached and then writes them as a batch using BatchWriter.
         
         '''
-        bw = BatchWriter( collection, processFunc, newFieldName, feedback )
+        bw = BatchWriter( collection, processFunc, newFieldName )
         
         writer = bw.bulkWrite()
         
