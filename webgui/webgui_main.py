@@ -46,7 +46,7 @@ def create_account(user, password, email):
         userColl.insert({'_id': user, 'salt': salt, 'pass': hashPwd, 'email': email, 'signup_date' : datetime.utcnow(), 
             'signup_ip' : request.remote_addr, 'reset_ip': '', 'last_login': datetime.utcnow()})
     else:
-        userColl.update({'_id': user}, {"$set": {'salt': salt, 'pass': hashPwd, 'reset_ip': request.remote_addr, last_login: datetime.utcnow()}})
+        userColl.update({'_id': user}, {"$set": {'salt': salt, 'pass': hashPwd, 'reset_ip': request.remote_addr, 'last_login': datetime.utcnow()}})
     session['username'] = user
      
 @app.route('/')

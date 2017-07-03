@@ -17,10 +17,13 @@ class Test(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def testFindSimple(self):
+        cursor = self._mugData.find( { "group.country" : "US" })
+        self.assertEqual( len( list( cursor )), 41 )
 
     def testFind(self):
-        cursor = self._mugData.find( {  "group.country" : { "$in" : [ 'USA' ] }})
-        self.assertEqual( len( list( cursor )), 41 )
+        cursor = self._mugData.find( {  "group.country" : { "$in" : [ "US", "GB" ] }})
+        self.assertGreaterEqual( len( list( cursor )), 41 )
 
     def testCombine(self):
         pass

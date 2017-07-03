@@ -6,14 +6,15 @@ Created on 26 Nov 2016
 '''
 import unittest
 from mugalyser.meetup_api import MeetupAPI
+from mugalyser.apikey import get_meetup_key
 import types
 
 class Test_meetup_api(unittest.TestCase):
-
+        
     def setUp(self):
-        self._api = MeetupAPI()
-
-
+        apikey = get_meetup_key()
+        self._api = MeetupAPI( apikey, reshape=True  )
+    
     def tearDown(self):
         pass
 
@@ -32,7 +33,7 @@ class Test_meetup_api(unittest.TestCase):
         
         g = self._api.get_pro_groups()
         groups = list( g )
-        self.assertGreaterEqual(len( groups ), 114 )
+        self.assertGreaterEqual(len( groups ), 116 )
 
     def test_get_past_events(self ):
         
@@ -71,11 +72,28 @@ class Test_meetup_api(unittest.TestCase):
         
     def test_get_members(self ):
         
-        members = self._api.get_members( ["London-MongoDB-User-Group" ] )
-        self.assertGreater( ( sum( 1 for _ in  members )),  1600 )
+        members = self._api.get_members( ["DublinMUG" ] )
+        count = 0
+        for i in members:
+            count = count + 1 
+            #print( "%i %s" % (count, i ))
+            #print( i )
+        self.assertGreaterEqual( count,  844 )
         
         members = list( self._api.get_pro_members())
         self.assertGreaterEqual( ( sum( 1 for _ in  members )) , 17400 )
+        
+    def test_get_groups(self):
+        
+        groups = self._api.get_pro_group_names()
+        urls = list( groups )
+        self.assertGreaterEqual( urls, 116 )
+        
+        count = 0
+        for _ in self._api.get_groups_by_url( urls ):
+            count = count + 1
+          
+        self.assertGreaterEqual( count, 116 )  
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -15,8 +15,6 @@ class Test(unittest.TestCase):
         self._mdb = MUGAlyserMongoDB( uri="mongodb://localhost/TESTMUGS")
         self._attendees = Attendees( self._mdb )
 
-
-
     def tearDown(self):
         pass
 
@@ -25,8 +23,6 @@ class Test(unittest.TestCase):
         
         attendees = self._attendees.find()
         self.assertGreaterEqual( len( list( attendees )), 1306 )
-        
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

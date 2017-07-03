@@ -61,6 +61,7 @@ the applcation. The API key can be passed in on the command line or
 read from `MEETUP_API_KEY`. `apikey.py` is not checked into github
 to prevent they key from being compromised.
 
+<<<<<<< HEAD
 
 
 
@@ -111,3 +112,6 @@ optional arguments:
   --loglevel LOGLEVEL   Logging level [default: INFO]
 JD10Gen-old:mugalyser jdrumgoole$ 
 ```
+=======
+## 
+>>>>>>> db522364bb6b6cc958ef61ef7b9b1480223e5a5c
