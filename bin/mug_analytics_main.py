@@ -587,8 +587,9 @@ def get_batches( mdb, start, end, limit=None ):
     
     audit = Audit( mdb )
     
-    c = CursorFormatter( audit.get_valid_batches( start, end ))
-    c.output( [ "batchID" , "end", "start" ], datemap=[ "start", "end" ], limit=limit)
+    for i in audit.get_valid_batches( start, end ):
+        print( i )
+    #c.output( [ "batchID" , "end", "start" ], datemap=[ "start", "end" ], limit=limit)
 
     
 def collection_stats( mdb, collection_name ) :
