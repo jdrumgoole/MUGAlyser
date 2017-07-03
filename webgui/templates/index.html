@@ -4,11 +4,14 @@
     <title>Index</title>
     <h2> <b> Current Batch: {{ batch }} </b> </h2>
     <p>
+    {% if user %}
     <h3> Welcome {{ user }} </h3>
+    {% endif %}
 </head>
 <body>
 	<p><a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="members">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>&emsp;<a href="logout">Logout</a>
 	<br>
+	<img src = "/pixel.gif"></img>
 
 </body>
 </html>

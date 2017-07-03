@@ -6,7 +6,7 @@ Created on 4 Oct 2016
 
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
-from flask import Flask, jsonify, request, session, redirect, url_for
+from flask import Flask, jsonify, request, session, redirect, url_for, send_file, Response
 from flask.templating import render_template
 from pymongo import MongoClient
 from cgi import escape
@@ -16,6 +16,7 @@ from datetime import datetime
 import os
 import boto3
 import webbrowser
+import send_email
 
 app = Flask(__name__)
 if os.getenv('SECRET_KEY') is not None:
@@ -42,9 +43,10 @@ def create_account(user, password, email):
     salt = urandom(16).encode('hex')
     hashPwd = sha512(password + salt).hexdigest()
     if email is not None:
-        userColl.insert({'_id': user, 'salt': salt, 'pass': hashPwd, 'email': email, 'signup_ip' : request.remote_addr, 'reset_ip': ''})
+        userColl.insert({'_id': user, 'salt': salt, 'pass': hashPwd, 'email': email, 'signup_date' : datetime.utcnow(), 
+            'signup_ip' : request.remote_addr, 'reset_ip': '', 'last_login': datetime.utcnow()})
     else:
-        userColl.update({'_id': user}, {"$set": {'salt': salt, 'pass': hashPwd, 'reset_ip': request.remote_addr}})
+        userColl.update({'_id': user}, {"$set": {'salt': salt, 'pass': hashPwd, 'reset_ip': request.remote_addr, last_login: datetime.utcnow()}})
     session['username'] = user
      
 @app.route('/')
@@ -55,7 +57,8 @@ def index():
 
 @app.route('/groups')
 def groups():
-
+    if not verify_login():
+        return render_template("error.html")
     curBatch = auditdb.getCurrentBatch()
     curGroups = groupCollection.find( { "batchID" : curBatch["currentID"]}, 
                                       { "_id"           : 0, 
@@ -69,6 +72,8 @@ def groups():
 
 @app.route( "/members")
 def members():
+    if not verify_login():
+        return render_template("error.html")
     cursor = membersCollection.find({}, { "_id" :0, "member.name" : 1 }).distinct("member.name")
     output =[]
     count = 0
@@ -79,6 +84,8 @@ def members():
 
 @app.route("/graph", methods=['POST', 'GET'])
 def graph():
+    if not verify_login():
+        return render_template("error.html")
     global currentBatch
     global currentType
     curBatch = auditdb.getCurrentBatch()
@@ -113,9 +120,11 @@ def graph():
         
     return render_template("graph.html", groups = output, batches = batchl, curbat = int(curbat), curtype = typ)
         
-@app.route('/user/<member>')
+@app.route('/members/<member>')
 def get_member(member):
     # show the user profile for that user
+    if not verify_login():
+        return render_template("error.html")
     member = membersCollection.find_one({"member.name" : member }, { "_id":0})
     return render_template("user.html", user=member)
 
@@ -156,27 +165,35 @@ def get_login():
     if userColl.find_one({'_id': user}, {'_id': 0, 'pass' : 1})['pass'] != sha512(password + salt).hexdigest():
         return render_template("login.html", username = user, login_error = "Password doesn't match.")
     print "User", user, "logged in"
+    userColl.update({'_id': user}, {"$set": {'last_login': datetime.utcnow()}})
     session['username'] = user
     return redirect(url_for('index'))
 
 @app.route('/logout')
 def logout():
-    session.pop('username')
+    if 'username' in session:
+        session.pop('username')
     return redirect(url_for('index'))
+
+@app.route('/pixel.gif')
+def track():
+    print request.headers.get('X-Forwarded-For', request.remote_addr)
+    return send_file('static/pixel.gif', mimetype='image/gif')
 
 @app.route('/forgotpw', methods=['GET', 'POST'])
 def forgot_pw():
     if request.method == 'GET':
         return render_template('forgotpw.html')
     email = escape(request.form.get('email'))
-    if userColl.find({'email':email}).count() == 0:
+    if userColl.find({'email':email}).count() == 0: #checks if user with specified email exists
         return render_template('forgotpw.html', email_error = "Can't find that email. Please try a different one.")
     user = userColl.find_one({'email':email})['_id']
-    if resetColl.find({'user': user}).count() != 0:
-        resetCol.remove({'user': user})
+    if resetColl.find({'user': user}).count() != 0: #checks if pending reset already exists, if yes marks it as invalid
+        resetColl.remove({'user': user})
     resetID = urandom(16).encode('hex')
-    resetColl.insert({'_id': resetID, 'requestDate': datetime.utcnow(), 'user': user})
+    resetColl.insert({'_id': resetID, 'timestamp': datetime.utcnow(), 'user': user})
     webbrowser.get('open -a /Applications/Google\ Chrome.app %s').open_new_tab('http://127.0.0.1:5000/resetpw/'+resetID)
+    #send_email.send(email, user, resetID)
     return """
     <a href="/">Home</a>
     <h3> Reset email sent! Please check your inbox.</h3>
@@ -203,7 +220,14 @@ def reset_pw(ID):
         user = doc['user']
         create_account(user, password, None)
         resetColl.remove({'_id' : ID})
-    return redirect(url_for('index'))
+        return redirect(url_for('index'))
+    return """
+    Link invalid.
+    """
 
+def verify_login():
+    if 'username' not in session:
+        return False
+    return True
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True)
