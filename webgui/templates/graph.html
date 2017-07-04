@@ -1,80 +1,112 @@
 <html>
 <head>
-<script src="/static/d3.min.js" charset="utf-8"></script>
-<link rel="stylesheet" type="text/css" href="/static/style.css">
-<title> Batch: {{ curbat }} </title>
+  <script src="/static/d3.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.3.0.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="/static/style.css">
+  <title> Batch: {{ curbat }} </title>
+  <style type="text/css">
+    ._type {
+      text-align : left;
+    }
+    </style>
 </head>
 <body>
-<p><a href="/">Home</a></p>
+
+<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="members">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="logout">Logout</a><p>
+
+{% if curgroup == "None" %}
 <form class = "_bat" method="post">
-<select name = "bat" onchange="this.form.submit()">
-  {% for id in batches %}
-  <option value = "{{ id }}" {% if id == curbat %} selected = "selected" {% endif %}> Batch {{ id }} </option>
-  {% endfor %}
-</select>
+  <select name = "bat" onchange="this.form.submit()">
+    {% for id in batches %}
+    <option value = "{{ id }}" {% if id == curbat %} selected = "selected" {% endif %}> Batch {{ id }} </option>
+    {% endfor %}
+  </select>
 </form>
+
 <form class = "_type" method="post">
-<select name = "type" onchange="this.form.submit()">
-  <!--<option value = "members" {% if "members" == curtype %} selected = "selected" {% endif %}> Members </option>
-  <option value = "pmembers" {% if "pmembers" == curtype %} selected = "selected" {% endif %}> Pro Members </option> -->
-  <option value = "groups" {% if "groups" == curtype %} selected = "selected" {% endif %}> Groups </option>
-  <option value = "pgroups" {% if "pgroups" == curtype %} selected = "selected" {% endif %}> Pro Groups </option>
-</select>
+  <select name = "type" onchange="this.form.submit()">
+    <option value = "groups" {% if "groups" == curtype %} selected = "selected" {% endif %}> Groups </option>
+    <option value = "pgroups" {% if "pgroups" == curtype %} selected = "selected" {% endif %}> Pro Groups </option>
+  </select>
 </form>
+<h2> Member count for Batch {{curbat}}</h2>
+{% else %}
+<h2> Historical member data for {{ curgroup }}</h2>
+{% endif %}
+
+<form class = "_group" method="post">
+  <select name = "grp" onchange="this.form.submit()">
+    <option value = "None"> None </option>
+    {% for group in grouplist %}
+    <option value = "{{ group.Name }}"  {% if group.Name == curgroup %} selected = "selected" {% endif %}> {{ group.Name }} </option>
+    {% endfor %}
+  </select>
+</form>
+
+<form method="post">
+<input name = "res" type = "submit" value="Reset"/>
+</form>
+<div id="chartContainer"></div>
+
 </body>
-<svg width="1200" height="700"></svg>
 <script type="text/javascript">
-	var data = {{groups|tojson}};
-	var svg = d3.select("svg"),
-    margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = +svg.attr("width") - margin.left - margin.right,
-    height = +svg.attr("height") - margin.top - margin.bottom;
+  var data = {{groups|tojson}};
+  var min = data[0].Count;
+  for (var i = 0; i < data.length; i++){
+    data[i].order = i;
+    if(data[i].Count < min) min = data[i].Count;
+  };
+  console.log(data);
+  var svg = dimple.newSvg("#chartContainer", "100%", "100%");
+  var myChart = new dimple.chart(svg, data);
+  myChart.setMargins("60px", "20px", "30px", "500px");
+
   
-	var tooltip = d3.select("body").append("div").attr("class", "toolTip");
 
-	var x = d3.scaleBand().rangeRound([0, width]).padding(0.2),
-	    y = d3.scaleLinear().rangeRound([height, 0]);
-	  
-	var colours = d3.scaleOrdinal()
-	    .range(["#589636", "#589636"]);
+  //var x = myChart.addCategoryAxis("x", "Name");
+  var y = myChart.addMeasureAxis("y", "Count");
+  y.fontSize = "12px";
+  y.fontFamily = "Arial";
+  y.tickFormat = "";
+  y.overrideMin = min;
+  {% if curgroup == "None" %}
+    console.log("Default");
+    var x = myChart.addCategoryAxis("x", "Name");
+    var s = myChart.addSeries("Count", dimple.plot.bar);
+  {% else %}
+    console.log("Special");
+    var x = myChart.addCategoryAxis("x", "Time");
+    var s = myChart.addSeries(null, dimple.plot.line);
+    myChart.addSeries(null, dimple.plot.scatter);
 
-	var g = svg.append("g")
-	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  {% endif %}
+  x.fontSize = "14px";
+  x.fontFamily = "Trebuchet MS";
+/*  // Animate a chart over the date field and write the current frame value to the console on update
+  var st = myChart.setStoryboard("Count");
+  st.frameDuration = 600;
+  st.addOrderRule("Count", true);*/
+  
 
-    x.domain(data.map(function(d) { return d.Name; }));
-    y.domain([0, d3.max(data, function(d) { return d.Count; })]);
 
-    g.append("g")
-        .attr("class", "axis axis--x")
-        .attr("transform", "translate(0," + height + ")");
+  //var s = myChart.addSeries("Count", dimple.plot.bar);
+  s.tooltipFontSize = "16px";
+  s.tooltipFontFamily = "Arial";
 
-    g.append("g")
-      	.attr("class", "axis axis--y")
-      	.call(d3.axisLeft(y).ticks(5).tickFormat(function(d) { return parseInt(d / 1000) + "K"; }).tickSizeInner([-width]))
-      .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", -40)
-        .attr("dy", "0.71em")
-        .style("font-size","15px")
-        .attr("text-anchor", "end")
-        .attr("fill", "#5D6971")
-        .text("Members");
+  //x.addOrderRule("Count");
 
-    g.selectAll(".bar")
-      	.data(data)
-      .enter().append("rect")
-        .attr("x", function(d) { return x(d.Name); })
-        .attr("y", function(d) { return y(d.Count); })
-        .attr("width", x.bandwidth())
-        .attr("height", function(d) { return height - y(d.Count); })
-        .attr("fill", function(d) { return colours(d.Name); })
-        .on("mousemove", function(d){
-            tooltip
-              .style("left", d3.event.pageX - 50 + "px")
-              .style("top", d3.event.pageY - 70 + "px")
-              .style("display", "inline-block")
-              .html((d.Name) + "<br>" + (d.Count) + " members");
-        }).on("mouseout", function(d){ tooltip.style("display", "none");});
-
+  s.getTooltipText = function (e) {
+                return [
+                    e.cx,
+                    "Member count: " + e.cy
+                ];
+            };
+  myChart.draw();
+  window.onresize = function () {
+    // As of 1.1.0 the second parameter here allows you to draw
+    // without reprocessing data.  This saves a lot on performance
+    // when you know the data won't have changed.
+    myChart.draw(0, true);
+};
 </script>
 </html>

@@ -5,12 +5,21 @@
 </head>
 <body>
 	<a href = "/members"> Back </a>
+	{% if user.member.photo %}
 	<p><img src = "{{ user.member.photo.photo_link }}"></p>
+	{% endif %}
 	<ul>
 	<li><a href="https://www.meetup.com/members/{{ user.member.id }}/"><b>Meetup</b></a></li>
 	<li>{{ user.member.name }}</li>
 	<li>{{ user.member.city }}</li>
 	<li>{{ user.member|tojson }} </li>
 	</ul>
+	<p>
+	<iframe
+	  width="600"
+	  height="450"
+	  frameborder="0" style="border:0"
+	  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBAKc7bTfSeM26MImbqtO_twAbW1Qup70E&q={{ user.member.location.coordinates.1 }}, {{ user.member.location.coordinates.0 }}" allowfullscreen>
+	</iframe>
 </body>
 </html>

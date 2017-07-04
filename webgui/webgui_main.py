@@ -31,8 +31,9 @@ proMemCollection = mdb.proMembersCollection()
 groupCollection = mdb.groupsCollection()
 proGrpCollection = mdb.proGroupsCollection()
 auditCollection = auditdb.auditCollection()
-currentBatch = auditdb.getCurrentBatch()["currentID"]
+currentBatch = auditdb.get_last_valid_batch_id()
 currentType = "groups"
+currentGroup = "None"
 
 connection = MongoClient('localhost')
 db = connection.MUGS
@@ -52,15 +53,15 @@ def create_account(user, password, email):
 @app.route('/')
 def index():
     if 'username' in session:
-        return render_template("index.html", user = session['username'], batch = auditdb.getCurrentBatch()["currentID"])
-    return render_template("index.html", batch = auditdb.getCurrentBatch()["currentID"])
+        return render_template("index.html", user = session['username'], batch = auditdb.get_last_valid_batch_id())
+    return render_template("index.html", batch = auditdb.get_last_valid_batch_id())
 
 @app.route('/groups')
 def groups():
     if not verify_login():
         return render_template("error.html")
-    curBatch = auditdb.getCurrentBatch()
-    curGroups = groupCollection.find( { "batchID" : curBatch["currentID"]}, 
+    curBatch = auditdb.get_last_valid_batch_id()
+    curGroups = groupCollection.find( { "batchID" : curBatch}, 
                                       { "_id"           : 0, 
                                         "group.urlname" : 1 })
     
@@ -86,39 +87,83 @@ def members():
 def graph():
     if not verify_login():
         return render_template("error.html")
+
     global currentBatch
     global currentType
-    curBatch = auditdb.getCurrentBatch()
+    global currentGroup
+    
+    curBatch = auditdb.get_last_valid_batch_id()
     batchl = []
     bids = auditdb.getBatchIDs()
+
     curbat = request.form.get('bat')
+    curGroup = request.form.get('grp')
+    typ = request.form.get('type')
+
+
     if type(curbat) is not unicode:
         curbat = currentBatch
     else:
-        currentBatch = curbat   
-    typ = request.form.get('type')
+        currentBatch = curbat
+
+    if type(curGroup) is not unicode:
+        curGroup = currentGroup
+    else:
+        currentGroup = curGroup 
+    
     if type(typ) is not unicode:
         typ = currentType
     else:
         currentType = typ
+
     for id in bids:
         batchl.append(id)
+
+    if request.form.get('res'):
+        currentBatch = curbat = curBatch
+        currentGroup = curGroup = "None"
+        currentType = typ = "groups"
+    
+
     if typ == "pgroups":
-        curGroups = proGrpCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
-                                  { "_id"           : 0, 
-                                    "group.name" : 1,
-                                    "group.member_count" : 1})
-        output = []
-        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"]} for d in curGroups]
-    else:
-        curGroups = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
-                                          { "_id"           : 0, 
-                                            "group.name" : 1,
-                                            "group.members" : 1})
-        output = []
-        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"]} for d in curGroups] 
-        
-    return render_template("graph.html", groups = output, batches = batchl, curbat = int(curbat), curtype = typ)
+        groupCurs = proGrpCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
+                                      { "_id"           : 0, 
+                                        "group.name" : 1,
+                                        "group.member_count" : 1})
+        groupl = []
+        groupl = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"]} for d in groupCurs]
+
+        if curGroup == 'None':
+            output = groupl
+        else:
+            curGroups = proGrpCollection.find( {"group.name": curGroup}, 
+                                      { "_id"           : 0, 
+                                        "group.name" : 1,
+                                        "group.member_count" : 1,
+                                        "timestamp" : 1})
+            output = []
+            output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in curGroups]
+
+    else: 
+        groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
+                                              { "_id"           : 0, 
+                                                "group.name" : 1,
+                                                "group.members" : 1})
+        groupl = []
+        groupl = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"]} for d in groupCurs]
+
+        if curGroup == 'None': 
+            output = groupl
+        else:
+            curGroups = groupCollection.find( {"group.name": curGroup}, 
+                                      { "_id"           : 0, 
+                                        "group.name" : 1,
+                                        "group.members" : 1,
+                                        "timestamp" : 1})
+            output = []
+            output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"], 'Time': d["timestamp"]} for d in curGroups]
+
+    return render_template("graph.html", groups = output, grouplist = groupl, batches = batchl, curbat = int(curbat), curtype = typ, curgroup = curGroup)
         
 @app.route('/members/<member>')
 def get_member(member):
@@ -130,6 +175,8 @@ def get_member(member):
 
 @app.route('/signup')
 def show_signup():
+    if verify_login():
+        return """<a href="/"> Home </a><p> You are already logged in! </p></a>"""
     return render_template("signup.html")
 
 @app.route('/signup', methods=['POST'])
@@ -152,6 +199,8 @@ def get_signup():
 
 @app.route('/login')
 def show_login():
+    if verify_login():
+        return """<a href="/"> Home </a><p> You are already logged in! </p></a>"""
     return render_template("login.html")
 
 @app.route('/login', methods=['POST'])
