@@ -127,7 +127,7 @@ class Audit( object ):
             new_batch_id = last_id + 1
             self._open_batch_count = self._open_batch_count + 1
             self._auditCollection.insert_one( { "batchID" : new_batch_id,
-                                                "start"   : datetime.now(),
+                                                "start"   : datetime.utcnow(),
                                                 "name"    : name,
                                                 "info"    : doc })
         
@@ -151,6 +151,14 @@ class Audit( object ):
         batch = self._auditCollection.find_one( { "batchID" : batchID })
         if batch is None:
             raise ValueError( "BatchID does not exist: %s" % batchID )
+        
+        return batch
+    
+    def get_batch_end(self, batchID ):
+        batch = self._auditCollection.find_one( { "batchID" : batchID,
+                                                  "end" : { "$exists" : 1 }})
+        if batch is None:
+            raise ValueError( "{ BatchID, end } does not exist: %s" % batchID )
         
         return batch
     
@@ -202,31 +210,20 @@ class Audit( object ):
         for i in results :
             return i
         
-    def get_current_batch( self ):  
-        '''
-        A Valid Batch record has a start and a end field that are both types.
-        It also has "valid" field set to true.
-        '''
-        
-        results = self.get_valid_batches()
-        
-        if results is None :
-            raise ValueError( "No current valid batch ID" )
-        for i in results:
-            return i
             
     def get_valid_batches( self, start=None, end=None):
 
-        if start and not isinstance( datetime, start ):
+        if start and not isinstance( start, datetime ):
             raise ValueError( "start is not a datetime object")
-        if end and not isinstance( datetime, end ):
+        if end and not isinstance( end, datetime ):
             raise ValueError( "end is not a datetime object")
         
+   
         batches = self._auditCollection.find( { "end" : { "$exists" : 1 }}).sort( "end", pymongo.DESCENDING )
-        
+         
         for i in batches:
             batch_date = i[ 'end']
-            
+             
             if start and end :
                 if batch_date >= start and batch_date <= end :
                     yield i

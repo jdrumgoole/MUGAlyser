@@ -7,6 +7,8 @@ Created on 16 Oct 2016
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
 import unittest
+from dateutil.parser import parse
+
 from mugalyser.version import __programName__, __version__
 
 class Test_audit(unittest.TestCase):
@@ -40,6 +42,8 @@ class Test_audit(unittest.TestCase):
         self._audit.end_batch( id2 )
         self.assertTrue( self._audit.in_batch())
         self._audit.end_batch( id1 )
+        batch = self._audit.get_batch_end( id1 )
+        self.assertGreaterEqual( batch[ 'end'], parse( "1-Jun-2017") )
         self.assertFalse( self._audit.in_batch())
         
         idlist = list( self._audit.get_valid_batch_ids())

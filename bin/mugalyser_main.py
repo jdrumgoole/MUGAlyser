@@ -24,7 +24,7 @@ from mugalyser.apikey import get_meetup_key
 from mugalyser.meetup_api import MeetupAPI
 from mugalyser.audit import Audit
 from mugalyser.mongodb import MUGAlyserMongoDB
-from mugalyser.meetup_writer import MeetupWriter, feedback
+from mugalyser.meetup_writer import MeetupWriter
 from mugalyser.version import __programName__, __version__
 from mugalyser.logger import Logger
 DEBUG = 1
@@ -93,7 +93,7 @@ access to the admin APIs.
         parser.add_argument( '--mugs', nargs="+", help='Process MUGs list list mugs by name [default: %(default)s]')
    
         parser.add_argument( "--collect",  choices=[ "pro", "nopro", "all" ], default="all", help="Use pro API calls, no pro API calls or both")
-        parser.add_argument( "--admin", default=False, action="store_true", help="Some calls are only available to admin users")
+        parser.add_argument( "--noadmin", default=True, action="store_false", help="Some calls are only available to admin users, use this if you are not an admin")
         parser.add_argument( "--database", default="MUGS", help="Default database name to write to [default: %(default)s]")
         parser.add_argument( '--phases', nargs="+", choices=[ "groups", "members", "attendees", "upcomingevents", "pastevents"], 
                              default=[ "all"], help='execution phases')
@@ -151,16 +151,17 @@ access to the admin APIs.
             else:
                 mugList = args.mugs
 
-        if args.admin:
+        if not args.noadmin:
             logger.info( "Using admin account")
 
-        writer = MeetupWriter( apikey, batchID, mdb, feedback )
+        writer = MeetupWriter( apikey, batchID, mdb )
             
         if "all" in args.phases :
             phases = [ "groups", "members", "upcomingevents", "pastevents"]
-            if args.admin:
-                phases.append( "attendees" )
+            if args.noadmin:
+                logger.info( "--noadmin : we will not collect attendee info")
             else:
+                phases.append( "attendees" )
                 logger.info( "No --admin : we will not collect attendee info")
         else:
             phases = args.phases
@@ -177,7 +178,7 @@ access to the admin APIs.
             phases.remove( "members")
             
         for i in mugList :
-            writer.capture_snapshot( i, args.admin, phases )
+            writer.capture_snapshot( i, not args.noadmin, phases )
         
         audit.end_batch( batchID )
         end = datetime.utcnow()
