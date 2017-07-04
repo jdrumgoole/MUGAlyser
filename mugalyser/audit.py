@@ -154,6 +154,14 @@ class Audit( object ):
         
         return batch
     
+    def get_batch_end(self, batchID ):
+        batch = self._auditCollection.find_one( { "batchID" : batchID,
+                                                  "end" : { "$exists" : 1 }})
+        if batch is None:
+            raise ValueError( "{ BatchID, end } does not exist: %s" % batchID )
+        
+        return batch
+    
     def is_batch(self, batchID ):
         return self._auditCollection.find_one( { "batchID" : batchID })
     
