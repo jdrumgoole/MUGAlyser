@@ -90,7 +90,7 @@ access to the admin APIs.
         parser.add_argument( "-v", "--version", action='version', version=__programName__ + " " + __version__ )
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
      
-        parser.add_argument( '--mugs', nargs="+", help='Process MUGs list list mugs by name [default: %(default)s]')
+        parser.add_argument( '--mugs', nargs="+", default=[], help='Process MUGs list list mugs by name [default: %(default)s]')
    
         parser.add_argument( "--collect",  choices=[ "pro", "nopro", "all" ], default="all", help="Use pro API calls, no pro API calls or both")
         parser.add_argument( "--noadmin", default=True, action="store_false", help="Some calls are only available to admin users, use this if you are not an admin")
@@ -102,6 +102,7 @@ access to the admin APIs.
         
         parser.add_argument( '--apikey', default=None, help='Default API key for meetup')
         
+        parser.add_argument( "--batchname", default= "test " + __programName__, help="Batch name used in creating audit batches")
         parser.add_argument( '--urlfile', 
                              help="File containing a list of MUG URLs to be used to parse data [ default: %(default)s]")
         # Process arguments
@@ -128,8 +129,9 @@ access to the admin APIs.
         
         audit = Audit( mdb )
         
-        batchID = audit.start_batch( { "args"    : vars( args ), 
+        batchID = audit.start_batch( { "args"   : vars( args ), 
                                       "version" : __programName__ + " " + __version__,
+                                      "name"    : args.batchname,
                                       "collect" : args.collect } )
 
         start = datetime.utcnow()
@@ -138,7 +140,7 @@ access to the admin APIs.
         
         if args.collect in [ "pro", "all"]:
             '''
-            Ignore the --urlfile argument and get the groups from the pro accoubt
+            Use the pro API.
             '''
             logger.info( "Using pro API calls (pro account API key)")
             mugList = list( MeetupAPI( apikey ).get_pro_group_names())
