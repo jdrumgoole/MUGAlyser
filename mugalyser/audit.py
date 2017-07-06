@@ -218,12 +218,15 @@ class Audit( object ):
         if end and not isinstance( end, datetime ):
             raise ValueError( "end is not a datetime object")
         
-   
-        batches = self._auditCollection.find( { "end" : { "$exists" : 1 }}).sort( "end", pymongo.DESCENDING )
+        batches = self._auditCollection.find( { "start" : { "$exists" : 0},
+                                                "end" : { "$exists" : 1 }}, 
+                                              { "_id" : 0 } ).sort( "end", pymongo.DESCENDING )
          
         for i in batches:
+#             if i['end'] is None : # some older batches may have null end values
+#                 continue
             batch_date = i[ 'end']
-             
+            #print( batch_date )
             if start and end :
                 if batch_date >= start and batch_date <= end :
                     yield i

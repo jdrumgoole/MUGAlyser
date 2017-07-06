@@ -28,7 +28,7 @@ class MeetupRequest( object ):
         else:
             r = requests.get( req )
             
-        self._logger.debug( "simple_request( %s )",  r.url )
+        self._logger.info( "simple_request( %s )",  r.url )
 
         try:
             r.raise_for_status()
@@ -50,12 +50,12 @@ class MeetupRequest( object ):
             return ( r.headers, r.json())
         
         except ValueError :
-            self._logger.error( "ValueError in makeRequests:")
+            self._logger.error( "ValueError in simple_request:")
             self._logger.error( "request: '%s'", r.url)
             self._logger.error( "headers:" )
             self._logger.error( pprint.pformat( r.headers ))
-            self._logger.error( "text:" )
-            self._logger.error( r.text )
+            self._logger.error( "text:'" )
+            self._logger.error( r.text + "'" )
             raise
         
         except requests.HTTPError, e :
@@ -140,6 +140,7 @@ class MeetupRequest( object ):
             nested_body = body
             while ( nested_body[ 'meta' ][ "next" ] != ""  ) :
 
+                pprint.pprint( nested_body[ 'meta' ] )
                 ( _, nested_body ) = self.simple_request( nested_body['meta'][ 'next' ] )
                 count = count + 1
                 #print( "Nested Body")
@@ -154,7 +155,7 @@ class MeetupRequest( object ):
                 yield i
                
             count = 0 
-            ( nxt, _) = self.getNextPrev(headers)
+            ( nxt, prev ) = self.getNextPrev(headers)
 
             
             while ( nxt is not None ) : # no next link in last page
@@ -162,9 +163,11 @@ class MeetupRequest( object ):
                 count = count + 1 
                 #print( "make request (new): %i" % count )
                     
+                pprint.pprint( nxt )
+                pprint.pprint( prev )
                 #print( "V2 Paged SimpleRequest( %s, %s)" % ( nxt, params))
                 ( headers, body ) = self.simple_request( nxt, params )
-                ( nxt, _ ) = self.getNextPrev(headers)
+                ( nxt,prev ) = self.getNextPrev(headers)
                 for i in body :
                     yield i
     
