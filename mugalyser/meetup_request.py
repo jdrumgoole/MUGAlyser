@@ -17,20 +17,19 @@ import pprint
 
 class MeetupRequest( object ):
     
-    def __init__(self, logging_level = logging.DEBUG ):
+    def __init__(self, logging_level = logging.INFO ):
         
-        self._logger = logging.getLogger( MeetupRequest.__name__ )
+        self._logger = logging.getLogger( "arse" )
+        self._logger.setLevel( logging_level)
         fh = logging.FileHandler( "meetuprequests.log" )
         sh = logging.StreamHandler()
-        fh.setLevel( logging.DEBUG )
-        sh.setLevel( logging.DEBUG )
+        fh.setLevel( logging_level)
+        sh.setLevel( logging_level )
         fh.setFormatter( logging.Formatter( "%(asctime)s - %(name)s - %(levelname)s - %(message)s" ))
-        sh.setFormatter(  logging.Formatter( "%(asctime)s - %(name)s - %(levelname)s - %(message)s" ))
+        sh.setFormatter( logging.Formatter( "%(asctime)s - %(name)s - %(levelname)s - %(message)s" ))
         
         self._logger.addHandler( sh )
         self._logger.addHandler( fh )
-
-        self._logger.debug( "Logging to  meetuprequests.log and stdout" )
 
     def simple_request(self, req, params=None ):
         
@@ -39,8 +38,7 @@ class MeetupRequest( object ):
         else:
             r = requests.get( req )
             
-        self._logger.info( "simple_request( %s )",  r.url )
-
+        self._logger.debug( "simple_request( %s )",  r.url )
         try:
             r.raise_for_status()
 #           for req_data in r.iter_lines():
@@ -174,8 +172,6 @@ class MeetupRequest( object ):
                 count = count + 1 
                 #print( "make request (new): %i" % count )
                     
-                pprint.pprint( nxt )
-                pprint.pprint( prev )
                 #print( "V2 Paged SimpleRequest( %s, %s)" % ( nxt, params))
                 ( headers, body ) = self.simple_request( nxt, params )
                 ( nxt,prev ) = self.getNextPrev(headers)
