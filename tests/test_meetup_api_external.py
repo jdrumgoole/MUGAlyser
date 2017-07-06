@@ -11,4 +11,5 @@ if __name__ == '__main__':
     
     for i in range( 50 ):
         members = client.GetMembers(group_urlname = "London-MongoDB-User-Group")
-        print( members )
+        for i in members :
+            print( i[ "name" ])

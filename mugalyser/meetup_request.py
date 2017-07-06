@@ -12,15 +12,26 @@ import requests
 import time
 import pprint
 
-from mugalyser.version import __programName__
-from mugalyser.logger import Logger
+# from mugalyser.version import __programName__
+# from mugalyser.logger import Logger
 
 class MeetupRequest( object ):
     
-    def __init__(self ):
+    def __init__(self, logging_level = logging.DEBUG ):
         
-        self._logger = Logger( __programName__).log()
+        self._logger = logging.getLogger( MeetupRequest.__name__ )
+        fh = logging.FileHandler( "meetuprequests.log" )
+        sh = logging.StreamHandler()
+        fh.setLevel( logging.DEBUG )
+        sh.setLevel( logging.DEBUG )
+        fh.setFormatter( logging.Formatter( "%(asctime)s - %(name)s - %(levelname)s - %(message)s" ))
+        sh.setFormatter(  logging.Formatter( "%(asctime)s - %(name)s - %(levelname)s - %(message)s" ))
         
+        self._logger.addHandler( sh )
+        self._logger.addHandler( fh )
+
+        self._logger.debug( "Logging to  meetuprequests.log and stdout" )
+
     def simple_request(self, req, params=None ):
         
         if params :
@@ -140,7 +151,7 @@ class MeetupRequest( object ):
             nested_body = body
             while ( nested_body[ 'meta' ][ "next" ] != ""  ) :
 
-                pprint.pprint( nested_body[ 'meta' ] )
+                #print.pprint( nested_body[ 'meta' ] )
                 ( _, nested_body ) = self.simple_request( nested_body['meta'][ 'next' ] )
                 count = count + 1
                 #print( "Nested Body")
