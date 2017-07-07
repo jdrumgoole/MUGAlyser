@@ -39,8 +39,8 @@
 <h2> Historical member data for {{ curgroup }}</h2>
 {% endif %}
 
-<form class = "_group" method="post">
-  <select name = "grp" onchange="this.form.submit()">
+<form id = "group" class = "_group" method="post">
+  <select id = "groupsel" name = "grp" onchange="this.form.submit()">
     <option value = "None"> None </option>
     {% for group in grouplist %}
     <option value = "{{ group.Name }}"  {% if group.Name == curgroup %} selected = "selected" {% endif %}> {{ group.Name }} </option>
@@ -61,7 +61,6 @@
     data[i].order = i;
     if(data[i].Count < min) min = data[i].Count;
   };
-  console.log(data);
   var svg = dimple.newSvg("#chartContainer", "100%", "100%");
   var myChart = new dimple.chart(svg, data);
   myChart.setMargins("60px", "20px", "30px", "500px");
@@ -75,13 +74,12 @@
   y.tickFormat = "";
   y.overrideMin = min;
   {% if curgroup == "None" %}
-    console.log("Default");
     var x = myChart.addCategoryAxis("x", "Name");
     var s = myChart.addSeries(null, dimple.plot.bar);
   {% else %}
-    console.log("Special");
     var x = myChart.addCategoryAxis("x", "Time");
     var s = myChart.addSeries(null, dimple.plot.line);
+    s.lineMarkers = true;
     // myChart.addSeries(null, dimple.plot.scatter);
 
   {% endif %}
@@ -106,7 +104,15 @@
                     "Member count: " + e.cy
                 ];
             };
-  myChart.draw();
+  myChart.staggerDraw = true;
+  myChart.ease = "sin";
+  myChart.draw(650);
+  d3.selectAll("rect").on("click", function (e) {
+        ////Which chart clicked
+     console.log('Selected: x-axis -'+e.cx+', y-axis -'+e.cy);
+     document.getElementById("groupsel").value = e.cx;
+     document.getElementById("group").submit();
+    });
   window.onresize = function () {
     // As of 1.1.0 the second parameter here allows you to draw
     // without reprocessing data.  This saves a lot on performance
