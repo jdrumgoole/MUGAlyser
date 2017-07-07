@@ -4,17 +4,22 @@
   <script src="http://dimplejs.org/dist/dimple.v2.3.0.min.js"></script>
   <link rel="stylesheet" type="text/css" href="/static/style.css">
   <title> Batch: {{ curbat }} </title>
-  <style type="text/css">
-    ._type {
-      text-align : left;
-    }
-    </style>
 </head>
 <body>
 
-<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="members">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="logout">Logout</a><p>
+<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="members/0                                 ">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="logout" class = "logout">Logout</a><p>
 
 {% if curgroup == "None" %}
+<form class = "_amt" method="post">
+  <select name = "amt" onchange="this.form.submit()">
+    <option value = "0" {% if 0 == curamt  %} selected = "selected" {% endif %}> All </option>
+    <option value = "5" {% if 5 == curamt  %} selected = "selected" {% endif %}> Top 5 </option>
+    <option value = "10" {% if 10 == curamt  %} selected = "selected" {% endif %}> Top 10 </option>
+    <option value = "15" {% if 15 == curamt  %} selected = "selected" {% endif %}> Top 15 </option>
+    <option value = "20" {% if 20 == curamt  %} selected = "selected" {% endif %}> Top 20 </option>
+  </select>
+</form>
+
 <form class = "_bat" method="post">
   <select name = "bat" onchange="this.form.submit()">
     {% for id in batches %}
@@ -72,21 +77,21 @@
   {% if curgroup == "None" %}
     console.log("Default");
     var x = myChart.addCategoryAxis("x", "Name");
-    var s = myChart.addSeries("Count", dimple.plot.bar);
+    var s = myChart.addSeries(null, dimple.plot.bar);
   {% else %}
     console.log("Special");
     var x = myChart.addCategoryAxis("x", "Time");
     var s = myChart.addSeries(null, dimple.plot.line);
-    myChart.addSeries(null, dimple.plot.scatter);
+    // myChart.addSeries(null, dimple.plot.scatter);
 
   {% endif %}
   x.fontSize = "14px";
   x.fontFamily = "Trebuchet MS";
-/*  // Animate a chart over the date field and write the current frame value to the console on update
-  var st = myChart.setStoryboard("Count");
-  st.frameDuration = 600;
-  st.addOrderRule("Count", true);*/
-  
+  // Animate a chart over the date field and write the current frame value to the console on update
+  // var st = myChart.setStoryboard("Count");
+  // st.frameDuration = 600;
+  // st.addOrderRule("Count", true);
+  // x.floatingBarWidth = 2;
 
 
   //var s = myChart.addSeries("Count", dimple.plot.bar);

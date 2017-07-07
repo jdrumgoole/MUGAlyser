@@ -1,14 +1,123 @@
+a {
+  color: #000000;
+}
 body {
-  background-color: #F1F3F3    
+  background-color: #F1F3F3;
+  margin: 5s !important;
+  padding: 0 !important;    
+}
+ul{
+  list-style-position: inside;
+  margin-left:0;
+  padding: 0;
+  line-height: 150%;
+}
+.menu {
+    float: left;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+}
+input[type=text],[type=password],[type=email] {
+    width: 100%;
+    padding: 6px 10px;
+    margin: 8px 0;
+    box-sizing: border-box;
+}
+input[type=button], input[type=submit], input[type=reset] {
+    background-color: grey;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+input:focus {
+    border: 3px solid #555;
+}
+.menu a {
+  color: #F1F3F3;
+}
+/*.menu li {
+    float: left;
+}
+
+.menu li a {
+    display: inline-block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+.menu li a:hover{
+    background-color: red;
+}
+*/
+li {
+  list-style-type: disc;
+  list-style-position: inside;
+  text-indent: -1em;
+  padding-left: 1em;
+}
+html *{
+  font-family: Arial !important;
+}
+h1{
+  font: 28px sans-serif;
+  margin-top: 0;
+  text-align: center;
+  margin-bottom: 0;
+  display:table;
+}
+h2{
+  font: 20px sans-serif;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+h3{
+  font: 20px sans-serif;
+  padding: 5px 10px 1px 1px;
+  float : right;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+._type {
+  float : right;
+}
+
+.logout {
+  font-size: 18px;
+  float : right;
+  padding: 0px 5px 1px 1px;
+  margin-top: 0;
+}
+
+.uinfo {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    right: 0px;
+    display:table;
+}
+
+a:hover {
+  text-decoration: none;
+  color: #8b8b8b;
 }
 ._bat{
     float : right;
 }
-._type{
+._amt{
     float : right;
 }
 .axis {
 	font: 15px sans-serif;
+}
+.class {
+
 }
 .axis path,
 .axis line {

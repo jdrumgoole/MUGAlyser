@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <title>{{ user.member.name }}</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
 </head>
 <body>
-	<a href = "/members"> Back </a>
+	<input type="button" value="Back" onclick="window.history.back()" />&emsp;<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="/groups">Groups</a>&emsp;<a href="/graph">Graph</a>&emsp;<a class = "logout" href="/logout">Logout</a>
 	{% if user.member.photo %}
 	<p><img src = "{{ user.member.photo.photo_link }}"></p>
 	{% endif %}
@@ -19,7 +20,7 @@
 	  width="600"
 	  height="450"
 	  frameborder="0" style="border:0"
-	  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBAKc7bTfSeM26MImbqtO_twAbW1Qup70E&q={{ user.member.location.coordinates.1 }}, {{ user.member.location.coordinates.0 }}" allowfullscreen>
+	  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBAKc7bTfSeM26MImbqtO_twAbW1Qup70E&q={{ user.member.lat}}, {{ user.member.lon }}" allowfullscreen>
 	</iframe>
 </body>
 </html>

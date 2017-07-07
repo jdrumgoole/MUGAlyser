@@ -15,6 +15,7 @@ from os import urandom
 from datetime import datetime
 import os
 import boto3
+import re
 import webbrowser
 import send_email
 
@@ -34,6 +35,7 @@ auditCollection = auditdb.auditCollection()
 currentBatch = auditdb.get_last_valid_batch_id()
 currentType = "groups"
 currentGroup = "None"
+currentAmt = 0
 
 connection = MongoClient('localhost')
 db = connection.MUGS
@@ -71,17 +73,67 @@ def groups():
         
     return render_template("groups.html", groups = output)
 
-@app.route( "/members")
-def members():
+@app.route( "/members/<pg>", methods = ['POST', 'GET'])
+def members(pg):
     if not verify_login():
         return render_template("error.html")
-    cursor = membersCollection.find({}, { "_id" :0, "member.name" : 1 }).distinct("member.name")
+    pg = int(pg)
+    query = "N0NE"
+    interest = "nothing."
     output =[]
-    count = 0
-    for i in cursor:
-        count = count + 1
-        output.append( i )
-    return render_template( "members.html", members=output)
+    if request.method == 'POST':
+        try: 
+            query = escape(request.form.get('query'))
+        except:
+            pass
+        regquery = re.compile(query, re.IGNORECASE)
+        print query
+        if request.form.get('int') != "nothing." and request.form.get('int') != "":
+            interest = escape(request.form.get('int')).replace(" ", "")
+            ilist = interest.split(",")
+            pipeline = [
+                {"$match":
+                    {"member.name" : regquery}
+                },
+                {"$unwind": "$member.topics"},
+                {"$group":
+                    {
+                    "_id": {"ID" :"$member.id", "name": "$member.name"},
+                    "ints":
+                        {"$push": "$member.topics.urlkey"}
+                    }
+                },
+                {"$project":{
+                    "ints": 1,
+                    "_id": 1,
+                    "isSub" : {"$setIsSubset" :[ilist, "$ints"] }
+                    }
+                },
+                {
+                "$match":{
+                    "isSub": True
+                    }
+                }
+            ]
+            cursor = membersCollection.aggregate(pipeline)
+            # print cursor.count()
+            # for i in cursor:
+            #     print i
+            output =[]
+            for i in cursor:
+                output.append( i['_id']['name'] ) 
+        else:
+            cursor = membersCollection.find({"member.name" : regquery}, { "_id" :0, "member.name" : 1 }).distinct("member.name")[pg * 1000: 1000 + (pg*1000)]
+            for i in cursor:
+                output.append( i ) 
+    else:
+        cursor = membersCollection.find({}, { "_id" :0, "member.name" : 1 }).distinct("member.name")[pg * 1000: 1000 + (pg*1000)]
+        output =[]
+        count = 0
+        for i in cursor:
+            count = count + 1
+            output.append( i )
+    return render_template( "members.html", members=output, cur = pg, query = query, filt = interest)
 
 @app.route("/graph", methods=['POST', 'GET'])
 def graph():
@@ -91,7 +143,8 @@ def graph():
     global currentBatch
     global currentType
     global currentGroup
-    
+    global currentAmt
+
     curBatch = auditdb.get_last_valid_batch_id()
     batchl = []
     bids = auditdb.getBatchIDs()
@@ -99,6 +152,7 @@ def graph():
     curbat = request.form.get('bat')
     curGroup = request.form.get('grp')
     typ = request.form.get('type')
+    amt = request.form.get('amt')
 
 
     if type(curbat) is not unicode:
@@ -116,20 +170,32 @@ def graph():
     else:
         currentType = typ
 
+    if type(amt) is not unicode:
+        amt = currentAmt
+    else:
+        currentAmt = int(amt)
+
     for id in bids:
         batchl.append(id)
+    batchl = list(set(batchl))
 
     if request.form.get('res'):
         currentBatch = curbat = curBatch
         currentGroup = curGroup = "None"
         currentType = typ = "groups"
-    
+        currentAmt = amt = 0
 
     if typ == "pgroups":
-        groupCurs = proGrpCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
-                                      { "_id"           : 0, 
-                                        "group.name" : 1,
-                                        "group.member_count" : 1})
+        if amt == 0:
+            groupCurs = proGrpCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
+                                          { "_id"           : 0, 
+                                            "group.name" : 1,
+                                            "group.member_count" : 1})
+        else:
+            groupCurs = proGrpCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
+                                          { "_id"           : 0, 
+                                            "group.name" : 1,
+                                            "group.member_count" : 1}).sort([("group.member_count", -1)]).limit(int(amt))
         groupl = []
         groupl = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"]} for d in groupCurs]
 
@@ -144,11 +210,17 @@ def graph():
             output = []
             output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in curGroups]
 
-    else: 
-        groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
-                                              { "_id"           : 0, 
-                                                "group.name" : 1,
-                                                "group.members" : 1})
+    else:
+        if amt == 0: 
+            groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
+                                                  { "_id"           : 0, 
+                                                    "group.name" : 1,
+                                                    "group.members" : 1})
+        else:
+            groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
+                                                  { "_id"           : 0, 
+                                                    "group.name" : 1,
+                                                    "group.members" : 1}).sort([("group.members", -1)]).limit(int(amt))
         groupl = []
         groupl = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"]} for d in groupCurs]
 
@@ -163,9 +235,9 @@ def graph():
             output = []
             output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"], 'Time': d["timestamp"]} for d in curGroups]
 
-    return render_template("graph.html", groups = output, grouplist = groupl, batches = batchl, curbat = int(curbat), curtype = typ, curgroup = curGroup)
+    return render_template("graph.html", groups = output, grouplist = groupl, batches = batchl, curbat = int(curbat), curtype = typ, curamt = int(amt), curgroup = curGroup)
         
-@app.route('/members/<member>')
+@app.route('/user/<member>')
 def get_member(member):
     # show the user profile for that user
     if not verify_login():
@@ -176,7 +248,7 @@ def get_member(member):
 @app.route('/signup')
 def show_signup():
     if verify_login():
-        return """<a href="/"> Home </a><p> You are already logged in! </p></a>"""
+        return """<link rel="stylesheet" type="text/css" href="/static/style.css"><a href="/"> Home </a><p> You are already logged in! </p></a>"""
     return render_template("signup.html")
 
 @app.route('/signup', methods=['POST'])
@@ -200,7 +272,7 @@ def get_signup():
 @app.route('/login')
 def show_login():
     if verify_login():
-        return """<a href="/"> Home </a><p> You are already logged in! </p></a>"""
+        return """<link rel="stylesheet" type="text/css" href="/static/style.css"><a href="/"> Home </a><p> You are already logged in! </p></a>"""
     return render_template("login.html")
 
 @app.route('/login', methods=['POST'])
@@ -242,10 +314,11 @@ def forgot_pw():
     resetID = urandom(16).encode('hex')
     resetColl.insert({'_id': resetID, 'timestamp': datetime.utcnow(), 'user': user})
     webbrowser.get('open -a /Applications/Google\ Chrome.app %s').open_new_tab('http://127.0.0.1:5000/resetpw/'+resetID)
-    #send_email.send(email, user, resetID)
+    send_email.send(email, user, resetID)
     return """
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
     <a href="/">Home</a>
-    <h3> Reset email sent! Please check your inbox.</h3>
+    <h4> Reset email sent! Please check your inbox.</h4>
     """
 
 @app.route('/resetpw/<ID>')
@@ -253,6 +326,7 @@ def show_reset(ID):
     if resetColl.find_one({'_id': ID}):
         return render_template("reset.html", error = "Please enter a new password.")
     return """
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
     <a href="/">Home</a>
     <p>Reset link is invalid."""
     
@@ -271,6 +345,7 @@ def reset_pw(ID):
         resetColl.remove({'_id' : ID})
         return redirect(url_for('index'))
     return """
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
     Link invalid.
     """
 

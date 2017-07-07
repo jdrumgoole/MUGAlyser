@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <title>MUG Members</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
     <style type="text/css">
     	.mem-list {
     		list-style-position: inside;
@@ -13,11 +14,33 @@
 	</style>
 </head>
 <body>
-	<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>&emsp;<a href="logout">Logout</a>
+	<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="0">Member List</a>&emsp;<a href="/groups">Groups</a>&emsp;<a href="/graph">Graph</a>&emsp;<a class = "logout" href="/logout">Logout</a>
 	<p>
+	{% if query == 'N0NE' %}
+		{% set query = 'Search here'%}
+		{% set int = 'Filter by interest' %}
+		{% if cur != 0 %}
+		<a href = "{{ cur - 1}}">Prev</a>&emsp;
+		{% endif %}
+		<a href = "{{ cur + 1}}">Next</a>
+	{% endif %}
+	<form method="post">
+		{% if query == 'Search here' %}
+			<input type="text" name="query" placeholder = "{{query}}">
+		{% else %}
+			<input type="text" name="query" value = "{{query}}">
+		{% endif %}
+		{% if filt == 'nothing.' %}
+		<input type="text" name="int" placeholder = "{{int}}">
+		{% else %}
+		<input type="text" name="int" value = "{{filt}}">
+		{% endif %}
+		<input type="submit" value = "Search">
+	</form>
+	<h2>Filtering by interests: {{filt}}</h2>
     <ul class="mem-list">
     {% for member in members %}
-        <li><a href="/members/{{ member }}">{{ member }}</a>&emsp;
+        <li><a href="/user/{{ member|urlencode }}">{{ member }}</a>&emsp;
     {% endfor %}
     </ul>
 

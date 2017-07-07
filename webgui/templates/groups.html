@@ -3,6 +3,7 @@
 <html>
   <head>
     <title>Groups</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
     <style type="text/css">
       .group-list {
         list-style-position: inside;
@@ -14,7 +15,7 @@
   </head>
 
   <body>
-      <a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="members">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>&emsp;<a href="logout">Logout</a>
+      <a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="members/0">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>&emsp;<a class = "logout" href="logout">Logout</a>
       <p>
       <ul class="group-list">
       {% for group in groups %}

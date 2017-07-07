@@ -1,16 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Index</title>
-    <h2> <b> Current Batch: {{ batch }} </b> </h2>
-    <p>
-    {% if user %}
-    <h3> Welcome {{ user }} </h3>
-    {% endif %}
+	<link rel="stylesheet" type="text/css" href="/static/style.css">
+	<title>Index</title>
 </head>
 <body>
-	<p><a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="members">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>&emsp;<a href="logout">Logout</a>
+    {% if user %}
+    <div class = "uinfo"> <h3> Welcome, {{ user }} </h3>
+    <p><a class = "logout" href="logout">Logout</a></p></div>
+    {% endif %}
+    <a href = "http://www.mongodb.com"> <img src = "static/mongodb_logo.png" style = "float:left" width="13%" height="13%"/></a>
+	<h1 style = "position: relative; top: 10px"> <b> MUGAlyser<!--  &emsp; &emsp; Current Batch: {{ batch }}  --></b> </h1>
+<!-- 	<ul class = "menu">
+	  <li><a href="/login">Login</a></li>
+	  <li><a href="signup">Signup</a></li>
+	  </li>
+	</ul> -->
+	<br><a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="members/0">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>
 	<br>
+	<p>
+
+    
 	<img src = "/pixel.gif"></img>
 
 </body>
