@@ -139,17 +139,7 @@ class MeetupAPI(object):
         for i in urls:
             yield self.get_group( i )
             
-    def get_past_events(self, url_name ) :
-        
-        params = deepcopy( self._params )
-        
-        params[ "status" ]       = "past"
-        params[ "group_urlname"] = url_name
-        
-        if self._reshape:
-            return ( Reshape_Event( i ).reshape() for i in self._requester.paged_request( self._api + "2/events", params ))
-        else:
-            return self._requester.paged_request( self._api + "2/events", params )
+
         
     def get_all_attendees(self, groups=None ):
         groupsIterator = None
@@ -183,6 +173,17 @@ class MeetupAPI(object):
         
         return self._requester.paged_request( self._api + "2/events", params )
     
+    def get_past_events(self, url_name ) :
+        
+        params = deepcopy( self._params )
+        
+        params[ "status" ]       = "past"
+        params[ "group_urlname"] = url_name
+        
+        if self._reshape:
+            return ( Reshape_Event( i ).reshape() for i in self._requester.paged_request( self._api + "2/events", params ))
+        else:
+            return self._requester.paged_request( self._api + "2/events", params )
     def get_member_by_id(self, member_id ):
 
         ( _, body ) = self._requester.simple_request( self._api + "2/member/" + str( member_id ), params = self._params )

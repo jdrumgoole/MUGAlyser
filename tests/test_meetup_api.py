@@ -8,6 +8,7 @@ import unittest
 from mugalyser.meetup_api import MeetupAPI
 from mugalyser.apikey import get_meetup_key
 import types
+from datetime import datetime
 
 class Test_meetup_api(unittest.TestCase):
         
@@ -40,11 +41,13 @@ class Test_meetup_api(unittest.TestCase):
         g = self._api.get_past_events("DublinMUG" )
         events = list( g )
         self.assertGreaterEqual( len( events ), 29 )
+
         event = events[ 0 ]
         
         #self.assertEqual( event[ "created"], 1335802792000 )
         self.assertEqual( event[ "event_url"], u'https://www.meetup.com/DublinMUG/events/62760772/' )
-
+        self.assertTrue( isinstance( event[ "created"], datetime ))
+                         
     def test_get_all_attendees( self ):
         attendees = self._api.get_all_attendees( [ "DublinMUG", "London-MongoDB-User-Group" ] )
         attendees = list( attendees )
