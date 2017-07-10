@@ -7,7 +7,7 @@
 </head>
 <body>
 
-<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="members/0                                 ">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="logout" class = "logout">Logout</a><p>
+<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="members/0">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="logout" class = "logout">Logout</a><p>
 
 {% if curgroup == "None" %}
 <form class = "_amt" method="post">
@@ -28,13 +28,13 @@
   </select>
 </form>
 
-<form class = "_type" method="post">
+<!-- <form class = "_type" method="post">
   <select name = "type" onchange="this.form.submit()">
     <option value = "groups" {% if "groups" == curtype %} selected = "selected" {% endif %}> Groups </option>
     <option value = "pgroups" {% if "pgroups" == curtype %} selected = "selected" {% endif %}> Pro Groups </option>
   </select>
-</form>
-<h2> Member count for Batch {{curbat}}</h2>
+</form> -->
+<h2> Member counts for Batch {{curbat}}</h2>
 {% else %}
 <h2> Historical member data for {{ curgroup }}</h2>
 {% endif %}
@@ -55,69 +55,64 @@
 
 </body>
 <script type="text/javascript">
-  var data = {{groups|tojson}};
-  var min = data[0].Count;
-  for (var i = 0; i < data.length; i++){
-    data[i].order = i;
-    if(data[i].Count < min) min = data[i].Count;
-  };
-  var svg = dimple.newSvg("#chartContainer", "100%", "100%");
-  var myChart = new dimple.chart(svg, data);
-  myChart.setMargins("60px", "20px", "30px", "500px");
+    var data = {{groups|tojson}};
+    var min = data[0].Count;
+    for (var i = 0; i < data.length; i++){
+      data[i].order = i;
+      if(data[i].Count < min) min = data[i].Count;
+    };
+    var svg = dimple.newSvg("#chartContainer", "100%", "100%");
+    var myChart = new dimple.chart(svg, data);
+    myChart.setMargins("60px", "20px", "30px", "500px");
 
-  
+    
+    //var x = myChart.addCategoryAxis("x", "Name");
+    var y = myChart.addMeasureAxis("y", "Count");
+    y.fontSize = "12px";
+    y.fontFamily = "Arial";
+    y.overrideMin = min;
+    {% if curgroup == "None" %}
+      var x = myChart.addCategoryAxis("x", "Name");
+      var s = myChart.addSeries(null, dimple.plot.bar);
+    {% else %}
+      var x = myChart.addCategoryAxis("x", "Time");
+      var s = myChart.addSeries(null, dimple.plot.line);
+      y.ticks = 4;
+      y.tickInterval = 1;
+      s.lineMarkers = true;
+      // myChart.addSeries(null, dimple.plot.scatter);
+    {% endif %}
+    x.fontSize = "14px";
+    x.fontFamily = "Trebuchet MS";
+    // Animate a chart over the date field and write the current frame value to the console on update
+    // var st = myChart.setStoryboard("Count");
+    // st.frameDuration = 600;
+    // st.addOrderRule("Count", true);
+    // x.floatingBarWidth = 2;
+    y.tickFormat = "d";
 
-  //var x = myChart.addCategoryAxis("x", "Name");
-  var y = myChart.addMeasureAxis("y", "Count");
-  y.fontSize = "12px";
-  y.fontFamily = "Arial";
-  y.tickFormat = "";
-  y.overrideMin = min;
-  {% if curgroup == "None" %}
-    var x = myChart.addCategoryAxis("x", "Name");
-    var s = myChart.addSeries(null, dimple.plot.bar);
-  {% else %}
-    var x = myChart.addCategoryAxis("x", "Time");
-    var s = myChart.addSeries(null, dimple.plot.line);
-    s.lineMarkers = true;
-    // myChart.addSeries(null, dimple.plot.scatter);
+    //var s = myChart.addSeries("Count", dimple.plot.bar);
+    s.tooltipFontSize = "16px";
+    s.tooltipFontFamily = "Arial";
 
-  {% endif %}
-  x.fontSize = "14px";
-  x.fontFamily = "Trebuchet MS";
-  // Animate a chart over the date field and write the current frame value to the console on update
-  // var st = myChart.setStoryboard("Count");
-  // st.frameDuration = 600;
-  // st.addOrderRule("Count", true);
-  // x.floatingBarWidth = 2;
+    //x.addOrderRule("Count");
 
-
-  //var s = myChart.addSeries("Count", dimple.plot.bar);
-  s.tooltipFontSize = "16px";
-  s.tooltipFontFamily = "Arial";
-
-  //x.addOrderRule("Count");
-
-  s.getTooltipText = function (e) {
-                return [
-                    e.cx,
-                    "Member count: " + e.cy
-                ];
-            };
-  myChart.staggerDraw = true;
-  myChart.ease = "sin";
-  myChart.draw(650);
-  d3.selectAll("rect").on("click", function (e) {
-        ////Which chart clicked
-     console.log('Selected: x-axis -'+e.cx+', y-axis -'+e.cy);
-     document.getElementById("groupsel").value = e.cx;
-     document.getElementById("group").submit();
-    });
-  window.onresize = function () {
-    // As of 1.1.0 the second parameter here allows you to draw
-    // without reprocessing data.  This saves a lot on performance
-    // when you know the data won't have changed.
-    myChart.draw(0, true);
-};
+    s.getTooltipText = function (e) {
+                  return [
+                      e.cx,
+                      "Member count: " + e.cy
+                  ];
+              };
+    myChart.staggerDraw = true;
+    myChart.ease = "sin";
+    myChart.draw(650);
+    d3.selectAll("rect").on("click", function (e) {
+       console.log('Selected: x-axis -'+e.cx+', y-axis -'+e.cy);
+       document.getElementById("groupsel").value = e.cx;
+       document.getElementById("group").submit();
+      });
+    window.onresize = function () {
+      myChart.draw(0, true);
+    };
 </script>
 </html>
