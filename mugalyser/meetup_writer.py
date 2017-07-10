@@ -45,13 +45,12 @@ class MeetupWriter(object):
         return { name : doc, "timestamp" : datetime.utcnow(), "batchID": self._batch_ID }
   
     
-    def __init__(self, apikey, batch_ID, mdb, unordered=True ):
+    def __init__(self, apikey, batch_ID, mdb, reshape=True, unordered=True ):
         '''
         Write contents of meetup API to MongoDB
         '''
-
         self._mdb = mdb 
-        self._meetup_api = MeetupAPI( apikey )
+        self._meetup_api = MeetupAPI( apikey, reshape=reshape )
         self._batch_ID = batch_ID
         self._groups = self._mdb.groupsCollection()
         self._pro_groups = self._mdb.proGroupsCollection()

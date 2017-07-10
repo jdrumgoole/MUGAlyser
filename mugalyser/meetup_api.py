@@ -11,7 +11,7 @@ from copy import deepcopy
 
 from mugalyser.version import __programName__
 from mugalyser.meetup_request import MeetupRequest
-from mugalyser.reshape import Reshape_Event, Reshape_Group, Reshape_Member
+from mugalyser.reshape import Reshape_Event, Reshape_Pro_Group, Reshape_Group, Reshape_Member
 
 def makeRequestURL( *args ):
     url = "https://api.meetup.com"
@@ -184,10 +184,11 @@ class MeetupAPI(object):
             return ( Reshape_Event( i ).reshape() for i in self._requester.paged_request( self._api + "2/events", params ))
         else:
             return self._requester.paged_request( self._api + "2/events", params )
+
     def get_member_by_id(self, member_id ):
 
         ( _, body ) = self._requester.simple_request( self._api + "2/member/" + str( member_id ), params = self._params )
-        
+    
         if self._reshape:
             return Reshape_Member( body ).reshape()
         else:
@@ -226,7 +227,7 @@ class MeetupAPI(object):
         self._logger.debug( "get_pro_groups")
         
         if self._reshape:
-            return ( Reshape_Group( i ).reshape() for i in self._requester.paged_request( self._api + "pro/MongoDB/groups", self._params ))
+            return ( Reshape_Pro_Group( i ).reshape() for i in self._requester.paged_request( self._api + "pro/MongoDB/groups", self._params ))
         else:
             return self._requester.paged_request( self._api + "pro/MongoDB/groups", self._params )
         

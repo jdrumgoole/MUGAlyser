@@ -11,7 +11,8 @@ from mugalyser.audit import Audit
 class Test(unittest.TestCase):
 
     def tearDown( self ):
-        self._mdb.client().drop_database( "TESTWRITER" )
+        pass
+        #self._mdb.client().drop_database( "TESTWRITER" )
         
     def test_write_group(self):
         self._mdb = MUGAlyserMongoDB("mongodb://localhost:27017/TESTWRITER")

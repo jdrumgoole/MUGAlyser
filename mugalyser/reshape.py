@@ -42,7 +42,8 @@ class Reshaper( object ):
         return doc   
     
     def reshape_time(self, field_name ):
-        return Reshaper.reshape_time_doc( self._doc, field_name )
+        self._doc = Reshaper.reshape_time_doc( self._doc, field_name )
+        return self._doc
     
     @staticmethod
     def reshape_geospatial_doc( doc,to_field=None, from_fields=None ):
@@ -68,7 +69,8 @@ class Reshaper( object ):
         return doc
 
     def reshape_geospatial( self, to_field=None, from_fields=None ):
-        return self.reshape_geospatial_doc( self._doc, to_field, from_fields)
+        self._doc = self.reshape_geospatial_doc( self._doc, to_field, from_fields)
+        return self._doc
    
     def iterate_one_field( self, generator, field_name ) :
         for i in generator:
@@ -118,8 +120,21 @@ class Reshape_Event( Reshaper ):
                                                                 [ "lon", "lat"] )
         return self._doc
     
-    
+
 class Reshape_Group( Reshaper ):
+    
+    time_fields = [ "created"  ]
+
+    def __init__(self, doc ):
+        self._doc = doc 
+        
+    def reshape(self):
+        for i in self.time_fields :
+            self.reshape_time( i )
+    
+        return self.reshape_geospatial()
+    
+class Reshape_Pro_Group( Reshaper ):
     
     time_fields = [ "created", "pro_join_date", "founded_date", "last_event" ]
 
