@@ -3,7 +3,9 @@ Created on 7 Jul 2017
 
 @author: jdrumgoole
 '''
-
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
+ 
 from mongodb_utils.agg import Agg, CursorFormatter
 from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES,  Groups
@@ -81,20 +83,22 @@ class MUG_Analytics( object ):
                 
         agg = Agg( self._mdb.pastEventsCollection())  
         
-        agg.addMatch({ "event.group.urlname" : { "$in" : urls }} )
+        agg.addMatch( { "batchID"             : self._batchID, 
+                        "event.group.urlname" : { "$in" : urls }} )
         
         if self._start_date or self._end_date :
             agg.addRangeMatch( "event.time", self._start_date, self._end_date )
             
-        agg.addProject( { "timestamp" : "$event.time", 
-                          "event"     : "$event.name",
-                          "country"    : "$event.venue.country",
+        agg.addProject( { "_id"        : 0,
+                          "timestamp"  : "$event.time",
+                          "urlname"    : "$event.group.urlname",
+                          "event"      : "$event.name",
                           "rsvp_count" : "$event.yes_rsvp_count" } )
         
-        agg.addMatch( { "timestamp" : { "$type" : "date" }} )
-        agg.addGroup( { "_id" :"$timestamp",
-                        #"event" : { "$addToSet" : { "event" : "$event", "country" : "$country" }},
-                        "rsvp_count" : { "$sum" : "$rsvp_count"}})
+#         agg.addMatch( { "timestamp" : { "$type" : "date" }} )
+#         agg.addGroup( { "_id" :"$timestamp",
+#                         #"event" : { "$addToSet" : { "event" : "$event", "country" : "$country" }},
+#                         "rsvp_count" : { "$sum" : "$rsvp_count"}})
         
         if self._sorter :
             agg.addSort( self._sorter)
@@ -106,7 +110,7 @@ class MUG_Analytics( object ):
             agg.create_view( self._mdb.database(), "rsvps_view" )
             
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
-        filename = formatter.output( fieldNames= [ "_id", "rsvp_count" ], datemap=[ "_id"], limit=self._limit )
+        filename = formatter.output( fieldNames= [ "timestamp", "urlname", "event","rsvp_count" ], datemap=[ "timestamp" ], limit=self._limit )
         
         if filename != "-":
             self._files.append( filename )
@@ -131,18 +135,17 @@ class MUG_Analytics( object ):
         
         agg.addProject({ "_id": 0,
                         "timestamp" : 1,
-                         "batchID" : 1,
-                         "urlname" : "$group.urlname",
-                         #"count" : "$group.members" } )
-                         "count" : Agg.ifNull( "$group.member_count", "$group.members")})
+                         "batchID"  : 1,
+                         "urlname"  : "$group.urlname",
+                         "count"    : "$group.members" })
 
 
         
 
-        agg.addGroup( { "_id" : { "ts": "$timestamp", "batchID" : "$batchID" },
-                        "groups" : { "$addToSet" : "$urlname" },
-                        "count" : { "$sum" : "$count"}})
-        
+#         agg.addGroup( { "_id"    : { "ts": "$timestamp", "batchID" : "$batchID" },
+#                         "groups" : { "$addToSet" : "$urlname" },
+#                         "count"  : { "$sum" : "$count"}})
+#         
         #CursorFormatter( agg.aggregate()).output()
         
         if self._sorter :
@@ -156,7 +159,7 @@ class MUG_Analytics( object ):
             agg.create_view( self._mdb.database(), "groups_view" )
             
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
-        formatter.output( fieldNames= [ "_id", "groups", "count" ], datemap=[ "_id.ts" ], limit=self._limit)
+        formatter.output( fieldNames= [ "timestamp", "batchID", "urlname", "count" ], datemap=[ "timestamp" ], limit=self._limit)
     
         if filename != "-":
             self._files.append( filename )
@@ -237,7 +240,7 @@ class MUG_Analytics( object ):
                        "event.group.urlname" : { "$in" : urls }} )
         
         if self._start_date or self._end_date :
-            agg.addRangeMatch( "groups.founded_date", self._start_date, self._end_date )
+            agg.addRangeMatch( "event.time", self._start_date, self._end_date )
             
         agg.addGroup( { "_id" : { "urlname" : "$event.group.urlname", 
                                   "year"    : { "$year" : "$event.time"}},
@@ -314,25 +317,24 @@ class MUG_Analytics( object ):
         Get all the members of all the groups (urls). Range is join_time.
         '''
         
-        agg = Agg( self._mdb.membersCollection())
-        
+        agg = Agg( self._mdb.proMembersCollection())
 
         agg.addMatch({ "batchID"            : self._batchID } )
         
-        agg.addUnwind( "$member.chapters" )
-        
-        agg.addMatch({ "member.chapters.urlname" : { "$in" : urls }} )
-        
-
-        
         if self._start_date or self._end_date :
             agg.addRangeMatch( "member.join_time", self._start_date, self._end_date )
+            
+        agg.addUnwind( "$member.chapters" )
+        agg.addMatch({ "member.chapters.urlname" : { "$in" : urls }} )
             
         agg.addProject( { "_id" : 0,
                           "group"     : "$member.chapters.urlname",
                           "name"      : "$member.member_name",
                           "join_date" : "$member.join_time" } )
         
+        if self._sorter:
+            agg.addSort( self._sorter)
+            
         if filename :
             self._filename = filename
 
@@ -427,15 +429,21 @@ class MUG_Analytics( object ):
         
         if self._start_date or self._end_date :
             agg.addRangeMatch( "info.event.time", self._start_date, self._end_date )
+        else:
+            agg.addRangeMatch( "info.event.time", datetime.utcnow() + relativedelta(months=-6) )
         
     #     agg.addProject( { "_id" : 0,
     #                       "name" : "$info.attendee.member.name",
     #                       "urlname" : "$info.event.group.urlname",
     #                       "event_name" : "$info.event.name" })
     
-        agg.addGroup( { "_id"    : "$info.attendee.member.name",
-                        "count"  : { "$sum": 1 },
-                        "groups" : { "$addToSet" : "$info.event.group.urlname" }} )
+        agg.addProject( { "_id" : 0,
+                          "name" : "$info.attendee.member.name",
+                          "event" : "$info.event.name",
+                          "date" : "$info.event.time" } )
+                         
+        agg.addGroup( { "_id"    : "$name" ,
+                        "count"  : { "$sum": 1 }} )
         
         if self._sorter :
             agg.addSort( self._sorter)
@@ -448,7 +456,7 @@ class MUG_Analytics( object ):
             agg.create_view( self._mdb.database(), "active_users_view" )
             
         formatter = CursorFormatter( agg, self._filename, self._format )
-        filename = formatter.output( fieldNames= [ "_id", "count", "groups" ], limit=self._limit )
+        filename = formatter.output( fieldNames= [ "_id", "count" ], limit=self._limit )
 
         if self._filename != "-":
             self._files.append( self._filename )
