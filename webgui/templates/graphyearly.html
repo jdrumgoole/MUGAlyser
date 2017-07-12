@@ -1,0 +1,89 @@
+<html>
+<head>
+  <script src="/static/d3.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.3.0.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="/static/style.css">
+  <title> Yearly RSVP </title>
+  <link rel="shortcut icon" href="/static/favicon.ico">
+</head>
+<body>
+
+<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="/members/0">Member List</a>&emsp;<a href="/groups">Groups</a>&emsp;<a href="/graph">Graphs</a>&emsp;<a href="/logout" class = "logout">Logout</a><p>
+
+<h2> RSVP per year</h2>
+<div id = "query"><p><h2><b>Please click a bar to view data</b></h2><p>&emsp;  <p> &emsp;<p>&emsp; </div>
+<div id="chartContainer"></div>
+
+</body>
+<script type="text/javascript">
+    var data = {{groups|tojson}};
+    var events = {{events}};
+    // var ev = {{ev|tojson}};
+    // console.log(ev);
+    // for (var i = 0; i < data.length; i++){
+    //   data[i].order = i;
+    //   if(data[i].Count < min) min = data[i].Count;
+    // };
+    var svg = dimple.newSvg("#chartContainer", "100%", "100%");
+    var myChart = new dimple.chart(svg, data);
+
+    myChart.setMargins("65px", "20px", "30px", "500px");
+    myChart.assignColor("RSVP", "#3366cc");
+
+    
+    var y = myChart.addMeasureAxis("y", "Total RSVP");
+    y.fontSize = "12px";
+    y.fontFamily = "Arial";
+
+    // var y2 = myChart.addMeasureAxis("y", "Events");
+
+    var x = myChart.addCategoryAxis("x", "Year");
+    var s = myChart.addSeries("RSVP", dimple.plot.bar);
+    x.fontSize = "14px";
+    y.tickFormat = ",d";
+    y.ticks = 4;
+
+    var leg = myChart.addLegend("90%", "0%", 70, 70);
+    leg.fontSize = "auto";
+
+    s.tooltipFontSize = "16px";
+    s.tooltipFontFamily = "Arial";
+
+ 
+    // var s2 = myChart.addSeries(null, dimple.plot.line, [x,y2]);
+    // s2.data = ev;
+
+    //x.addOrderRule("Count");
+
+    s.getTooltipText = function (e) {
+                  return [
+                      "Year: " + e.cx,
+                      "Total RSVP: " + e.cy.toLocaleString(),
+                      "Total events: " + events[e.cx],
+                      "Average RSVP: " + (e.cy / events[e.cx]).toFixed(2)
+                  ];
+              };
+      s.afterDraw = function (s, d) {
+
+        var shape = d3.select(s);
+        svg.append("text")
+          .attr("x", parseFloat(shape.attr("x")) + shape.attr("width") / 2)
+          .attr("y", parseFloat(shape.attr("y")) + (shape.attr("height") > 30 ? (shape.attr("height") / 2 + 8) : - 10))
+          .style("text-anchor", "middle")
+          .style("font-size", "16px")
+          .style("fill", "c7c5ea")
+          .text(d.yValue.toLocaleString());
+
+      };
+    // myChart.staggerDraw = true;
+    // myChart.ease = "sin";
+    myChart.draw(500);
+    d3.selectAll("rect").on("click", function (e) {
+       var str = "<p>Year: " + e.cx + "<p>Total RSVP: " + e.cy.toLocaleString() + "<p>Total events: " + events[e.cx] + "<p>Average RSVP: " + (e.cy / events[e.cx]).toFixed(2);
+       document.getElementById("query").innerHTML = str;
+      });
+    window.onresize = function () {
+      myChart.draw(0, true);
+    };
+</script>
+</html>

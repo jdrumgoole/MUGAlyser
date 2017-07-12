@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Forgot Password</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <style type="text/css">
+      .label {text-align: right}
+      .error {color: red}
+      .done {color: green}
+    </style> 
+    <link rel="shortcut icon" href="/static/favicon.ico">
+
+  </head>
+
+  <body>
+      Already a user? <a href="/login">Login</a>&emsp;<a href="/">Home</a>&emsp;<a href="members">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>&emsp;<a class = "logout" href="logout">Logout</a>
+      <br>
+    <h4>Enter your email:</h4>
+    <form method="post">
+      <table>
+
+        <tr>
+          <td class="label">
+            Email
+          </td>
+          <td>
+            <input type="email" name="email" value="">
+          </td>
+          <td class="error">
+	    {{email_error}}
+            
+          </td>
+        </tr>
+      </table>
+
+      <input type="submit">
+      <div class = "done"> {{done}} </div>
+    </form>
+  </body>
+
+</html>

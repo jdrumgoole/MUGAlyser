@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>{{ error }}</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <style type="text/css">
+      .label {text-align: right}
+      .error {color: red}
+      .succ {color: green}
+    </style>
+    <link rel="shortcut icon" href="/static/favicon.ico">
+
+  </head>
+
+  <body>
+  <a href="/">Home</a>&emsp;
+    <h2>{{ error }}</h2>
+    <form method="post">
+      <table>
+
+        <tr>
+          <td class="label">
+            Password
+          </td>
+          <td>
+            <input type="password" name="password" value="">
+          </td>
+          <td class="error">
+        {{password_error}}
+            
+          </td>
+        </tr>
+
+        <tr>
+          <td class="label">
+            Verify Password
+          </td>
+          <td>
+            <input type="password" name="verify" value="">
+          </td>
+          <td class="error">            
+          </td>
+        </tr>
+
+      </table>
+
+      <input type="submit">
+    </form>
+  </body>
+
+</html>
