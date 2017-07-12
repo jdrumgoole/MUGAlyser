@@ -4,10 +4,11 @@
   <script src="http://dimplejs.org/dist/dimple.v2.3.0.min.js"></script>
   <link rel="stylesheet" type="text/css" href="/static/style.css">
   <title> Batch: {{ curbat }} </title>
+  <link rel="shortcut icon" href="/static/favicon.ico">
 </head>
 <body>
 
-<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="members/0">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="logout" class = "logout">Logout</a><p>
+<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="/members/0">Member List</a>&emsp;<a href="/groups">Groups</a>&emsp;<a href="/logout" class = "logout">Logout</a><p>
 
 {% if curgroup == "None" %}
 <form class = "_amt" method="post">
@@ -27,6 +28,7 @@
     {% endfor %}
   </select>
 </form>
+<a href="graph/yearly">Yearly RSVP</a>&emsp;
 
 <!-- <form class = "_type" method="post">
   <select name = "type" onchange="this.form.submit()">
@@ -88,7 +90,7 @@
     // st.frameDuration = 600;
     // st.addOrderRule("Count", true);
     // x.floatingBarWidth = 2;
-    y.tickFormat = "d";
+    y.tickFormat = ",d";
 
     //var s = myChart.addSeries("Count", dimple.plot.bar);
     s.tooltipFontSize = "16px";
@@ -102,9 +104,9 @@
                       "Member count: " + e.cy
                   ];
               };
-    myChart.staggerDraw = true;
+    // myChart.staggerDraw = true;
     myChart.ease = "sin";
-    myChart.draw(650);
+    myChart.draw(500);
     d3.selectAll("rect").on("click", function (e) {
        console.log('Selected: x-axis -'+e.cx+', y-axis -'+e.cy);
        document.getElementById("groupsel").value = e.cx;

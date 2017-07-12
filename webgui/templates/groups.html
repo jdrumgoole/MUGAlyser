@@ -12,16 +12,35 @@
         line-height: 150%;
     }
   </style>
+  <link rel="shortcut icon" href="/static/favicon.ico">
   </head>
 
   <body>
       <a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="members/0">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>&emsp;<a class = "logout" href="logout">Logout</a>
       <p>
-      <ul class="group-list">
-      {% for group in groups %}
-        <li>{{ group }} </li>
-      {% endfor %}
-      </ul>
+      <table class = "group-list">
+        <tr> 
+        <td><b>Name </td> 
+        <td> <b>Member Count &emsp;
+          <!-- <form class = "count" method="post">
+          <select name = "count_sort" onchange="">
+            <option value = "asc" {% if 0 == curamt  %} selected = "selected" {% endif %}> Member Count (asc) </option>
+            <option value = "desc" {% if 5 == curamt  %} selected = "selected" {% endif %}> Member Count (desc) </option>
+          </select>
+          </form> &emsp;  -->
+        </td>
+        <td> <b>Average Age </td> 
+        </tr>
+        {% for group in groups %}
+        <tr>
+        <td>{{ group.0 }} </td>
+        <td>{{ group.1 }} </td>
+        <td>{{ group.2 }} </td>
+        </tr>
+        {% endfor %}
+
+      </table>
+      
   </body>
 
 </html>

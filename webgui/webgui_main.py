@@ -34,6 +34,7 @@ membersCollection = mdb.membersCollection()
 proMemCollection = mdb.proMembersCollection()
 groupCollection = mdb.groupsCollection()
 proGrpCollection = mdb.proGroupsCollection()
+eventsCollection = mdb.pastEventsCollection()
 currentBatch = auditdb.get_last_valid_batch_id()
 currentType = "groups"
 currentGroup = "None"
@@ -77,8 +78,7 @@ def index():
 def groups():
     if not verify_login():
         return render_template("error.html")
-    curBatch = auditdb.get_last_valid_batch_id()
-    curGroups = proGrpCollection.find( { "batchID" : curBatch}, 
+    curGroups = proGrpCollection.find( { "batchID" : currentBatch}, 
                                       { "_id"           : 0, 
                                         "group.name" : 1,
                                         "group.member_count": 1,
@@ -86,7 +86,7 @@ def groups():
     
     output = []
     for d in curGroups:
-        output.append( [d["group"]["name"], "Member Count: " +  str(d["group"]["member_count"]), "Average Age: " +  str(d["group"]["average_age"])])
+        output.append( [d["group"]["name"], "{:,}".format(d["group"]["member_count"]), round(d["group"]["average_age"], 2)])
         
     return render_template("groups.html", groups = output)
 
@@ -107,7 +107,6 @@ def members(pg):
         if request.form.get('int') != "nothing." and request.form.get('int') != "":
             interest = escape(request.form.get('int')).replace(" ", "")
             ilist = interest.split(",")
-
             pipeline = [
                 {"$match":
                     {"batchID": currentBatch,
@@ -141,22 +140,49 @@ def members(pg):
             for i in cursor:
                 output.append( i['_id']['name'] ) 
         else:
-            cursor = membersCollection.find({"member.name" : regquery}, { "_id" :0, "member.name" : 1 }).distinct("member.name")#[pg * 1000: 1000 + (pg*1000)]
-            for i in cursor:
-                output.append( i ) 
+            output = membersCollection.find({"batchID": currentBatch, "member.name" : regquery}, { "_id" :0, "member.name" : 1 }).distinct("member.name")#[pg * 1000: 1000 + (pg*1000)]
+            # for i in cursor:
+            #     output.append( i ) 
     else:
-        cursor = membersCollection.find({}, { "_id" :0, "member.name" : 1 }).distinct("member.name")[pg * 1000: 1000 + (pg*1000)]
-        output =[]
-        for i in cursor:
-            output.append( i )
+        output = membersCollection.find({"batchID": currentBatch}, { "_id" :0, "member.name" : 1}).distinct("member.name")[pg * 1000: 1000 + (pg*1000)]
+        # output =[]
+        # for i in cursor:
+        #     output.append( i )
 
     return render_template( "members.html", members=output, cur = pg, query = query, filt = interest)
 
-@app.route("/graph/yearly", methods=['POST', 'GET'])
+@app.route("/graph/yearly")
 def graph_yearly():
     if not verify_login():
         return render_template("error.html")
-
+    now = datetime.now()
+    curYear = int(now.year)
+    dates = [i for i in range(2009, curYear + 1)]
+    output = []
+    events = {}
+    ev = []
+    # for year in dates:
+    pipeline = [
+        {"$match": {"batchID": currentBatch}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "yesrsvp" : "$event.yes_rsvp_count"
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
+    ]
+    eCurs = eventsCollection.aggregate(pipeline)
+    # doc = eCurs.next()
+    # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
+    # events[year] = doc['numevents']
+    for doc in eCurs:
+        year = doc['_id']  
+        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
+        events[year] = doc['numevents']
+        ev.append({'Year': year, 'Events': doc['numevents']})
+    return render_template("graphyearly.html", groups = output, events = events, ev = ev)
 
 @app.route("/graph", methods=['POST', 'GET'])
 def graph():
