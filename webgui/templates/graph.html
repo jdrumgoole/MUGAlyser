@@ -75,12 +75,11 @@
       var x = myChart.addCategoryAxis("x", "Name");
       var s = myChart.addSeries(null, dimple.plot.bar);
     {% else %}
-      var x = myChart.addCategoryAxis("x", "Time");
+      var x = myChart.addTimeAxis("x", "Time");
       var s = myChart.addSeries(null, dimple.plot.line);
       y.ticks = 4;
       y.tickInterval = 1;
       s.lineMarkers = true;
-      // myChart.addSeries(null, dimple.plot.scatter);
     {% endif %}
     x.fontSize = "14px";
     x.fontFamily = "Trebuchet MS";

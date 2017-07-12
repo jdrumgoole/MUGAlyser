@@ -3,6 +3,7 @@ Created on 4 Oct 2016
 
 @author: jdrumgoole
 '''
+# -*- coding: utf-8 -*-
 
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
@@ -13,6 +14,7 @@ from cgi import escape
 from hashlib import sha512
 from os import urandom
 from datetime import datetime
+
 import os
 import boto3
 import re
@@ -20,6 +22,7 @@ import webbrowser
 import send_email
 
 app = Flask(__name__)
+
 if os.getenv('SECRET_KEY') is not None:
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 else:
@@ -31,7 +34,6 @@ membersCollection = mdb.membersCollection()
 proMemCollection = mdb.proMembersCollection()
 groupCollection = mdb.groupsCollection()
 proGrpCollection = mdb.proGroupsCollection()
-auditCollection = auditdb.auditCollection()
 currentBatch = auditdb.get_last_valid_batch_id()
 currentType = "groups"
 currentGroup = "None"
@@ -76,13 +78,15 @@ def groups():
     if not verify_login():
         return render_template("error.html")
     curBatch = auditdb.get_last_valid_batch_id()
-    curGroups = groupCollection.find( { "batchID" : curBatch}, 
+    curGroups = proGrpCollection.find( { "batchID" : curBatch}, 
                                       { "_id"           : 0, 
-                                        "group.urlname" : 1 })
+                                        "group.name" : 1,
+                                        "group.member_count": 1,
+                                        "group.average_age": 1 }).sort([("group.member_count", -1)])
     
     output = []
     for d in curGroups:
-        output.append( d["group"]["urlname"])
+        output.append( [d["group"]["name"], "Member Count: " +  str(d["group"]["member_count"]), "Average Age: " +  str(d["group"]["average_age"])])
         
     return render_template("groups.html", groups = output)
 
@@ -93,7 +97,7 @@ def members(pg):
     pg = int(pg)
     query = "N0NE"
     interest = "nothing."
-    output =[]
+    output = []
     if request.method == 'POST':
         try: 
             query = escape(request.form.get('query'))
@@ -103,9 +107,11 @@ def members(pg):
         if request.form.get('int') != "nothing." and request.form.get('int') != "":
             interest = escape(request.form.get('int')).replace(" ", "")
             ilist = interest.split(",")
+
             pipeline = [
                 {"$match":
-                    {"member.name" : regquery}
+                    {"batchID": currentBatch,
+                    "member.name" : regquery}
                 },
                 {"$unwind": "$member.topics"},
                 {"$group":
@@ -135,7 +141,7 @@ def members(pg):
             for i in cursor:
                 output.append( i['_id']['name'] ) 
         else:
-            cursor = membersCollection.find({"member.name" : regquery}, { "_id" :0, "member.name" : 1 }).distinct("member.name")[pg * 1000: 1000 + (pg*1000)]
+            cursor = membersCollection.find({"member.name" : regquery}, { "_id" :0, "member.name" : 1 }).distinct("member.name")#[pg * 1000: 1000 + (pg*1000)]
             for i in cursor:
                 output.append( i ) 
     else:
@@ -145,6 +151,12 @@ def members(pg):
             output.append( i )
 
     return render_template( "members.html", members=output, cur = pg, query = query, filt = interest)
+
+@app.route("/graph/yearly", methods=['POST', 'GET'])
+def graph_yearly():
+    if not verify_login():
+        return render_template("error.html")
+
 
 @app.route("/graph", methods=['POST', 'GET'])
 def graph():
@@ -228,7 +240,9 @@ def graph():
                                     "timestamp" : 1})
         output = []
         output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in curGroups]
+
     groupl = get_group_list()
+
     # else:
     #     if amt == 0: 
     #         groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
@@ -261,12 +275,12 @@ def get_member(member):
     # show the user profile for that user
     if not verify_login():
         return render_template("error.html")
-    member = membersCollection.find_one({"member.name" : member }, { "_id":0})
+    member = membersCollection.find_one({"member.name" : member, "batchID" : currentBatch }, { "_id":0})
     return render_template("user.html", user=member)
 
 @app.route('/signup')
 def show_signup():
-    if verify_login():
+    if verify_login():   #if user is already logged in, gives them an error
         return """<link rel="stylesheet" type="text/css" href="/static/style.css"><a href="/"> Home </a><p> You are already logged in! </p></a>"""
     return render_template("signup.html")
 
@@ -276,21 +290,24 @@ def get_signup():
     password = escape(request.form.get('password'))
     vpassword = escape(request.form.get('verify'))
     email = escape(request.form.get('email'))
-    if userColl.find({'_id':user}).count() != 0 or len(user) < 1:
+
+    if userColl.find({'_id':user}).count() != 0 or len(user) < 1:  #checks if username is in use already, prevents empty username
         return render_template("signup.html", username_error = "User with that name already exists. Please try a different name.")
-    if userColl.find({'email':email}).count() != 0:
+    if userColl.find({'email':email}).count() != 0:                #checks if email is in use
         return render_template("signup.html", email_error = "That email is already in use. Please try a different name.")
-    if len(password) < 5:
+    if len(password) < 5:                                          #only permits passwords over 4 characters
         return render_template("signup.html", username = user, email = email, password_error = "Passwords must be over 4 characters long")
-    if vpassword != password:
+    if vpassword != password:                                      #checks if password and verification match
         return render_template("signup.html", username = user, email = email, password_error = "Passwords don't match")
+
     print "Account created with username", user
     create_account(user, password, email)
+
     return render_template("signup.html", done = "Account created!")
 
 @app.route('/login')
 def show_login():
-    if verify_login():
+    if verify_login():  #if user is already logged in, gives them an error
         return """<link rel="stylesheet" type="text/css" href="/static/style.css"><a href="/"> Home </a><p> You are already logged in! </p></a>"""
     return render_template("login.html")
 
@@ -298,25 +315,30 @@ def show_login():
 def get_login():
     user = escape(request.form.get('username'))
     password = escape(request.form.get('password'))
-    if userColl.find({'_id':user}).count() == 0:
+
+    if userColl.find({'_id':user}).count() == 0: #checks if user exists
         error = "User", user, "doesn't exist."
         return render_template("login.html", login_error = error)
-    salt = userColl.find_one({'_id': user})['salt']
-    if userColl.find_one({'_id': user}, {'_id': 0, 'pass' : 1})['pass'] != sha512(password + salt).hexdigest():
-        return render_template("login.html", username = user, login_error = "Password doesn't match.")
+
+    salt = userColl.find_one({'_id': user})['salt']  #gets the user's salt
+
+    if userColl.find_one({'_id': user}, {'_id': 0, 'pass' : 1})['pass'] != sha512(password + salt).hexdigest():  #salts and hashes password input with the stored salt
+        return render_template("login.html", username = user, login_error = "Password doesn't match.")          #and verifies it matches the hash in database
+
     print "User", user, "logged in"
     userColl.update({'_id': user}, {"$set": {'last_login': datetime.utcnow()}})
     session['username'] = user
+
     return redirect(url_for('index'))
 
 @app.route('/logout')
 def logout():
-    if 'username' in session:
+    if 'username' in session:   #removes user session
         session.pop('username')
     return redirect(url_for('index'))
 
-@app.route('/pixel.gif')
-def track():
+@app.route('/pixel.gif')   #tracking pixel for emails
+def track():   
     print request.headers.get('X-Forwarded-For', request.remote_addr)
     return send_file('static/pixel.gif', mimetype='image/gif')
 
@@ -370,3 +392,4 @@ def reset_pw(ID):
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True)
+
