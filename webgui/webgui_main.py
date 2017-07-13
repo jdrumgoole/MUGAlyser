@@ -16,7 +16,6 @@ from os import urandom
 from datetime import datetime
 
 import os
-import boto3
 import re
 import webbrowser
 import send_email
@@ -36,14 +35,15 @@ groupCollection = mdb.groupsCollection()
 proGrpCollection = mdb.proGroupsCollection()
 eventsCollection = mdb.pastEventsCollection()
 currentBatch = auditdb.get_last_valid_batch_id()
-currentType = "groups"
-currentGroup = "None"
-currentAmt = 0
 
 connection = MongoClient('localhost')
 db = connection.MUGS
 userColl = db.users
 resetColl = db.resets
+
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('404.html', error = error), 404
 
 def verify_login():
     if 'username' not in session:
@@ -67,6 +67,14 @@ def get_group_list():
                                                 "group.member_count" : 1}).sort([("group.member_count", -1)])
     groupl = [{'Name' : d["group"]["name"]} for d in cur]
     return groupl
+
+def get_batch_list():
+    batchIDs = auditdb.getBatchIDs()
+
+    batchIDList = [d for d in batchIDs]
+    batchIDList = list(set(batchIDList))  #removes duplicates 
+
+    return batchIDList
      
 @app.route('/')
 def index():
@@ -90,11 +98,10 @@ def groups():
         
     return render_template("groups.html", groups = output)
 
-@app.route( "/members/<pg>", methods = ['POST', 'GET'])
+@app.route( "/members/<int:pg>", methods = ['POST', 'GET'])
 def members(pg):
     if not verify_login():
         return render_template("error.html")
-    pg = int(pg)
     query = "N0NE"
     interest = "nothing."
     output = []
@@ -136,20 +143,19 @@ def members(pg):
             # print cursor.count()
             # for i in cursor:
             #     print i
-            output = []
-            for i in cursor:
-                output.append( i['_id']['name'] ) 
+            output = [i['_id']['name'] for i in cursor]
         else:
             output = membersCollection.find({"batchID": currentBatch, "member.name" : regquery}, { "_id" :0, "member.name" : 1 }).distinct("member.name")#[pg * 1000: 1000 + (pg*1000)]
             # for i in cursor:
             #     output.append( i ) 
     else:
-        output = membersCollection.find({"batchID": currentBatch}, { "_id" :0, "member.name" : 1}).distinct("member.name")[pg * 1000: 1000 + (pg*1000)]
+        curs = membersCollection.find({"batchID": currentBatch, "member.name": { "$exists": True}}, { "_id" :0, "member.name" : 1}).sort("member.name", -1).distinct("member.name")
+        output =  curs[pg * 1000: 1000 + (pg*1000)]
         # output =[]
         # for i in cursor:
         #     output.append( i )
 
-    return render_template( "members.html", members=output, cur = pg, query = query, filt = interest)
+    return render_template("members.html", members=output, cur = pg, query = query, filt = interest)
 
 @app.route("/graph/yearly")
 def graph_yearly():
@@ -160,7 +166,6 @@ def graph_yearly():
     dates = [i for i in range(2009, curYear + 1)]
     output = []
     events = {}
-    ev = []
     # for year in dates:
     pipeline = [
         {"$match": {"batchID": currentBatch}},
@@ -181,28 +186,20 @@ def graph_yearly():
         year = doc['_id']  
         output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
         events[year] = doc['numevents']
-        ev.append({'Year': year, 'Events': doc['numevents']})
-    return render_template("graphyearly.html", groups = output, events = events, ev = ev)
+    return render_template("graphyearly.html", groups = output, events = events)
 
 @app.route("/graph", methods=['POST', 'GET'])
 def graph():
     if not verify_login():
         return render_template("error.html")
 
-    # global currentBatch
-    # global currentType
-    # global currentGroup
-    # global currentAmt
-
-    curBatch = auditdb.get_last_valid_batch_id()
-    if request.method == 'GET':
-        curbat = session['batch'] = curBatch
+    if request.method == 'GET' or request.form.get('res'):  #sets options to default values
+        curbat = session['batch'] = currentBatch
         curGroup = session['group'] = "None"
         amt = session['amount'] = 0
     else:
         curbat = request.form.get('bat')
         curGroup = request.form.get('grp')
-        # typ = request.form.get('type')
         amt = request.form.get('amt')
 
         if curbat is None:
@@ -215,84 +212,28 @@ def graph():
         else:
             session['group'] = curGroup 
         
-        # if type(typ) is not unicode:
-        #     typ = session['type']
-        # else:
-        #     session['type'] = typ
-
         if amt is None:
             amt = session['amount']
         else:
             session['amount'] = int(amt)
 
-        # session['batch'] = curbat
-        # session['group'] = curGroup
-        # session['amount'] = amt
-
-    batchl = []
-    bids = auditdb.getBatchIDs()
-    
-    for id in bids:
-        batchl.append(id)
-
-    batchl = list(set(batchl))
-
-    if request.form.get('res'):
-        session['batch'] = curbat = curBatch
-        session['group'] = curGroup = "None"
-        #session['type'] = typ = "groups"
-        session['amount'] = amt = 0
-
-    # if typ == "pgroups":
     output = []
     if curGroup == 'None':
-        if amt == 0:
-            groupCurs = proGrpCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
-                                              { "_id"           : 0, 
-                                                "group.name" : 1,
-                                                "group.member_count" : 1}).sort([("group.member_count", -1)])
-            output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"]} for d in groupCurs]
-        else:
-            groupCurs = proGrpCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
-                                              { "_id"           : 0, 
-                                                "group.name" : 1,
-                                                "group.member_count" : 1}).sort([("group.member_count", -1)]).limit(int(amt))
-            output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"]} for d in groupCurs]
+        groupCurs = proGrpCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
+                                          { "_id"           : 0, 
+                                            "group.name" : 1,
+                                            "group.member_count" : 1}).sort([("group.member_count", -1)]).limit(int(amt))
+        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"]} for d in groupCurs]
     else:
         curGroups = proGrpCollection.find( {"group.name": curGroup}, 
                                   { "_id"           : 0, 
                                     "group.name" : 1,
                                     "group.member_count" : 1,
                                     "timestamp" : 1})
-        output = []
         output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in curGroups]
 
     groupl = get_group_list()
-
-    # else:
-    #     if amt == 0: 
-    #         groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
-    #                                               { "_id"           : 0, 
-    #                                                 "group.name" : 1,
-    #                                                 "group.members" : 1})
-    #     else:
-    #         groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
-    #                                               { "_id"           : 0, 
-    #                                                 "group.name" : 1,
-    #                                                 "group.members" : 1}).sort([("group.members", -1)]).limit(int(amt))
-    #     groupl = []
-    #     groupl = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"]} for d in groupCurs]
-
-    #     if curGroup == 'None': 
-    #         output = groupl
-    #     else:
-    #         curGroups = groupCollection.find( {"group.name": curGroup}, 
-    #                                   { "_id"           : 0, 
-    #                                     "group.name" : 1,
-    #                                     "group.members" : 1,
-    #                                     "timestamp" : 1})
-    #         output = []
-    #         output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"], 'Time': d["timestamp"]} for d in curGroups]
+    batchl = get_batch_list()
 
     return render_template("graph.html", groups = output, grouplist = groupl, batches = batchl, curbat = int(curbat), curamt = int(amt), curgroup = curGroup)
         

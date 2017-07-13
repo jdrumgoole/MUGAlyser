@@ -1,7 +1,7 @@
 <html>
 <head>
   <script src="/static/d3.js"></script>
-  <script src="http://dimplejs.org/dist/dimple.v2.3.0.min.js"></script>
+  <script src="/static/dimple.min.js"></script>
   <link rel="stylesheet" type="text/css" href="/static/style.css">
   <title> Yearly RSVP </title>
   <link rel="shortcut icon" href="/static/favicon.ico">
@@ -18,12 +18,7 @@
 <script type="text/javascript">
     var data = {{groups|tojson}};
     var events = {{events}};
-    // var ev = {{ev|tojson}};
-    // console.log(ev);
-    // for (var i = 0; i < data.length; i++){
-    //   data[i].order = i;
-    //   if(data[i].Count < min) min = data[i].Count;
-    // };
+
     var svg = dimple.newSvg("#chartContainer", "100%", "100%");
     var myChart = new dimple.chart(svg, data);
 
@@ -56,25 +51,25 @@
     //x.addOrderRule("Count");
 
     s.getTooltipText = function (e) {
-                  return [
-                      "Year: " + e.cx,
-                      "Total RSVP: " + e.cy.toLocaleString(),
-                      "Total events: " + events[e.cx],
-                      "Average RSVP: " + (e.cy / events[e.cx]).toFixed(2)
-                  ];
-              };
-      s.afterDraw = function (s, d) {
+      return [
+          "Year: " + e.cx,
+          "Total RSVP: " + e.cy.toLocaleString(),
+          "Total events: " + events[e.cx],
+          "Average RSVP: " + (e.cy / events[e.cx]).toFixed(2)
+      ];
+    };
+    s.afterDraw = function (s, d) {
 
-        var shape = d3.select(s);
-        svg.append("text")
-          .attr("x", parseFloat(shape.attr("x")) + shape.attr("width") / 2)
-          .attr("y", parseFloat(shape.attr("y")) + (shape.attr("height") > 30 ? (shape.attr("height") / 2 + 8) : - 10))
-          .style("text-anchor", "middle")
-          .style("font-size", "16px")
-          .style("fill", "c7c5ea")
-          .text(d.yValue.toLocaleString());
+      var shape = d3.select(s);
+      svg.append("text")
+        .attr("x", parseFloat(shape.attr("x")) + shape.attr("width") / 2)
+        .attr("y", parseFloat(shape.attr("y")) + (shape.attr("height") > 30 ? (shape.attr("height") / 2 + 8) : - 10))
+        .style("text-anchor", "middle")
+        .style("font-size", "16px")
+        .style("fill", "c7c5ea")
+        .text(d.yValue.toLocaleString());
 
-      };
+    };
     // myChart.staggerDraw = true;
     // myChart.ease = "sin";
     myChart.draw(500);

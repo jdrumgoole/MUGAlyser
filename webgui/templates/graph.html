@@ -1,7 +1,7 @@
 <html>
 <head>
   <script src="/static/d3.js"></script>
-  <script src="http://dimplejs.org/dist/dimple.v2.3.0.min.js"></script>
+  <script src="/static/dimple.min.js"></script>
   <link rel="stylesheet" type="text/css" href="/static/style.css">
   <title> Batch: {{ curbat }} </title>
   <link rel="shortcut icon" href="/static/favicon.ico">
@@ -106,7 +106,7 @@
               };
     // myChart.staggerDraw = true;
     myChart.ease = "sin";
-    myChart.draw(500);
+    myChart.draw(/*500*/);
     d3.selectAll("rect").on("click", function (e) {
        console.log('Selected: x-axis -'+e.cx+', y-axis -'+e.cy);
        document.getElementById("groupsel").value = e.cx;
