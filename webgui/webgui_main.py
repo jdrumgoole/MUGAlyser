@@ -15,6 +15,7 @@ from hashlib import sha512
 from os import urandom
 from datetime import datetime
 
+import time
 import os
 import re
 import webbrowser
@@ -154,7 +155,6 @@ def members(pg):
         # output =[]
         # for i in cursor:
         #     output.append( i )
-
     return render_template("members.html", members=output, cur = pg, query = query, filt = interest)
 
 @app.route("/graph/yearly")
@@ -225,17 +225,17 @@ def graph():
                                             "group.member_count" : 1}).sort([("group.member_count", -1)]).limit(int(amt))
         output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"]} for d in groupCurs]
     else:
-        curGroups = proGrpCollection.find( {"group.name": curGroup}, 
+        groupCurs = proGrpCollection.find( {"group.name": curGroup}, 
                                   { "_id"           : 0, 
                                     "group.name" : 1,
                                     "group.member_count" : 1,
                                     "timestamp" : 1})
-        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in curGroups]
+        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in groupCurs]
 
-    groupl = get_group_list()
-    batchl = get_batch_list()
+    # groupl = get_group_list()
+    # batchl = get_batch_list()
 
-    return render_template("graph.html", groups = output, grouplist = groupl, batches = batchl, curbat = int(curbat), curamt = int(amt), curgroup = curGroup)
+    return render_template("graph.html", groups = output, grouplist = get_group_list(), batches = get_batch_list(), curbat = int(curbat), curamt = int(amt), curgroup = curGroup)
         
 @app.route('/user/<member>')
 def get_member(member):
