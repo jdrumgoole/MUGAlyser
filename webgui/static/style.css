@@ -1,30 +1,83 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto:300);
+
 a {
   color: #000000;
 }
 body {
   background-color: #e5e8e6;
-  margin: 5s !important;
+  background: linear-gradient(to left, #d9e0db, #c5dbcb);
+  /*margin: 5s !important;*/
   padding: 0 !important;    
 }
-ul{
-  list-style-position: inside;
-  margin-left:0;
-  padding: 0;
-  line-height: 150%;
-}
-.menu {
-    float: left;
-    margin: 0;
-    padding: 0;
+
+.menu ul {
     overflow: hidden;
-    background-color: #333;
+    background-color: #439744;
+    list-style-type: none;
+    margin: 0px;
+    padding: 0px;
 }
+.menu li{
+  float: left;
+}
+.menu li a, .menu .dropbtn {
+    font-family: "Roboto", sans-serif;
+    text-transform: uppercase;
+    float: none;
+    display: block;
+    color: #f2f7f2;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+
+}
+
+.menu li a:hover{
+    background-color: #2a5b2a;
+}
+
+#elementId #logout{
+    float : right, !important;
+}
+.menu li.dropdown {
+    display: inline-block;
+}
+
+.menu .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.menu .dropdown-content a {
+    color: black;
+    width:  80%;
+    text-decoration: none;
+    clear:both;
+    display: inline-block;
+    text-align: left;
+    float: left;
+}
+
+.menu .dropdown-content a:hover {background-color: #f1f1f1}
+
+.menu .dropdown:hover .dropdown-content {
+    display: block;
+}
+
+
 input[type=text],[type=password],[type=email] {
     width: 100%;
     padding: 6px 10px;
     margin: 8px 0;
     box-sizing: border-box;
 }
+/*h1.label {
+  -webkit-text-stroke: 1px black;
+}*/
 input[type=button], input[type=submit], input[type=reset] {
     background-color: grey;
     border: none;
@@ -37,37 +90,14 @@ input[type=button], input[type=submit], input[type=reset] {
 input:focus {
     border: 3px solid #555;
 }
-.menu a {
-  color: #F1F3F3;
-}
-/*.menu li {
-    float: left;
-}
 
-.menu li a {
-    display: inline-block;
-    color: white;
-    text-align: center;
-    padding: 14px 16px;
-    text-decoration: none;
-}
 
-.menu li a:hover{
-    background-color: red;
-}
-*/
-
-li {
-  list-style-type: disc;
-  list-style-position: inside;
-  text-indent: -1em;
-  padding-left: 1em;
-}
 html *{
-  font-family: Arial !important;
+  font-family: Arial;
 }
 h1{
   font: 28px sans-serif;
+
   margin-top: 0;
   text-align: center;
   margin-bottom: 0;

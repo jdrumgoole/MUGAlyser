@@ -80,8 +80,8 @@ def get_batch_list():
 @app.route('/')
 def index():
     if 'username' in session:
-        return render_template("index.html", user = session['username'], batch = auditdb.get_last_valid_batch_id())
-    return render_template("index.html", batch = auditdb.get_last_valid_batch_id())
+        return render_template("index.html", user = session['username'], batch = auditdb.get_last_valid_batch_id(), groupn = len(get_group_list()))
+    return render_template("index.html", batch = auditdb.get_last_valid_batch_id(), groupn = len(get_group_list()))
 
 @app.route('/groups')
 def groups():
@@ -155,7 +155,7 @@ def members(pg):
         # output =[]
         # for i in cursor:
         #     output.append( i )
-    return render_template("members.html", members=output, cur = pg, query = query, filt = interest)
+    return render_template("members.html", members = output, cur = pg, query = query, filt = interest)
 
 @app.route("/graph/yearly")
 def graph_yearly():
@@ -243,7 +243,7 @@ def get_member(member):
     if not verify_login():
         return render_template("error.html")
     member = membersCollection.find_one({"member.name" : member, "batchID" : currentBatch }, { "_id":0})
-    return render_template("user.html", user=member)
+    return render_template("user.html", user = member)
 
 @app.route('/signup')
 def show_signup():
@@ -251,21 +251,23 @@ def show_signup():
         return """<link rel="stylesheet" type="text/css" href="/static/style.css"><a href="/"> Home </a><p> You are already logged in! </p></a>"""
     return render_template("signup.html")
 
-@app.route('/signup', methods=['POST'])
+@app.route('/signup', methods = ['POST'])
 def get_signup():
     user = escape(request.form.get('username'))
     password = escape(request.form.get('password'))
     vpassword = escape(request.form.get('verify'))
     email = escape(request.form.get('email'))
 
-    if userColl.find({'_id':user}).count() != 0 or len(user) < 1:  #checks if username is in use already, prevents empty username
-        return render_template("signup.html", username_error = "User with that name already exists. Please try a different name.")
+    userreg = re.compile(user, re.IGNORECASE)
+
+    if userColl.find({'_id':userreg}).count() != 0 or len(user) < 1:  #checks if username is in use already, prevents empty username
+        return render_template("signup.html", error = "User with that name already exists. Please try a different name.", email = email)
     if userColl.find({'email':email}).count() != 0:                #checks if email is in use
-        return render_template("signup.html", email_error = "That email is already in use. Please try a different name.")
+        return render_template("signup.html", username = user, error = "That email is already in use. Please try a different name.")
     if len(password) < 5:                                          #only permits passwords over 4 characters
-        return render_template("signup.html", username = user, email = email, password_error = "Passwords must be over 4 characters long")
+        return render_template("signup.html", username = user, email = email, error = "Passwords must be over 4 characters long")
     if vpassword != password:                                      #checks if password and verification match
-        return render_template("signup.html", username = user, email = email, password_error = "Passwords don't match")
+        return render_template("signup.html", username = user, email = email, error = "Passwords don't match")
 
     print "Account created with username", user
     create_account(user, password, email)
@@ -278,13 +280,13 @@ def show_login():
         return """<link rel="stylesheet" type="text/css" href="/static/style.css"><a href="/"> Home </a><p> You are already logged in! </p></a>"""
     return render_template("login.html")
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods = ['POST'])
 def get_login():
     user = escape(request.form.get('username'))
     password = escape(request.form.get('password'))
 
     if userColl.find({'_id':user}).count() == 0: #checks if user exists
-        error = "User", user, "doesn't exist."
+        error = "Username not found"
         return render_template("login.html", login_error = error)
 
     salt = userColl.find_one({'_id': user})['salt']  #gets the user's salt
@@ -307,15 +309,15 @@ def logout():
 @app.route('/pixel.gif')   #tracking pixel for emails
 def track():   
     print request.headers.get('X-Forwarded-For', request.remote_addr)
-    return send_file('static/pixel.gif', mimetype='image/gif')
+    return send_file('static/pixel.gif', mimetype = 'image/gif')
 
-@app.route('/forgotpw', methods=['GET', 'POST'])
+@app.route('/forgotpw', methods = ['GET', 'POST'])
 def forgot_pw():
     if request.method == 'GET':
         return render_template('forgotpw.html')
     email = escape(request.form.get('email'))
     if userColl.find({'email':email}).count() == 0: #checks if user with specified email exists
-        return render_template('forgotpw.html', email_error = "Can't find that email. Please try a different one.")
+        return render_template('forgotpw.html', email_error = "Can't find that email")
     user = userColl.find_one({'email':email})['_id']
     if resetColl.find({'user': user}).count() != 0: #checks if pending reset already exists, if yes marks it as invalid
         resetColl.remove({'user': user})
@@ -338,7 +340,7 @@ def show_reset(ID):
     <a href="/">Home</a>
     <p>Reset link is invalid."""
     
-@app.route('/resetpw/<ID>', methods=['POST'])
+@app.route('/resetpw/<ID>', methods = ['POST'])
 def reset_pw(ID):
     password = escape(request.form.get('password'))
     vpassword = escape(request.form.get('verify'))
@@ -358,5 +360,5 @@ def reset_pw(ID):
     """
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug = True)
 

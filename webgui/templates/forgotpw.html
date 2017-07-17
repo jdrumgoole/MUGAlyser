@@ -8,35 +8,47 @@
       .label {text-align: right}
       .error {color: red}
       .done {color: green}
+      .forgot {background-color: white; padding: 8px 2px 8px 2px; width: 20%; margin: auto; margin-top: 5%; box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);}
+      .forgot .butt {background-color: #439744; border: 0;}
+      .forgot a {font-size: 11px;}
+      .forgot input{outline: 0;}
     </style> 
     <link rel="shortcut icon" href="/static/favicon.ico">
 
   </head>
 
   <body>
-      Already a user? <a href="/login">Login</a>&emsp;<a href="/">Home</a>&emsp;<a href="members">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>&emsp;<a class = "logout" href="logout">Logout</a>
-      <br>
-    <h4>Enter your email:</h4>
-    <form method="post">
-      <table>
-
-        <tr>
-          <td class="label">
-            Email
-          </td>
+    <div class = "menu">
+      <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/signup">Signup</a></li>
+      <li><a href="/members/0">Member List</a></li>
+      <li><a href="/groups">Groups</a></li>
+      <li class = "dropdown">
+        <a href="javascript:void(0)" class="dropbtn">Graphs</a>
+        <div class="dropdown-content">
+          <a href="/graph">Member Count</a>
+          <a href="/graph/yearly">RSVP</a>
+        </div>
+      </li>
+      </ul>
+    </div>
+    <div  align = "center" class = "forgot">
+      <form method="post">
+        <table>
+          <tr style = "color:red" class = "error"> {{email_error}} </tr>
+          <tr>
           <td>
-            <input type="email" name="email" value="">
-          </td>
-          <td class="error">
-	    {{email_error}}
-            
-          </td>
-        </tr>
-      </table>
+              <input type="email" name="email" value="" placeholder = "email">
+            </td>
 
-      <input type="submit">
-      <div class = "done"> {{done}} </div>
-    </form>
+          </tr>
+        </table>
+
+        <input class = "butt" type="submit">
+        <div class = "done"> {{done}} </div>
+      </form>
+    </div>
   </body>
 
 </html>

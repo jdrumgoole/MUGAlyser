@@ -8,7 +8,23 @@
 </head>
 <body>
 
-<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="/members/0">Member List</a>&emsp;<a href="/groups">Groups</a>&emsp;<a href="/logout" class = "logout">Logout</a><p>
+<div class = "menu">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/members/0">Member List</a></li>
+    <li><a href="/groups">Groups</a></li>
+    <li class = "dropdown">
+      <a href="javascript:void(0)" class="dropbtn">Graphs</a>
+      <div class="dropdown-content">
+        <a href="/graph">Member Count</a>
+        <a href="/graph/yearly">RSVP</a>
+      </div>
+    </li>
+    <li><a id = "logout" href="/logout">Logout</a></li>
+  </ul>
+</div>
+
+<p>
 
 {% if curgroup == "None" %}
 <form class = "_amt" method="post">
@@ -28,7 +44,6 @@
     {% endfor %}
   </select>
 </form>
-<a href="graph/yearly">Yearly RSVP</a>&emsp;
 
 <!-- <form class = "_type" method="post">
   <select name = "type" onchange="this.form.submit()">

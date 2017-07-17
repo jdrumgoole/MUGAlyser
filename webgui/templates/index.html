@@ -6,22 +6,45 @@
 	<link rel="shortcut icon" href="/static/favicon.ico">
 </head>
 <body>
-    {% if user %}
-    <div class = "uinfo"> <h3> Welcome, {{ user }} </h3>
-    <p><a class = "logout" href="logout">Logout</a></p></div>
-    {% endif %}
-    <a href = "http://www.mongodb.com"> <img src = "static/mongodb_logo.png" style = "float:left" width="13%" height="13%"/></a>
-	<h1 style = "position: relative; top: 10px"> <b> MUGAlyser<!--  &emsp; &emsp; Current Batch: {{ batch }}  --></b> </h1>
+    
 <!-- 	<ul class = "menu">
 	  <li><a href="/login">Login</a></li>
 	  <li><a href="signup">Signup</a></li>
 	  </li>
 	</ul> -->
-	<br><a href="/login">Login</a>&emsp;<a href="signup">Signup</a>&emsp;<a href="members/0">Member List</a>&emsp;<a href="groups">Groups</a>&emsp;<a href="graph">Graph</a>
+	<div class = "menu">
+		<ul>
+			<li><a href="/">Home</a></li>
+			{% if not user %}
+			<li><a href="/login">Login</a></li>
+			<li><a href="/signup">Signup</a><li>
+			{% endif %}
+			<li><a href="/members/0">Member List</a></li>
+			<li><a href="/groups">Groups</a></li>
+			<li class = "dropdown">
+		      <a href="javascript:void(0)" class="dropbtn">Graphs</a>
+		      <div class="dropdown-content">
+		        <a href="/graph">Member Count</a>
+		        <a href="/graph/yearly">RSVP</a>
+		      </div>
+		    </li>
+			{% if user %}
+			<li><a id = "logout" href="/logout">Logout</a></li>
+			{% endif %}
+		</ul>
+	</div>
 	<br>
-	<p>
+	{% if user %}
+    <h3> Welcome, {{ user }} </h3>
+    {% endif %}
+    <a href = "http://www.mongodb.com"> <img src = "static/mongodb_logo.png" style = "float:left" width="13%" height="13%"/></a>
+	<h1 style = "position: relative; top: 10px"> <b> MUGAlyser<!--  &emsp; &emsp; Current Batch: {{ batch }}  --></b> </h1>
+	<br>
+	<h2> Stats: </h2>
+	Current batch: {{batch}}
+	<br>Total groups: 
+	{{groupn}}
 
-    
 	<img src = "/pixel.gif"></img>
 
 </body>

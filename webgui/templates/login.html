@@ -6,54 +6,67 @@
     <link rel="stylesheet" type="text/css" href="/static/style.css">
     <style type="text/css">
       .label {text-align: right}
-      .error {color: red}
+      .error {color: red; font-size: 14px;}
       .succ {color: green}
+      .login {background-color: white; padding: 8px 2px 8px 2px; width: 30%; margin: auto; margin-top: 5%; box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);}
+      .login .butt {background-color: #439744; border: 0;}
+      .login a {font-size: 11px;}
+      .login input{outline: 0;background: #f2f2f2; border: 0;padding: 10px;box-sizing: border-box;font-size: 13px;}
     </style>
     <link rel="shortcut icon" href="/static/favicon.ico">
 
   </head>
 
   <body>
-  <a href="/">Home</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="/members/0">Member List</a>&emsp;<a href="/groups">Groups</a>&emsp;<a href="/graph">Graph</a>&emsp;<a class = "/logout" href="logout">Logout</a>
-    <p>
-    <h2>Login</h2>
+    <div class = "menu">
+      <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/signup">Signup</a></li>
+      <li><a href="/members/0">Member List</a></li>
+      <li><a href="/groups">Groups</a></li>
+      <li class = "dropdown">
+        <a href="javascript:void(0)" class="dropbtn">Graphs</a>
+        <div class="dropdown-content">
+          <a href="/graph">Member Count</a>
+          <a href="/graph/yearly">RSVP</a>
+        </div>
+      </li>
+      {% if user %}
+      <li><a id = "logout" href="/logout">Logout</a></li>
+      {% endif %}
+      </ul>
+    </div>
     <p>
 
-    <form method="post">
-      <table>
-        <tr>
-          <td class="label">
-            Username
-          </td>
-          <td>
-            <input type="text" name="username" value="{{username}}">
-          </td>
-          <td class="error">
-          </td>
-        </tr>
+    <div align = "center" class = "login">
+      <form method="post">
+        <table>
+          <tr>
+          <text style = "color: red;"> {{login_error}} </text>           
+          <tr>
+           
+            <td>
+              <input type="text" name="username" placeholder = "username" value="{{username}}">
+            </td>
+            <td class="error">
+            </td>
+          </tr>
 
-        <tr>
-          <td class="label">
-            Password
-          </td>
-          <td>
-            <input type="password" name="password" value="">
-          </td>
-          <td class="error">
-	    {{login_error}}
-      <div class = "succ"> {{succ}} </div>
+          <tr>
+            <td>
+              <input type="password" placeholder = "password" name="password" value="">
+              <a href="/forgotpw"> Forgot password? </a>
+            </td>
             
-          </td>
-        </tr>
+          </tr>
 
-      </table>
+        </table>
 
-      <input type="submit">
+        <input class = "butt" type="submit" value = "LOGIN">
 
-    </form>
-    <form action="/forgotpw">
-    <input type = "submit" value="Forgot password" />
-    </form>
+      </form>
+
+      </div>
   </body>
 
 </html>

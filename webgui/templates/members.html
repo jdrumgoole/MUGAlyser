@@ -11,11 +11,37 @@
 		    margin-left:0;
 		    padding: 0;
 		}
+		.mem-list ul{
+		  list-style-position: inside;
+		  margin-left:0;
+		  padding: 0;
+		  line-height: 150%;
+		}
+		.mem-list li {
+		  list-style-type: disc;
+		  list-style-position: inside;
+		  text-indent: -1em;
+		  padding-left: 1em;
+		}
 	</style>
 	<link rel="shortcut icon" href="/static/favicon.ico">
 </head>
 <body>
-	<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="0">Member List</a>&emsp;<a href="/groups">Groups</a>&emsp;<a href="/graph">Graph</a>&emsp;<a class = "logout" href="/logout">Logout</a>
+	<div class = "menu">
+		<ul>
+			<li><a href="/">Home</a></li>
+			<li><a href="0">Member List</a></li>
+			<li><a href="/groups">Groups</a></li>
+			<li class = "dropdown">
+		      <a href="javascript:void(0)" class="dropbtn">Graphs</a>
+		      <div class="dropdown-content">
+		        <a href="/graph">Member Count</a>
+		        <a href="/graph/yearly">RSVP</a>
+		      </div>
+		    </li>
+			<li><a id = "logout" href="/logout">Logout</a></li>
+		</ul>
+	</div>
 	<p>
 	{% if query == 'N0NE' %}
 		{% set query = 'Search here'%}

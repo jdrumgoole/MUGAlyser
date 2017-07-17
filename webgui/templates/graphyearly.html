@@ -8,7 +8,23 @@
 </head>
 <body>
 
-<a href="/">Home</a>&emsp;<a href="/login">Login</a>&emsp;<a href="/signup">Signup</a>&emsp;<a href="/members/0">Member List</a>&emsp;<a href="/groups">Groups</a>&emsp;<a href="/graph">Graphs</a>&emsp;<a href="/logout" class = "logout">Logout</a><p>
+<div class = "menu">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/members/0">Member List</a></li>
+    <li><a href="/groups">Groups</a></li>
+    <li class = "dropdown">
+      <a href="javascript:void(0)" class="dropbtn">Graphs</a>
+      <div class="dropdown-content">
+        <a href="/graph">Member Count</a>
+        <a href="/graph/yearly">RSVP</a>
+      </div>
+    </li>
+    <li><a id = "logout" href="/logout">Logout</a></li>
+  </ul>
+</div>
+
+<p>
 
 <h2> RSVP per year</h2>
 <div id = "query"><p><h2><b>Please click a bar to view data</b></h2><p>&emsp;  <p> &emsp;<p>&emsp; </div>
@@ -67,6 +83,10 @@
         .style("text-anchor", "middle")
         .style("font-size", "16px")
         .style("fill", "c7c5ea")
+        // .style("stroke", "black")
+        // .style("stroke-width", "1px")
+        .style("text-shadow",   "-1px -1px 0 #000,  1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000")
+        .attr("class", "label")
         .text(d.yValue.toLocaleString());
 
     };
