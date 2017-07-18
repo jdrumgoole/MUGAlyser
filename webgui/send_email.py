@@ -46,6 +46,6 @@ def send(recipient, user, ID):
         server.sendmail(sender, recipient, msg.as_string())
         server.close()
     except Exception as e:
-        print ("Error: ", e)
+        print "Error: ", e
     else:
-        print ("Email sent!")
+        print "Email sent!"

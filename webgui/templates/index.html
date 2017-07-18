@@ -29,7 +29,9 @@
 		      </div>
 		    </li>
 			{% if user %}
-			<li><a id = "logout" href="/logout">Logout</a></li>
+			<div class = "logout">
+				<li><a href="/logout">Logout</a></li>
+			</div>
 			{% endif %}
 		</ul>
 	</div>
@@ -37,7 +39,7 @@
 	{% if user %}
     <h3> Welcome, {{ user }} </h3>
     {% endif %}
-    <a href = "http://www.mongodb.com"> <img src = "static/mongodb_logo.png" style = "float:left" width="13%" height="13%"/></a>
+    <a href = "http://www.mongodb.com"> <img src = "static/mongodb_logo.png" style = "float:left;" width="13%" height="13%"/></a>
 	<h1 style = "position: relative; top: 10px"> <b> MUGAlyser<!--  &emsp; &emsp; Current Batch: {{ batch }}  --></b> </h1>
 	<br>
 	<h2> Stats: </h2>

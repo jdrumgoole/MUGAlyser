@@ -6,7 +6,7 @@ a {
 body {
   background-color: #e5e8e6;
   background: linear-gradient(to left, #d9e0db, #c5dbcb);
-  /*margin: 5s !important;*/
+  margin-top: 0 !important;
   padding: 0 !important;    
 }
 
@@ -36,8 +36,8 @@ body {
     background-color: #2a5b2a;
 }
 
-#elementId #logout{
-    float : right, !important;
+.menu .logout{
+    float : right;
 }
 .menu li.dropdown {
     display: inline-block;
@@ -117,13 +117,6 @@ h3{
 }
 ._type {
   float : right;
-}
-
-.logout {
-  font-size: 18px;
-  float : right;
-  padding: 0px 5px 1px 1px;
-  margin-top: 0;
 }
 
 .uinfo {

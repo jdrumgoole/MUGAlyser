@@ -146,7 +146,8 @@ def members(pg):
             #     print i
             output = [i['_id']['name'] for i in cursor]
         else:
-            output = membersCollection.find({"batchID": currentBatch, "member.name" : regquery}, { "_id" :0, "member.name" : 1 }).distinct("member.name")#[pg * 1000: 1000 + (pg*1000)]
+            output = membersCollection.find({"batchID": currentBatch, "member.name" : regquery}, { "_id" :0, "member.name" : 1 }).distinct("member.name")
+            #[pg * 1000: 1000 + (pg*1000)]
             # for i in cursor:
             #     output.append( i ) 
     else:
