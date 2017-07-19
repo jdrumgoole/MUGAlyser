@@ -30,6 +30,14 @@
 		    </li>
 			{% if user %}
 			<div class = "logout">
+				<li class = "dropdown">
+			      <a href="javascript:void(0)" class="dropbtn">Stats</a>
+			      <div class="dropdown-content">
+			        <a href="#">Batch: {{batch}} </a>
+			        <a href="#">Groups: {{groupn}}</a>
+			      </div>
+			    </li>
+
 				<li><a href="/logout">Logout</a></li>
 			</div>
 			{% endif %}
@@ -40,12 +48,9 @@
     <h3> Welcome, {{ user }} </h3>
     {% endif %}
     <a href = "http://www.mongodb.com"> <img src = "static/mongodb_logo.png" style = "float:left;" width="13%" height="13%"/></a>
-	<h1 style = "position: relative; top: 10px"> <b> MUGAlyser<!--  &emsp; &emsp; Current Batch: {{ batch }}  --></b> </h1>
+	<h1 style = "position: relative; top: 10px; "> <b> MUGAlyser<!--  &emsp; &emsp; Current Batch: {{ batch }}  --></b> </h1>
 	<br>
-	<h2> Stats: </h2>
-	Current batch: {{batch}}
-	<br>Total groups: 
-	{{groupn}}
+	
 
 	<img src = "/pixel.gif"></img>
 
