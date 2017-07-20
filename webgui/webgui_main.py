@@ -359,7 +359,6 @@ def reset_pw(ID):
     <link rel="stylesheet" type="text/css" href="/static/style.css">
     <a href="/">Home</a>
     <p>Reset link is invalid."""
-    
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug = True)
 

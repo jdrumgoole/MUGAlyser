@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 
 # Replace sender@example.com with your "From" address.
 # This address must be verified with Amazon SES.
+
 sender = "ari.benderlong@10gen.com"
 sendername = "MUGAlyser"
 
