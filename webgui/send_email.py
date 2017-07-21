@@ -34,7 +34,8 @@ with open("keys.txt", "r") as f:
 sender = smtp_username = keys[1]
 smtp_password = keys[2]
 
-try:  
+try:
+    print "Logging into GMail (this might take a while)..."  
     server = smtplib.SMTP_SSL(host, port)
     server.ehlo()
     server.login(smtp_username, smtp_password)

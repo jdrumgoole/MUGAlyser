@@ -21,10 +21,10 @@ try:
     server.close()
 except Exception as e:
     print "Error: ", e
+    print "If you are sure your password is correct and have 2FA enabled on your GMail account\nyou might need to generate a special password: https://www.google.com/settings/security/lesssecureapps"
     valid = False
 
 if valid:
-	print "
 	with open("keys.txt", "w") as o:
 		o.write(skey + "\n")
 		o.write(email + "\n")
