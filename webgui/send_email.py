@@ -1,6 +1,8 @@
 import smtplib  
 import email.utils
 import os
+import signal
+import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -34,6 +36,7 @@ with open("keys.txt", "r") as f:
 sender = smtp_username = keys[1]
 smtp_password = keys[2]
 
+
 try:
     print "Logging into GMail (this might take a while)..."  
     server = smtplib.SMTP_SSL(host, port)
@@ -56,8 +59,12 @@ def send(recipient, user, ID):
     msg.attach(part2)
     try:
         server.sendmail(sender, recipient, msg.as_string())
-        server.close()
     except Exception as e:
         print "Error: ", e
     else:
         print "Email sent!"
+
+def sigint_handler(signum, frame):
+    server.close()
+    exit()
+signal.signal(signal.SIGINT, sigint_handler)
