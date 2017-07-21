@@ -19,13 +19,15 @@ import time
 import os
 import re
 import webbrowser
-import send_email
-
-app = Flask(__name__)
 
 if not os.path.isfile('keys.txt') or os.stat('keys.txt').st_size == 0:
     print "Please run web_setup.py first"
     exit()
+
+import send_email
+
+app = Flask(__name__)
+
 
 with open('keys.txt', 'r') as f:
     skey = f.readline().strip("\n")
