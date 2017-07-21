@@ -71,7 +71,7 @@
     s.getTooltipText = function (e) {
       return [
           "Year: " + e.cx,
-          "Total RSVP: " + e.cy,
+          "Total RSVP: " + e.cy.toLocaleString(),
           "Total events: " + events[e.cx],
           "Average RSVP: " + (e.cy / events[e.cx]).toFixed(2)
       ];
