@@ -17,6 +17,7 @@ from datetime import datetime
 from argparse import ArgumentParser
 import logging
 import os
+import re
 
 import pymongo
 
@@ -150,25 +151,31 @@ access to the admin APIs.
                 urlfile = os.path.abspath( args.urlfile )
                 logger.info( "Reading groups from: '%s'", urlfile )
                 with open( urlfile ) as f:
-                    mugList = f.read().splitlines()
+                    lines = f.read().splitlines()
+                    # string come
+                    regex = "^\s*#.*|^\s*$" # comments with # or blank lines
+                    mugList = []
+                    for i in lines :
+                        clean_line = i.rstrip()
+                        if not re.match( regex, clean_line ):
+                            mugList.append( clean_line )
             else:
                 mugList = args.mugs
 
         writer = MeetupWriter( apikey, batchID, mdb, reshape=True )
             
         if "all" in args.phases :
-            phases = [ "groups", "members", "upcomingevents", "pastevents", "attendees" ]
+            phases = [ "groups", "members", "upcomingevents", "pastevents" ]
 
         else:
             phases = args.phases
             
-        if 'attendees'  in phases  :
-            if args.admin:
-                logger.info( "--admin : we will collect attendee info")
-            else:
-                logger.info( "No admin account")
-                logger.info( "We will not collect attendee info: ignoring attendees")
-                phases.remove( 'attendees' )
+        if args.admin :
+            logger.info( "--admin : we will collect attendee info")
+            phases.append( "attendees")
+        else:
+            logger.info( "No admin account")
+            logger.info( "We will not collect attendee info: ignoring attendees")
             
         logger.info( "Processing phases: %s", phases )
         

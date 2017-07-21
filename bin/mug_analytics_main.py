@@ -16,7 +16,7 @@ from mugalyser.gdrive import GDrive
 
 
 from mongodb_utils.agg import Sorter
-from mugalyser.analytics import MUG_Analytics
+from mugalyser.analytics import MUG_Analytics, Filename
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
@@ -64,45 +64,7 @@ def addCountry( mdb, cursor ):
         country = groups.get_country( i[ 'group'] )
         i[ "country"] = country
         yield i    
-        
-class Filename( object ):
-    '''
-    Make a filename but accept an "-" as the name parameter. If the name
-    is "-" then ignore all other parameters and write to stdout. So return
-    just "-" as the filename.
-    '''
-    def __init__(self, prefix="", name="-", suffix="", ext=""):
-        self._prefix = prefix
-        self._name = name
-        self._suffix = suffix
-        self._ext = ext
-        
-        self._filename = self.make()
-        
-    def __call__(self, suffix ):
-        self._suffix = suffix
-        return self.make()
-    
-    def __str__(self):
-        return self._filename
-    
-    def __repr__(self):
-        return self._filename
 
-    def make( self ):
-        '''
-        If root is '-" then we just return that. Otherwise
-        we construct a filename of the form:
-        <root><suffix>.<ext>
-        '''
-        
-        if self._name == "-"  or self._name is None:
-            return "-"
-        else: 
-            print( self._prefix + self._name + self._suffix + "." + self._ext )
-            return self._prefix + self._name + self._suffix + "." + self._ext
-
-    
 def convert_direction( arg ):
     
     if arg == "ascending" :
@@ -112,7 +74,7 @@ def convert_direction( arg ):
     else:
         return pymongo.ASCENDING
     
-def get_batches( mdb, start, end, limit=None ):
+def get_batches( mdb, start, end ):
     
     audit = Audit( mdb )
     
@@ -135,7 +97,7 @@ def main( args ):
     
     cmds = [ "grouptotals", "groups", "pastevents", "rsvps", 
             "activeusers", "newmembers", "memberhistory", "rsvphistory",
-            "totals", "rsvpevents", "collections", "upcomingevents" ]
+            "totals", "rsvpevents", "collections", "upcomingevents", "members" ]
 
     parser = ArgumentParser( args )
         
@@ -153,6 +115,8 @@ def main( args ):
     
     parser.add_argument( "--url", nargs="+",
                          help="pick a URL for a group to report on [default: %(default)s]")
+    
+    parser.add_argument( "--groups", default=False, action="store_true", help="list all groups (can be filtered by country)")
 
     parser.add_argument( "--start", type=valid_date, help="Starting date range for a query" )
     
@@ -184,7 +148,7 @@ def main( args ):
         prefix = ""
     
     if prefix == "<date>":
-        prefix = datetime.datetime.now().strftime( "%d-%b-%y-%H%M%S" ) + "-"
+        prefix = datetime.datetime.now().strftime( "%d-%b-%y-%H%M%S" )
 
     if output is None:
         output = "-"
@@ -212,6 +176,10 @@ def main( args ):
         else:
             urls = groups.get_region_group_urlnames( args.country )
 
+    if args.groups:
+        for i in urls:
+            print( i )
+        
     if args.start and args.end:
         if args.end < args.start  :
             print( "--end date is before start date ignoring dates")
@@ -223,11 +191,11 @@ def main( args ):
     else:
         batchID = None
         
-    print( "Processing : %i urls" % len( urls ))
+    #print( "Processing : %i urls" % len( urls ))
     analytics = MUG_Analytics( mdb, output, formatter, batchID = batchID, limit=args.limit, view=args.createview )
     analytics.setRange(args.start, args.end )
     
-    filename = Filename( prefix=prefix, name=args.output, ext=formatter)
+    filename = Filename( prefix=prefix, name=args.output, suffix="", ext=formatter)
     
     if args.stats is None:
         args.stats = []
@@ -247,34 +215,37 @@ def main( args ):
     #print( "Current batch ID: %i" % Audit( mdb ).getCurrentBatchID())
 
     if "grouptotals" in args.stats :
-        analytics.get_group_totals( urls, filename=filename( "grouptotals" ))
+        analytics.get_group_totals( urls, filename=filename.suffix( "grouptotals" ))
         
     if "groups" in args.stats :
-        analytics.get_groups( urls, filename=filename( "groups" ))
+        analytics.get_groups( urls, filename=filename.suffix( "groups" ))
     
     if "newmembers" in args.stats :
-        analytics.get_new_members( urls, filename=filename( "members" ))
+        analytics.get_new_members( urls, filename=filename.suffix( "members" ))
 
     if "pastevents" in args.stats:
-        analytics.get_events( urls, when="past", filename=filename( "events" ))
+        analytics.get_events( urls, when="past", filename=filename.suffix( "events" ))
         
     if "upcomingevents" in args.stats :
-        analytics.get_events( urls, when="upcoming", filename=filename( "events" ))
+        analytics.get_events( urls, when="upcoming", filename=filename.suffix( "events" ))
         
     if "rsvps" in args.stats:
-        analytics.get_rsvps( urls, filename=filename( "rsvps" ))
+        analytics.get_rsvps( urls, filename=filename.suffix( "rsvps" ))
         
     if "activeusers" in args.stats:
-        analytics.get_active_users(  urls, filename=filename( "active" ))
+        analytics.get_active_users(  urls, filename=filename.suffix( "active" ))
         
     if "memberhistory" in args.stats :
-        analytics.get_member_history(urls,  filename=filename( "memberhistory"))
+        analytics.get_member_history(urls,  filename=filename.suffix( "memberhistory"))
         
     if "rsvphistory" in args.stats :
-        analytics.get_RSVP_history(urls, filename=filename( "rsvphistory" ))
+        analytics.get_RSVP_history(urls, filename=filename.suffix( "rsvphistory" ))
         
     if "rsvpevents" in args.stats:
-        analytics.get_rsvp_by_event(urls, filename=filename( "rsvpevents" ))
+        analytics.get_rsvp_by_event(urls, filename=filename.suffix( "rsvpevents" ))
+        
+    if "members" in args.stats :
+        analytics.get_members(urls, filename=filename.suffix( "members" ))
         
     if "totals" in args.stats:
         analytics.get_totals( urls, countries=countries )

@@ -12,6 +12,55 @@ from mugalyser.groups import EU_COUNTRIES,  Groups
 from mugalyser.members import Members
 from mugalyser.events import PastEvents
 
+class Filename( object ):
+    '''
+    Make a filename but accept an "-" as the name parameter. If the name
+    is "-" then ignore all other parameters and write to stdout. So return
+    just "-" as the filename.
+    '''
+    def __init__(self, prefix="", name="-", suffix="", ext=""):
+        
+        self._prefix = prefix
+        self._name   = name
+        self._suffix = suffix
+        self._ext    = ext 
+        
+        self._filename = Filename.make( self._prefix, self._name, self._suffix, self._ext )
+    
+    def __str__(self):
+        return self._filename
+    
+    def __repr__(self):
+        return self._filename
+
+    def suffix(self, s ):
+        self._filename =Filename.make( self._prefix, self._name, s, self._ext )
+        return self._filename
+        
+    def prefix(self, p ):
+        self._filename =Filename.make( p, self._name, self._suffix, self._ext )
+        return self._filename
+        
+    def name(self, n ):
+        self._filename =Filename.make( self._prefix, n, self._suffix, self._ext )
+        return self._filename
+    
+    @staticmethod
+    def make( prefix, name, suffix, ext ):
+        '''
+        If root is '-" then we just return that. Otherwise
+        we construct a filename of the form:
+        <root><suffix>.<ext>
+        '''
+        if not ext.startswith( '.' ):
+            ext = '.' + ext
+            
+        if name == "-"  or name is None:
+            return "-"
+        else: 
+            #print( self._prefix + self._name + self._suffix + "." + self._ext )
+            return prefix + name + suffix + ext
+
 class MUG_Analytics( object ):
             
     def __init__(self, mdb, output_filename="-", formatter="json", batchID=None, limit=None, view=None ):
@@ -45,7 +94,7 @@ class MUG_Analytics( object ):
     def setSort(self, sorter ):
         self._sorter = sorter
         
-    def getMembers( self, urls, filename=None ):
+    def get_members( self, urls, filename=None ):
         '''
         Get a count of the members for each group in "urls"
         Range doens't make sense here so its not used. If supplied it is ignored.
@@ -60,7 +109,7 @@ class MUG_Analytics( object ):
                            "urlname" : "$group.urlname", 
                            "country" : "$group.country",
                            "batchID" : 1, 
-                           "member_count" : "$group.member_count" })
+                           "members" : "$group.members" })
         
         if self._sorter:
             agg.addSort( self._sorter)
@@ -73,7 +122,10 @@ class MUG_Analytics( object ):
             #agg.create_view( self._mdb.database(), "members_view")
             
         formatter = CursorFormatter( agg.aggregate(), self._filename, self._format )
-        formatter.output( fieldNames= [ "urlname", "country", "batchID", "member_count"] )
+        formatter.output( fieldNames= [ "urlname", "country", "batchID", "members"] )
+        
+        if filename != "-":
+            self._files.append( filename )
         
     def get_RSVP_history(self, urls, filename=None ):
         '''

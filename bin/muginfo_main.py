@@ -114,8 +114,8 @@ def main( argv=None ) :
             count = 0 
             for g in groups.get_all_groups() :
                 count = count + 1 
-                print( "{:40} (location: {})".format( g[ "group"][ "urlname" ], g["group"]["country"] ))
-            print( "total: %i" % count )
+                print( g[ "group"][ "urlname" ]  )
+                #print( "total: %i" % count )
             
         if args.country: 
             count = 0
