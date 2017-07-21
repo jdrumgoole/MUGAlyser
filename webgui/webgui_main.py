@@ -236,13 +236,27 @@ def graph():
                                     "group.name" : 1,
                                     "group.member_count" : 1,
                                     "timestamp" : 1})
+        # print datetime.utcfromtimestamp(groupCurs.next()["timestamp"])
         output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in groupCurs]
 
     # groupl = get_group_list()
     # batchl = get_batch_list()
 
     return render_template("graph.html", groups = output, grouplist = get_group_list(), batches = get_batch_list(), curbat = int(curbat), curamt = int(amt), curgroup = curGroup)
-        
+
+@app.route("/graph/batch", methods=['POST', 'GET'])
+def graph_batch():
+    if not verify_login():
+        return render_template("error.html")
+
+    pipeline = [
+        {"$group": {"_id": "$batchID", "total_members": {"$sum": "$group.member_count"}}}
+    ]
+
+    groupCurs = proGrpCollection.aggregate(pipeline)
+    output = [{'Batch' : d['_id'], 'Count': d['total_members']} for d in groupCurs]
+
+    return render_template("graphbatch.html", members = output)
 @app.route('/user/<member>')
 def get_member(member):
     # show the user profile for that user
