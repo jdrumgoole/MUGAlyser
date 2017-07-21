@@ -23,9 +23,3 @@ with open("keys.txt", "w") as o:
 	o.write(email + "\n")
 	o.write(passw)
 
-x = []
-with open("keys.txt", "r") as f:
-	for line in f:
-		x.append(line.strip("\n"))
-	print x
-

@@ -23,10 +23,9 @@ import send_email
 
 app = Flask(__name__)
 
-if os.getenv('SECRET_KEY') is not None:
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-else:
-    app.config['SECRET_KEY'] = '4f5b0399c7b3b7a12833ca7d933792b0'
+with open('keys.txt', 'r') as f:
+    skey = f.readline().strip("\n")
+    app.config['SECRET_KEY'] = skey
 
 mdb = MUGAlyserMongoDB()
 auditdb = Audit( mdb )
@@ -360,5 +359,8 @@ def reset_pw(ID):
     <a href="/">Home</a>
     <p>Reset link is invalid."""
 if __name__ == "__main__":
+    if os.stat('keys.txt').st_size == 0:
+        print "Please run web_setup.py first"
+        exit()
     app.run(host='0.0.0.0', debug = True)
 
