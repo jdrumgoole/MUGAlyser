@@ -16,7 +16,7 @@ class Test(unittest.TestCase):
     def test_get_member_by_url(self):
         
         members = self._api.get_members( [ "DublinMUG", "London-MongoDB-User-Group"])
-        self.assertGreaterEqual( len( list( members )), 2471 )
+        self.assertGreaterEqual( len( list( members )), 2470 )
                                  
 
 if __name__ == "__main__" :
