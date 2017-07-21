@@ -12,15 +12,25 @@ import requests
 import time
 import pprint
 
-from mugalyser.version import __programName__
-from mugalyser.logger import Logger
+# from mugalyser.version import __programName__
+# from mugalyser.logger import Logger
 
 class MeetupRequest( object ):
     
-    def __init__(self ):
+    def __init__(self, logging_level = logging.INFO ):
         
-        self._logger = Logger( __programName__).log()
+        self._logger = logging.getLogger( "arse" )
+        self._logger.setLevel( logging_level)
+        fh = logging.FileHandler( "meetuprequests.log" )
+        sh = logging.StreamHandler()
+        fh.setLevel( logging_level)
+        sh.setLevel( logging_level )
+        fh.setFormatter( logging.Formatter( "%(asctime)s - %(name)s - %(levelname)s - %(message)s" ))
+        sh.setFormatter( logging.Formatter( "%(asctime)s - %(name)s - %(levelname)s - %(message)s" ))
         
+        self._logger.addHandler( sh )
+        self._logger.addHandler( fh )
+
     def simple_request(self, req, params=None ):
         
         if params :
@@ -29,7 +39,6 @@ class MeetupRequest( object ):
             r = requests.get( req )
             
         self._logger.debug( "simple_request( %s )",  r.url )
-
         try:
             r.raise_for_status()
 #           for req_data in r.iter_lines():
@@ -50,12 +59,12 @@ class MeetupRequest( object ):
             return ( r.headers, r.json())
         
         except ValueError :
-            self._logger.error( "ValueError in makeRequests:")
+            self._logger.error( "ValueError in simple_request:")
             self._logger.error( "request: '%s'", r.url)
             self._logger.error( "headers:" )
             self._logger.error( pprint.pformat( r.headers ))
-            self._logger.error( "text:" )
-            self._logger.error( r.text )
+            self._logger.error( "text:'" )
+            self._logger.error( r.text + "'" )
             raise
         
         except requests.HTTPError, e :
@@ -140,6 +149,7 @@ class MeetupRequest( object ):
             nested_body = body
             while ( nested_body[ 'meta' ][ "next" ] != ""  ) :
 
+                #print.pprint( nested_body[ 'meta' ] )
                 ( _, nested_body ) = self.simple_request( nested_body['meta'][ 'next' ] )
                 count = count + 1
                 #print( "Nested Body")
@@ -154,7 +164,7 @@ class MeetupRequest( object ):
                 yield i
                
             count = 0 
-            ( nxt, _) = self.getNextPrev(headers)
+            ( nxt, prev ) = self.getNextPrev(headers)
 
             
             while ( nxt is not None ) : # no next link in last page
@@ -164,7 +174,7 @@ class MeetupRequest( object ):
                     
                 #print( "V2 Paged SimpleRequest( %s, %s)" % ( nxt, params))
                 ( headers, body ) = self.simple_request( nxt, params )
-                ( nxt, _ ) = self.getNextPrev(headers)
+                ( nxt,prev ) = self.getNextPrev(headers)
                 for i in body :
                     yield i
     

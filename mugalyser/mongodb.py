@@ -43,7 +43,7 @@ class MUGAlyserMongoDB( object ):
     def setup(self ):
 
         if self._uri.startswith( "mongodb://" ) :
-            self._client = pymongo.MongoClient( host=self._uri, tz_aware=True )
+            self._client = pymongo.MongoClient( host=self._uri  )
         else:
             raise ValueError( "Invalid URL: %s" % self._uri )
         

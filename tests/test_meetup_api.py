@@ -8,6 +8,7 @@ import unittest
 from mugalyser.meetup_api import MeetupAPI
 from mugalyser.apikey import get_meetup_key
 import types
+from datetime import datetime
 
 class Test_meetup_api(unittest.TestCase):
         
@@ -28,23 +29,35 @@ class Test_meetup_api(unittest.TestCase):
         self.assertTrue( g[ "country" ] == u"IE" )
         #pprint.pprint( g )
         self.assertTrue( "location"  in g )
+        self.assertTrue( g.has_key( "created" ))
         
     def test_get_pro_groups(self):
         
         g = self._api.get_pro_groups()
-        groups = list( g )
-        self.assertGreaterEqual(len( groups ), 116 )
+        count = 0
+        for  i in g:
 
+            self.assertTrue( "rsvps_per_event" in i )
+            self.assertTrue( "pro_join_date" in i )
+            self.assertTrue( "founded_date" in i )
+            self.assertTrue( isinstance( i[ "pro_join_date" ], datetime ))
+            self.assertTrue( isinstance( i[ "founded_date" ], datetime ))
+            count = count + 1 
+            
+        self.assertGreaterEqual( count, 116 )
+            
     def test_get_past_events(self ):
         
         g = self._api.get_past_events("DublinMUG" )
         events = list( g )
         self.assertGreaterEqual( len( events ), 29 )
+
         event = events[ 0 ]
         
         #self.assertEqual( event[ "created"], 1335802792000 )
         self.assertEqual( event[ "event_url"], u'https://www.meetup.com/DublinMUG/events/62760772/' )
-
+        self.assertTrue( isinstance( event[ "created"], datetime ))
+                         
     def test_get_all_attendees( self ):
         attendees = self._api.get_all_attendees( [ "DublinMUG", "London-MongoDB-User-Group" ] )
         attendees = list( attendees )
@@ -74,7 +87,7 @@ class Test_meetup_api(unittest.TestCase):
         
         members = self._api.get_members( ["DublinMUG" ] )
         count = 0
-        for i in members:
+        for _ in members:
             count = count + 1 
             #print( "%i %s" % (count, i ))
             #print( i )
@@ -83,18 +96,9 @@ class Test_meetup_api(unittest.TestCase):
         members = list( self._api.get_pro_members())
         self.assertGreaterEqual( ( sum( 1 for _ in  members )) , 17400 )
         
-    def test_get_groups(self):
         
-        groups = self._api.get_pro_group_names()
-        urls = list( groups )
-        self.assertGreaterEqual( urls, 116 )
-        
-        count = 0
-        for _ in self._api.get_groups_by_url( urls ):
-            count = count + 1
-          
-        self.assertGreaterEqual( count, 116 )  
-        
+
+            
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

@@ -29,7 +29,6 @@ St-Louis-Postgres-User-Group
 Sydney-PostgreSQL-User-Group
 PostgreSQL-User-Group-Toulouse
 melpug
-Brighton-PostgreSQL-Meetup
 hamburg-pug
 Brisbane-PostgreSQL-User-Group
 Meetup-PostgreSQL-Lille
@@ -54,4 +53,3 @@ Kong-MELBOURNE
 Canberra-PostgreSQL-and-PostGIS-Meetup
 Kong-TAIPEI
 PGConf-ASIA
-EDB-Postgres-Meetup

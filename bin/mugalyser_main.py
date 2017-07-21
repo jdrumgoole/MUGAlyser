@@ -17,6 +17,7 @@ from datetime import datetime
 from argparse import ArgumentParser
 import logging
 import os
+import re
 
 import pymongo
 
@@ -90,10 +91,10 @@ access to the admin APIs.
         parser.add_argument( "-v", "--version", action='version', version=__programName__ + " " + __version__ )
         parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
      
-        parser.add_argument( '--mugs', nargs="+", help='Process MUGs list list mugs by name [default: %(default)s]')
+        parser.add_argument( '--mugs', nargs="+", default=[], help='Process MUGs list list mugs by name [default: %(default)s]')
    
         parser.add_argument( "--collect",  choices=[ "pro", "nopro", "all" ], default="all", help="Use pro API calls, no pro API calls or both")
-        parser.add_argument( "--noadmin", default=True, action="store_false", help="Some calls are only available to admin users, use this if you are not an admin")
+        parser.add_argument( "--admin", default=False, action="store_true", help="Some calls are only available to admin users, use this if you are not an admin")
         parser.add_argument( "--database", default="MUGS", help="Default database name to write to [default: %(default)s]")
         parser.add_argument( '--phases', nargs="+", choices=[ "groups", "members", "attendees", "upcomingevents", "pastevents"], 
                              default=[ "all"], help='execution phases')
@@ -102,8 +103,10 @@ access to the admin APIs.
         
         parser.add_argument( '--apikey', default=None, help='Default API key for meetup')
         
+        parser.add_argument( "--batchname", default= "test " + __programName__, help="Batch name used in creating audit batches")
         parser.add_argument( '--urlfile', 
                              help="File containing a list of MUG URLs to be used to parse data [ default: %(default)s]")
+        
         # Process arguments
         args = parser.parse_args()
             
@@ -114,9 +117,9 @@ access to the admin APIs.
         else:
             apikey = get_meetup_key()
 
-        mugalyser_logger = Logger( __programName__ )
-        mugalyser_logger.add_stream_handler()
-        mugalyser_logger.add_file_handler( "mugalyser.log" )
+        mugalyser_logger = Logger( __programName__, args.loglevel )
+        mugalyser_logger.add_stream_handler( args.loglevel )
+        mugalyser_logger.add_file_handler( "mugalyser.log", args.loglevel )
         
         logger = mugalyser_logger.log()
         
@@ -128,8 +131,9 @@ access to the admin APIs.
         
         audit = Audit( mdb )
         
-        batchID = audit.start_batch( { "args"    : vars( args ), 
+        batchID = audit.start_batch( { "args"   : vars( args ), 
                                       "version" : __programName__ + " " + __version__,
+                                      "name"    : args.batchname,
                                       "collect" : args.collect } )
 
         start = datetime.utcnow()
@@ -138,7 +142,7 @@ access to the admin APIs.
         
         if args.collect in [ "pro", "all"]:
             '''
-            Ignore the --urlfile argument and get the groups from the pro accoubt
+            Use the pro API.
             '''
             logger.info( "Using pro API calls (pro account API key)")
             mugList = list( MeetupAPI( apikey ).get_pro_group_names())
@@ -147,24 +151,31 @@ access to the admin APIs.
                 urlfile = os.path.abspath( args.urlfile )
                 logger.info( "Reading groups from: '%s'", urlfile )
                 with open( urlfile ) as f:
-                    mugList = f.read().splitlines()
+                    lines = f.read().splitlines()
+                    # string come
+                    regex = "^\s*#.*|^\s*$" # comments with # or blank lines
+                    mugList = []
+                    for i in lines :
+                        clean_line = i.rstrip()
+                        if not re.match( regex, clean_line ):
+                            mugList.append( clean_line )
             else:
                 mugList = args.mugs
 
-        if not args.noadmin:
-            logger.info( "Using admin account")
-
-        writer = MeetupWriter( apikey, batchID, mdb )
+        writer = MeetupWriter( apikey, batchID, mdb, reshape=True )
             
         if "all" in args.phases :
-            phases = [ "groups", "members", "upcomingevents", "pastevents"]
-            if args.noadmin:
-                logger.info( "--noadmin : we will not collect attendee info")
-            else:
-                phases.append( "attendees" )
-                logger.info( "No --admin : we will not collect attendee info")
+            phases = [ "groups", "members", "upcomingevents", "pastevents" ]
+
         else:
             phases = args.phases
+            
+        if args.admin :
+            logger.info( "--admin : we will collect attendee info")
+            phases.append( "attendees")
+        else:
+            logger.info( "No admin account")
+            logger.info( "We will not collect attendee info: ignoring attendees")
             
         logger.info( "Processing phases: %s", phases )
         
@@ -178,7 +189,7 @@ access to the admin APIs.
             phases.remove( "members")
             
         for i in mugList :
-            writer.capture_snapshot( i, not args.noadmin, phases )
+            writer.capture_snapshot( i, args.admin, phases )
         
         audit.end_batch( batchID )
         end = datetime.utcnow()
