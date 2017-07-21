@@ -23,6 +23,10 @@ import send_email
 
 app = Flask(__name__)
 
+if not os.path.isfile('keys.txt') or os.stat('keys.txt').st_size == 0:
+    print "Please run web_setup.py first"
+    exit()
+
 with open('keys.txt', 'r') as f:
     skey = f.readline().strip("\n")
     app.config['SECRET_KEY'] = skey
@@ -359,8 +363,5 @@ def reset_pw(ID):
     <a href="/">Home</a>
     <p>Reset link is invalid."""
 if __name__ == "__main__":
-    if os.stat('keys.txt').st_size == 0:
-        print "Please run web_setup.py first"
-        exit()
     app.run(host='0.0.0.0', debug = True)
 

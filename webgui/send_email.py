@@ -26,16 +26,23 @@ local_ip=f.read().split("inet ")[1].split(" ")[0]
 msg = MIMEMultipart('alternative')
 msg['Subject'] = subject
 
+keys = []
+with open("keys.txt", "r") as f:
+    for line in f:
+        keys.append(line.strip("\n"))
 
+sender = smtp_username = keys[1]
+smtp_password = keys[2]
+
+try:  
+    server = smtplib.SMTP_SSL(host, port)
+    server.ehlo()
+    server.login(smtp_username, smtp_password)
+except Exception as e:
+    print "Error: ", e
 # Try to send the email.
 def send(recipient, user, ID):
-    keys = []
-    with open("keys.txt", "r") as f:
-        for line in f:
-            keys.append(line.strip("\n"))
-
-    sender = smtp_username = keys[1]
-    smtp_password = keys[2]
+    
 
     msg['From'] = email.utils.formataddr((sendername, sender))
 
@@ -46,11 +53,7 @@ def send(recipient, user, ID):
     part2 = MIMEText(html, 'html')
     msg.attach(part1)
     msg.attach(part2)
-
-    try:  
-        server = smtplib.SMTP_SSL(host, port)
-        server.ehlo()
-        server.login(smtp_username, smtp_password)
+    try:
         server.sendmail(sender, recipient, msg.as_string())
         server.close()
     except Exception as e:
