@@ -72,6 +72,8 @@ def gitclone() :
     run( "mkdir -p GIT" )
     with cd( "GIT" ) :
         run( "git clone https://github.com/jdrumgoole/MUGAlyser.git" )
+    with cd( "GIT" ) :
+        run( "git clone https://github.com/jdrumgoole/mongodb_utils.git" )
         
 def apikey():
     get_dns_name()
