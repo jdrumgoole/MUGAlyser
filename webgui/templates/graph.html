@@ -1,0 +1,159 @@
+<html>
+<head>
+  <script src="/static/d3.js"></script>
+  <script src="/static/dimple.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="/static/style.css">
+  <title> Batch: {{ curbat }} </title>
+  <link rel="shortcut icon" href="/static/favicon.ico">
+</head>
+<body>
+
+<div class = "menu">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/members/0">Member List</a></li>
+    <li><a href="/groups">Groups</a></li>
+    <li class = "dropdown">
+      <a href="javascript:void(0)" class="dropbtn">Graphs</a>
+      <div class="dropdown-content">
+        <a href="/graph">Member Count</a>
+        <a href="/graph/yearly">RSVP</a>
+      </div>
+    </li>
+    <div class = "logout">
+        <li><a href="/logout">Logout</a></li>
+    </div>
+  </ul>
+</div>
+
+<p>
+
+{% if curgroup == "None" %}
+<form class = "_amt" method="post">
+  <select name = "amt" onchange="this.form.submit()">
+    <option value = "0" {% if 0 == curamt  %} selected = "selected" {% endif %}> All </option>
+    <option value = "5" {% if 5 == curamt  %} selected = "selected" {% endif %}> Top 5 </option>
+    <option value = "10" {% if 10 == curamt  %} selected = "selected" {% endif %}> Top 10 </option>
+    <option value = "15" {% if 15 == curamt  %} selected = "selected" {% endif %}> Top 15 </option>
+    <option value = "20" {% if 20 == curamt  %} selected = "selected" {% endif %}> Top 20 </option>
+  </select>
+</form>
+
+<form class = "_bat" method="post">
+  <select name = "bat" onchange="this.form.submit()">
+    {% for id in batches %}
+    <option value = "{{ id }}" {% if id == curbat %} selected = "selected" {% endif %}> Batch {{ id }} </option>
+    {% endfor %}
+  </select>
+</form>
+
+<!-- <form class = "_type" method="post">
+  <select name = "type" onchange="this.form.submit()">
+    <option value = "groups" {% if "groups" == curtype %} selected = "selected" {% endif %}> Groups </option>
+    <option value = "pgroups" {% if "pgroups" == curtype %} selected = "selected" {% endif %}> Pro Groups </option>
+  </select>
+</form> -->
+<h2> Member counts for Batch {{curbat}}</h2>
+{% else %}
+<h2> Historical member data for {{ curgroup }}</h2>
+{% endif %}
+
+<form id = "group" class = "_group" method="post">
+  <select id = "groupsel" name = "grp" onchange="this.form.submit()">
+    <option value = "None"> None </option>
+    {% for group in grouplist %}
+    <option value = "{{ group.Name }}"  {% if group.Name == curgroup %} selected = "selected" {% endif %}> {{ group.Name }} </option>
+    {% endfor %}
+  </select>
+</form>
+
+<form method="post" style="float: right;">
+<input name = "res" type = "submit" value="Reset"/>
+</form>
+<div id="chartContainer"></div>
+
+</body>
+<script type="text/javascript">
+    var data = {{groups|tojson}};
+
+    var min = data[0].Count;
+    var max = data[0].Count;
+    for (var i = 0; i < data.length; i++){
+      data[i].order = i;
+      if(data[i].Count < min){ 
+        min = data[i].Count;
+      }
+      if(data[i].Count > max){
+        max = data[i].Count;
+      }
+    };
+    var svg = dimple.newSvg("#chartContainer", "100%", "100%");
+    var myChart = new dimple.chart(svg, data);
+    myChart.setMargins("60px", "30px", "30px", "500px");
+
+    
+    //var x = myChart.addCategoryAxis("x", "Name");
+    var y = myChart.addMeasureAxis("y", "Count");
+    y.fontSize = "12px";
+    y.fontFamily = "Arial";
+    y.overrideMin = min - 2;
+    y.overrideMax = max + 2;
+
+    {% if curgroup == "None" %}
+      var x = myChart.addCategoryAxis("x", "Name");
+      var s = myChart.addSeries("Member Count", dimple.plot.bar);
+      s.getTooltipText = function (e) {
+                  return [
+                      e.cx,
+                      "Member count: " + e.cy
+                  ];
+              };
+    {% else %}
+      console.log(data[0].Time)
+      console.log(data[10].Time)
+      var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
+      var s = myChart.addSeries("Member Count", dimple.plot.line);
+      x.timePeriod = d3.timeHour;
+      x.timeInterval = 24;
+
+      y.ticks = 4;
+      y.tickInterval = 1;
+
+      s.getTooltipText = function (e) {
+                  return [
+                      new Date( e.cx ),
+                      "Member count: " + e.cy
+                  ];
+      };
+      s.lineMarkers = true;
+    {% endif %}
+    // var leg = myChart.addLegend("80%", "5%", 100, 100);
+    // leg.fontSize = "auto";
+    s.tooltipFontSize = "16px";
+    s.tooltipFontFamily = "Arial";
+    x.fontSize = "14px";
+    x.fontFamily = "Trebuchet MS";
+    // Animate a chart over the date field and write the current frame value to the console on update
+    // var st = myChart.setStoryboard("Count");
+    // st.frameDuration = 600;
+    // st.addOrderRule("Count", true);
+    // x.floatingBarWidth = 2;
+    y.tickFormat = ",d";
+
+    //var s = myChart.addSeries("Count", dimple.plot.bar);
+
+
+    //x.addOrderRule("Count");
+
+    // myChart.staggerDraw = true;
+    // myChart.ease = "sin";
+    myChart.draw(/*500*/);
+    d3.selectAll("rect").on("click", function (e) {
+       document.getElementById("groupsel").value = e.cx;
+       document.getElementById("group").submit();
+      });
+    window.onresize = function () {
+      myChart.draw(0, true);
+    };
+</script>
+</html>

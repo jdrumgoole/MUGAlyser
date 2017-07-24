@@ -2,11 +2,74 @@
 <html lang="en">
 <head>
     <title>MUG Members</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <style type="text/css">
+    	.mem-list {
+    		list-style-position: inside;
+		    column-count: 7;
+		    column-gap: 20;
+		    margin-left:0;
+		    padding: 0;
+		}
+		.mem-list ul{
+		  list-style-position: inside;
+		  margin-left:0;
+		  padding: 0;
+		  line-height: 150%;
+		}
+		.mem-list li {
+		  list-style-type: disc;
+		  list-style-position: inside;
+		  text-indent: -1em;
+		  padding-left: 1em;
+		}
+	</style>
+	<link rel="shortcut icon" href="/static/favicon.ico">
 </head>
 <body>
-    <ul id="navigation">
+	<div class = "menu">
+		<ul>
+			<li><a href="/">Home</a></li>
+			<li><a href="0">Member List</a></li>
+			<li><a href="/groups">Groups</a></li>
+			<li class = "dropdown">
+		      <a href="javascript:void(0)" class="dropbtn">Graphs</a>
+		      <div class="dropdown-content">
+		        <a href="/graph">Member Count</a>
+		        <a href="/graph/yearly">RSVP</a>
+		      </div>
+		    </li>
+			<div class = "logout">
+				<li><a href="/logout">Logout</a></li>
+			</div>
+		</ul>
+	</div>
+	<p>
+	{% if query == 'N0NE' %}
+		{% set query = 'Search here'%}
+		{% set int = 'Filter by interest' %}
+		{% if cur != 0 %}
+		<a href = "{{ cur - 1}}">Prev</a>&emsp;
+		{% endif %}
+		<a href = "{{ cur + 1}}">Next</a>
+	{% endif %}
+	<form method="post">
+		{% if query == 'Search here' %}
+			<input type="text" name="query" placeholder = "{{query}}">
+		{% else %}
+			<input type="text" name="query" value = "{{query}}">
+		{% endif %}
+		{% if filt == 'nothing.' %}
+		<input type="text" name="int" placeholder = "{{int}}">
+		{% else %}
+		<input type="text" name="int" value = "{{filt}}">
+		{% endif %}
+		<input type="submit" value = "Search">
+	</form>
+	<h2>Filtering by interests: {{filt}}</h2>
+    <ul class="mem-list">
     {% for member in members %}
-        {{ member }}<br>
+        <li><a href="/user/{{ member|urlencode }}">{{ member }}</a>&emsp;
     {% endfor %}
     </ul>
 

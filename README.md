@@ -7,12 +7,12 @@ Version "1.0.6a6"
 
 MUGAlyser is a python program that uses the Meetup API to extract
 longitudinal data from the Meetup website for a collection of meetup
-groups. Its designed to capture MongoDB meetup information but it
+groups. It's designed to capture MongoDB meetup information but it
 could be used to collect data on any group of meetups by changing the
 list of urlnames in the mugs.py file. You can also get specific mugs
 using the --mug parameter.
 
-It puts the data in a MongoDB database. There are seperate collections
+It puts the data in a MongoDB database. There are separate collections
 for groups, members, past events and upcoming events. 
 
 There is also an audit collection which tracks when the
@@ -26,7 +26,7 @@ users.
 
 ## bin/mugalyser_main.py
 
-Captures data from meetup via the Meet API. For this program to work
+Captures data from meetup via the Meetup API. For this program to work
 you need to provide a [ meetup api key ](
 https://secure.meetup.com/meetup_api/key/).  Without this key the
 program will fail. The key can be passed in via the `--apikey`
@@ -34,7 +34,7 @@ argument. Most people find it easier to set an environment variable
 `MEETUP_API_KEY` which the program will also use.
 
 The meetup API is rate limited and the program is smart about the rate
-limit so you should see issues unless you run more than one copy at a
+limit so you shouldn't see issues unless you run more than one copy at a
 time.
 
 It currently takes about 17 minutes to capture a complete batch of
@@ -57,8 +57,6 @@ default specify a different database via the [MongoDB URI](https://docs.mongodb.
 ## bin/makeapikeyfile.py
 
 This creates a file callled `apikey.py` which contains the API key for
-the applcation. The API key can be passed in on the command line or
+the application. The API key can be passed in on the command line or
 read from `MEETUP_API_KEY`. `apikey.py` is not checked into github
 to prevent they key from being compromised.
-
-## 

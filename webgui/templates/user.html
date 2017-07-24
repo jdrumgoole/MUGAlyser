@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ user.member.name }}</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <link rel="shortcut icon" href="/static/favicon.ico">
+</head>
+<body>
+	<div class = "menu">
+		<ul>
+			<li><a style="background-color: grey" href="#" onclick = "window.history.back();"/>Back</a></li>
+			<li><a href="/">Home</a></li>
+			<li><a href="/members/0">Member List</a></li>
+			<li><a href="/groups">Groups</a></li>
+			<li class = "dropdown">
+		      <a href="javascript:void(0)" class="dropbtn">Graphs</a>
+		      <div class="dropdown-content">
+		        <a href="/graph">Member Count</a>
+		        <a href="/graph/yearly">RSVP</a>
+		      </div>
+		    </li>
+			<div class = "logout">
+				<li><a href="/logout">Logout</a></li>
+			</div>
+		</ul>
+	</div>
+	{% if user.member.photo %}
+	<p><img src = "{{ user.member.photo.photo_link }}"></p>
+	{% endif %}
+	<ul>
+	<li><a href="https://www.meetup.com/members/{{ user.member.id }}/"><b>Meetup</b></a></li>
+	<li>{{ user.member.name }}</li>
+	<li>{{ user.member.city }}</li>
+	<li>{{ user.member|tojson }} </li>
+	</ul>
+	<p>
+	<iframe
+	  width="600"
+	  height="450"
+	  frameborder="0" style="border:0"
+	  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBAKc7bTfSeM26MImbqtO_twAbW1Qup70E&q={{ user.member.lat}}, {{ user.member.lon }}" allowfullscreen>
+	</iframe>
+</body>
+</html>

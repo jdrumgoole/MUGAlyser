@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>{{ error }}</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <style type="text/css">
+      .label {text-align: right}
+      .error {color: red}
+      .succ {color: green}
+      .reset {background-color: white; padding: 8px 2px 8px 2px; width: 20%; margin: auto; margin-top: 5%; box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);}
+      .reset .butt {background-color: #439744; border: 0;}
+      .reset a {font-size: 11px;}
+      .reset input{outline: 0;}
+    </style>
+    <link rel="shortcut icon" href="/static/favicon.ico">
+
+  </head>
+
+  <body>
+  <div class = "menu">
+    <ul>
+    <li><a href="/">Home</a></li>
+    </ul>
+  </div>
+    <h2>{{ error }}</h2>
+    <div class = "reset">
+      <form method="post">
+        <table>
+
+          <tr>
+            <td class="label">
+              Password
+            </td>
+            <td>
+              <input type="password" name="password" value="">
+            </td>
+            <td class="error">
+          {{password_error}}
+              
+            </td>
+          </tr>
+
+          <tr>
+            <td class="label">
+              Verify Password
+            </td>
+            <td>
+              <input type="password" name="verify" value="">
+            </td>
+            <td class="error">            
+            </td>
+          </tr>
+
+        </table>
+
+        <input type="submit">
+      </form>
+    </div>
+  </body>
+
+</html>

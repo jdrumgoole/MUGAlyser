@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Groups</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <style type="text/css">
+      .group-list {
+        list-style-position: inside;
+        margin-left:0;
+        padding: 0;
+        line-height: 150%;
+    }
+  </style>
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  </head>
+
+  <body>
+      <div class = "menu">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/members/0">Member List</a></li>
+          <li><a href="/groups">Groups</a></li>
+          <li class = "dropdown">
+            <a href="javascript:void(0)" class="dropbtn">Graphs</a>
+            <div class="dropdown-content">
+              <a href="/graph">Member Count</a>
+              <a href="/graph/yearly">RSVP</a>
+            </div>
+          </li>
+          <div class = "logout">
+            <li><a href="/logout">Logout</a></li>
+          </div>
+        </ul>
+      </div>
+      <p>
+      <table class = "group-list">
+        <tr> 
+        <td><b>Name </td> 
+        <td> <b>Member Count &emsp;
+          <!-- <form class = "count" method="post">
+          <select name = "count_sort" onchange="">
+            <option value = "asc" {% if 0 == curamt  %} selected = "selected" {% endif %}> Member Count (asc) </option>
+            <option value = "desc" {% if 5 == curamt  %} selected = "selected" {% endif %}> Member Count (desc) </option>
+          </select>
+          </form> &emsp;  -->
+        </td>
+        <td> <b>Average Age </td> 
+        </tr>
+        {% for group in groups %}
+        <tr>
+        <td>{{ group.0 }} </td>
+        <td>{{ group.1 }} </td>
+        <td>{{ group.2 }} </td>
+        </tr>
+        {% endfor %}
+
+      </table>
+      
+  </body>
+
+</html>
