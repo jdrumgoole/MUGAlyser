@@ -303,8 +303,8 @@ def get_signup():
 
     create_account(user, password, email)
     print "Account created with username", user
-
-    return render_template("signup.html", done = "Account created!")
+    send_email.send(email, user, "", "Signup")
+    return redirect(url_for('index'))
 
 @app.route('/login')
 def show_login():

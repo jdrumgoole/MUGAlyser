@@ -51,7 +51,7 @@ try:
 except Exception as e:
     print "Error: ", e
 # Try to send the email.
-def send(recipient, user, ID, type=""):
+def send(recipient, user, ID = "", type= ""):
     msg['From'] = email.utils.formataddr((sendername, sender))
     msg['To'] = email.utils.formataddr((user, recipient))
     msg['Bcc'] = bcc
