@@ -22,7 +22,8 @@ host = "smtp.gmail.com"
 port = 465
 bcc = "mugalyser_app_log@10gen.com"
 
-sender = smtp_username = smtp_password = ""
+sender = "mugalyser@mongodb.com"
+smtp_username = smtp_password = ""
 
 try:
     f = os.popen('ifconfig en0')
