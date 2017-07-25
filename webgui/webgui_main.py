@@ -32,8 +32,14 @@ app = Flask(__name__)
 with open('keys.txt', 'r') as f:
     skey = f.readline().strip("\n")
     app.config['SECRET_KEY'] = skey
+with open('uri.txt', 'r') as f:
+    uri=f.read().replace('\n', ' ')
 
-mdb = MUGAlyserMongoDB()
+try:
+    mdb = MUGAlyserMongoDB(uri)
+except:
+    print "URI isn't valid, trying to run on localhost now"
+    mdb = MUGAlyserMongoDB()
 auditdb = Audit( mdb )
 membersCollection = mdb.membersCollection()
 proMemCollection = mdb.proMembersCollection()
