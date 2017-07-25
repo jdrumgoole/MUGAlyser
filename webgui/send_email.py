@@ -27,8 +27,8 @@ try:
     f = os.popen('ifconfig en0')
     local_ip=f.read().split("inet ")[1].split(" ")[0]
 except:
-    print "Running externally on http://", local_ip, ":5000"
     local_ip=requests.get('http://ip.42.pl/raw').text
+    print "Running externally on http://", local_ip, ":5000"
 msg = MIMEMultipart('alternative')
 msg['Subject'] = subject
 
