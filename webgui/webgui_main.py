@@ -36,10 +36,11 @@ with open('keys.txt', 'r') as f:
     skey = f.readline().strip("\n")
     app.config['SECRET_KEY'] = skey
 with open('uri.txt', 'r') as f:
-    uri=f.read().replace('\n', ' ')
-
+    uri=f.readline().strip("\n")
+    print uri
 try:
-    mdb = MUGAlyserMongoDB(uri)
+    print "Connecting to database..."
+    mdb = MUGAlyserMongoDB(uri=uri)
 except:
     print "URI isn't valid, trying to run on localhost now"
     mdb = MUGAlyserMongoDB()
