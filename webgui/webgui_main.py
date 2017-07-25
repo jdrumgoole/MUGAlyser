@@ -20,6 +20,9 @@ import os
 import re
 import webbrowser
 
+
+DEBUG = False
+
 if not os.path.isfile('keys.txt') or os.stat('keys.txt').st_size == 0:
     print "Please run web_setup.py first"
     exit()
@@ -385,5 +388,5 @@ def reset_pw(ID):
     <a href="/">Home</a>
     <p>Reset link is invalid."""
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug = True)
+    app.run(host='0.0.0.0', debug = DEBUG)
 
