@@ -59,6 +59,7 @@ def send(recipient, user, ID = "", type= ""):
     html = "Hey " + user + ", <p>Please click <a href='http://" + ip + ":5000/resetpw/"  + ID + "'>here</a> to reset your password. <p><p><b>Please note that password request links expire 24 hours after creation.</b><img src = 'http://" + ip + ":5000/pixel.gif' width='1' height='1'></img>"
     text = ID
     if type == "Signup":
+        msg['Subject'] = 'MUGAlyser - Verify your account'
         html = "Hey " + user + ", <p>Welcome to MUGAlyser!<p>Please click <a href='http://" + ip + ":5000/verify/"  + ID + "'>here</a> to verify your account"
     part1 = MIMEText(text, 'plain')
     part2 = MIMEText(html, 'html')
