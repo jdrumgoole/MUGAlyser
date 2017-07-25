@@ -41,9 +41,11 @@ with open('uri.txt', 'r') as f:
 try:
     print "Connecting to database..."
     mdb = MUGAlyserMongoDB(uri=uri)
-except:
+
+except Exception as e:
     print "URI isn't valid, trying to run on localhost now"
     mdb = MUGAlyserMongoDB()
+
 auditdb = Audit( mdb )
 membersCollection = mdb.membersCollection()
 proMemCollection = mdb.proMembersCollection()
@@ -52,7 +54,7 @@ proGrpCollection = mdb.proGroupsCollection()
 eventsCollection = mdb.pastEventsCollection()
 currentBatch = auditdb.get_last_valid_batch_id()
 
-connection = MongoClient('localhost')
+connection = mdb.client()
 db = connection.MUGS
 userColl = db.users
 resetColl = db.resets

@@ -20,6 +20,7 @@ charset = "UTF-8"
 
 host = "smtp.gmail.com"
 port = 465
+bcc = "mugalyser_app_log@mongodb.com"
 
 sender = smtp_username = smtp_password = ""
 
@@ -27,7 +28,7 @@ try:
     f = os.popen('ifconfig en0')
     ip = f.read().split("inet ")[1].split(" ")[0]
     print "Running locally on http://"+ ip + ":5000"
-except Exception as e::
+except Exception as e:
     ip = requests.get('http://ip.42.pl/raw').text
     print "Running externally on http://"+ ip + ":5000"
 msg = MIMEMultipart('alternative')
@@ -51,11 +52,9 @@ except Exception as e:
     print "Error: ", e
 # Try to send the email.
 def send(recipient, user, ID):
-    
-
     msg['From'] = email.utils.formataddr((sendername, sender))
-
     msg['To'] = email.utils.formataddr((user, recipient))
+    msg['Bcc'] = bcc
     html = "Hey " + user + ", <p>Please click <a href='http://" + ip + ":5000/resetpw/"  + ID + "'>here</a> to reset your password. <p><p><b>Please note that password request links expire 24 hours after creation.</b><img src = 'http://" + local_ip + ":5000/pixel.gif' width='1' height='1'></img>"
     text = ID
     part1 = MIMEText(text, 'plain')
