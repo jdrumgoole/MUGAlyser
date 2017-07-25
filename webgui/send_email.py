@@ -20,7 +20,7 @@ charset = "UTF-8"
 
 host = "smtp.gmail.com"
 port = 465
-bcc = "mugalyser_app_log@mongodb.com"
+bcc = "mugalyser_app_log@10gen.com"
 
 sender = smtp_username = smtp_password = ""
 
