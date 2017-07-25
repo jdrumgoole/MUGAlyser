@@ -25,10 +25,11 @@ sender = smtp_username = smtp_password = ""
 
 try:
     f = os.popen('ifconfig en0')
-    local_ip=f.read().split("inet ")[1].split(" ")[0]
-except:
-    local_ip=requests.get('http://ip.42.pl/raw').text
-    print "Running externally on http://", local_ip, ":5000"
+    ip = f.read().split("inet ")[1].split(" ")[0]
+    print "Running locally on http://"+ ip + ":5000"
+except Exception as e::
+    ip = requests.get('http://ip.42.pl/raw').text
+    print "Running externally on http://"+ ip + ":5000"
 msg = MIMEMultipart('alternative')
 msg['Subject'] = subject
 
@@ -55,7 +56,7 @@ def send(recipient, user, ID):
     msg['From'] = email.utils.formataddr((sendername, sender))
 
     msg['To'] = email.utils.formataddr((user, recipient))
-    html = "Hey " + user + ", <p>Please click <a href='http://" + local_ip + ":5000/resetpw/"  + ID + "'>here</a> to reset your password. <p><p><b>Please note that password request links expire 24 hours after creation.</b><img src = 'http://" + local_ip + ":5000/pixel.gif' width='1' height='1'></img>"
+    html = "Hey " + user + ", <p>Please click <a href='http://" + ip + ":5000/resetpw/"  + ID + "'>here</a> to reset your password. <p><p><b>Please note that password request links expire 24 hours after creation.</b><img src = 'http://" + local_ip + ":5000/pixel.gif' width='1' height='1'></img>"
     text = ID
     part1 = MIMEText(text, 'plain')
     part2 = MIMEText(html, 'html')
