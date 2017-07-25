@@ -20,6 +20,9 @@ import os
 import re
 import webbrowser
 
+
+DEBUG = False
+
 if not os.path.isfile('keys.txt') or os.stat('keys.txt').st_size == 0:
     print "Please run web_setup.py first"
     exit()
@@ -32,8 +35,17 @@ app = Flask(__name__)
 with open('keys.txt', 'r') as f:
     skey = f.readline().strip("\n")
     app.config['SECRET_KEY'] = skey
+with open('uri.txt', 'r') as f:
+    uri=f.readline().strip("\n")
 
-mdb = MUGAlyserMongoDB()
+try:
+    print "Connecting to database..."
+    mdb = MUGAlyserMongoDB(uri=uri)
+
+except Exception as e:
+    print "URI isn't valid, trying to run on localhost now"
+    mdb = MUGAlyserMongoDB()
+
 auditdb = Audit( mdb )
 membersCollection = mdb.membersCollection()
 proMemCollection = mdb.proMembersCollection()
@@ -42,7 +54,7 @@ proGrpCollection = mdb.proGroupsCollection()
 eventsCollection = mdb.pastEventsCollection()
 currentBatch = auditdb.get_last_valid_batch_id()
 
-connection = MongoClient('localhost')
+connection = mdb.client()
 db = connection.MUGS
 userColl = db.users
 resetColl = db.resets
@@ -58,13 +70,16 @@ def verify_login():
 
 def create_account(user, password, email):
     salt = urandom(16).encode('hex')
+    verify = urandom(16).encode('hex')
     hashPwd = sha512(password + salt).hexdigest()
     if email is not None:
+        send_email.send(email, user, verify, "Signup")
         userColl.insert({'_id': user, 'salt': salt, 'pass': hashPwd, 'email': email, 'signup_date' : datetime.utcnow(), 
-            'signup_ip' : request.remote_addr, 'reset_ip': '', 'last_login': datetime.utcnow()})
+            'signup_ip' : request.remote_addr, 'reset_ip': '', 'verified': verify, 'last_login': datetime.utcnow()})
     else:
         userColl.update({'_id': user}, {"$set": {'salt': salt, 'pass': hashPwd, 'reset_ip': request.remote_addr, 'last_login': datetime.utcnow()}})
-    session['username'] = user
+    if userColl.find_one({'_id':user})['verified'] == True:
+        session['username'] = user
 
 def get_group_list():
     cur = proGrpCollection.find( { "batchID" : currentBatch, "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
@@ -284,15 +299,27 @@ def get_signup():
         return render_template("signup.html", error = "User with that name already exists. Please try a different name.", email = email)
     if userColl.find({'email':email}).count() != 0:                #checks if email is in use
         return render_template("signup.html", username = user, error = "That email is already in use. Please try a different name.")
+    if not email.endswith(('mongodb.com', '10gen.com')):
+        return render_template("signup.html", username = user, error = "Invalid email address.")
     if len(password) < 5:                                          #only permits passwords over 4 characters
         return render_template("signup.html", username = user, email = email, error = "Passwords must be over 4 characters long")
     if vpassword != password:                                      #checks if password and verification match
         return render_template("signup.html", username = user, email = email, error = "Passwords don't match")
 
-    print "Account created with username", user
     create_account(user, password, email)
+    print "Account created with username", user
+    return redirect(url_for('index'))
 
-    return render_template("signup.html", done = "Account created!")
+@app.route('/verify/<ID>')
+def verify_account(ID):
+    if userColl.find_one({'verified':ID}):
+        session['username'] = userColl.find_one({'verified': ID})['_id']
+        userColl.update({'verified': ID}, {'$set': {'verified': True}})
+        return redirect(url_for('index'))
+    return """
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <a href="/">Home</a>
+    <p>Verify link is invalid (you may have already verified)."""
 
 @app.route('/login')
 def show_login():
@@ -307,6 +334,10 @@ def get_login():
 
     if userColl.find({'_id':user}).count() == 0: #checks if user exists
         error = "Username not found"
+        return render_template("login.html", login_error = error)
+
+    if userColl.find_one({'_id':user})['verified'] != True:
+        error = "Account not verified yet. Please check your email."
         return render_template("login.html", login_error = error)
 
     salt = userColl.find_one({'_id': user})['salt']  #gets the user's salt
@@ -328,8 +359,12 @@ def logout():
 
 @app.route('/pixel.gif')   #tracking pixel for emails
 def track():   
-    print request.headers.get('X-Forwarded-For', request.remote_addr)
+    print "Email viewed by:", request.headers.get('X-Forwarded-For', request.remote_addr)
     return send_file('static/pixel.gif', mimetype = 'image/gif')
+
+@app.route('/woowee')
+def tester():
+    return render_template('reset.html')
 
 @app.route('/forgotpw', methods = ['GET', 'POST'])
 def forgot_pw():
@@ -379,5 +414,5 @@ def reset_pw(ID):
     <a href="/">Home</a>
     <p>Reset link is invalid."""
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug = True)
+    app.run(host='0.0.0.0', debug = DEBUG)
 
