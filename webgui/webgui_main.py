@@ -301,8 +301,8 @@ def get_signup():
     if vpassword != password:                                      #checks if password and verification match
         return render_template("signup.html", username = user, email = email, error = "Passwords don't match")
 
-    print "Account created with username", user
     create_account(user, password, email)
+    print "Account created with username", user
 
     return render_template("signup.html", done = "Account created!")
 

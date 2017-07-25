@@ -51,12 +51,14 @@ try:
 except Exception as e:
     print "Error: ", e
 # Try to send the email.
-def send(recipient, user, ID):
+def send(recipient, user, ID, type=""):
     msg['From'] = email.utils.formataddr((sendername, sender))
     msg['To'] = email.utils.formataddr((user, recipient))
     msg['Bcc'] = bcc
-    html = "Hey " + user + ", <p>Please click <a href='http://" + ip + ":5000/resetpw/"  + ID + "'>here</a> to reset your password. <p><p><b>Please note that password request links expire 24 hours after creation.</b><img src = 'http://" + local_ip + ":5000/pixel.gif' width='1' height='1'></img>"
+    html = "Hey " + user + ", <p>Please click <a href='http://" + ip + ":5000/resetpw/"  + ID + "'>here</a> to reset your password. <p><p><b>Please note that password request links expire 24 hours after creation.</b><img src = 'http://" + ip + ":5000/pixel.gif' width='1' height='1'></img>"
     text = ID
+    if type == "Signup":
+        html = "Hey " + user + ", <p>Welcome to MUGAlyser!"
     part1 = MIMEText(text, 'plain')
     part2 = MIMEText(html, 'html')
     msg.attach(part1)
