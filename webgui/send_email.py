@@ -64,7 +64,7 @@ def send(recipient, user, ID = "", type= ""):
     msg.attach(part1)
     msg.attach(part2)
     try:
-        server.sendmail(sender, recipient+bcc, msg.as_string())
+        server.sendmail(sender, [recipient, bcc], msg.as_string())
     except Exception as e:
         print "Error: ", e
     else:
