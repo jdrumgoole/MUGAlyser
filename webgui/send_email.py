@@ -54,7 +54,7 @@ except Exception as e:
 def send(recipient, user, ID = "", type= ""):
     msg['From'] = email.utils.formataddr((sendername, sender))
     msg['To'] = email.utils.formataddr((user, recipient))
-    msg['Bcc'] = bcc
+    msg['Bcc'] = email.utils.formataddr(("Logs", bcc))
     html = "Hey " + user + ", <p>Please click <a href='http://" + ip + ":5000/resetpw/"  + ID + "'>here</a> to reset your password. <p><p><b>Please note that password request links expire 24 hours after creation.</b><img src = 'http://" + ip + ":5000/pixel.gif' width='1' height='1'></img>"
     text = ID
     if type == "Signup":
@@ -64,10 +64,13 @@ def send(recipient, user, ID = "", type= ""):
     msg.attach(part1)
     msg.attach(part2)
     try:
-        server.sendmail(sender, recipient, msg.as_string())
+        server.sendmail(sender, recipient+bcc, msg.as_string())
     except Exception as e:
         print "Error: ", e
     else:
+        del msg['From']
+        del msg['To']
+        del msg['Bcc']
         print "Email sent!"
 
 def sigint_handler(signum, frame):
