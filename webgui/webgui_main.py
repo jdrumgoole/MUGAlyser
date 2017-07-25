@@ -101,12 +101,12 @@ def get_batch_list():
 def index():
     if 'username' in session:
         return render_template("index.html", user = session['username'], batch = auditdb.get_last_valid_batch_id(), groupn = len(get_group_list()))
-    return render_template("index.html", batch = auditdb.get_last_valid_batch_id(), groupn = len(get_group_list()))
+    return redirect(url_for('show_login'))
 
 @app.route('/groups')
 def groups():
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
     curGroups = proGrpCollection.find( { "batchID" : currentBatch}, 
                                       { "_id"           : 0, 
                                         "group.name" : 1,
@@ -122,7 +122,7 @@ def groups():
 @app.route( "/members/<int:pg>", methods = ['POST', 'GET'])
 def members(pg):
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
     query = "N0NE"
     interest = "nothing."
     output = []
@@ -181,7 +181,7 @@ def members(pg):
 @app.route("/graph/yearly")
 def graph_yearly():
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
     now = datetime.now()
     curYear = int(now.year)
     dates = [i for i in range(2009, curYear + 1)]
@@ -212,7 +212,7 @@ def graph_yearly():
 @app.route("/graph", methods=['POST', 'GET'])
 def graph():
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
 
     if request.method == 'GET' or request.form.get('res'):  #sets options to default values
         curbat = session['batch'] = currentBatch
@@ -246,7 +246,14 @@ def graph():
                                             "group.member_count" : 1}).sort([("group.member_count", -1)]).limit(int(amt))
         output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"]} for d in groupCurs]
     else:
-        groupCurs = proGrpCollection.find( {"group.name": curGroup}, 
+        # groupCurs = proGrpCollection.find( {"group.name": curGroup}, 
+        #                           { "_id"           : 0, 
+        #                             "group.name" : 1,
+        #                             "group.member_count" : 1,
+        #                             "timestamp" : 1})
+        # # print datetime.utcfromtimestamp(groupCurs.next()["timestamp"])
+        # output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in groupCurs]
+        groupCurs = groupCollection.find( {"group.name": curGroup}, 
                                   { "_id"           : 0, 
                                     "group.name" : 1,
                                     "group.member_count" : 1,
@@ -262,7 +269,7 @@ def graph():
 @app.route("/graph/batch", methods=['POST', 'GET'])
 def graph_batch():
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
 
     pipeline = [
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$group.member_count"}}}
@@ -276,7 +283,7 @@ def graph_batch():
 def get_member(member):
     # show the user profile for that user
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
     member = membersCollection.find_one({"member.name" : member, "batchID" : currentBatch }, { "_id":0})
     return render_template("user.html", user = member)
 
