@@ -19,7 +19,7 @@ class MeetupRequest( object ):
     
     def __init__(self, logging_level = logging.INFO ):
         
-        self._logger = logging.getLogger( "arse" )
+        self._logger = logging.getLogger( __name__ )
         self._logger.setLevel( logging_level)
         fh = logging.FileHandler( "meetuprequests.log" )
         sh = logging.StreamHandler()
@@ -63,8 +63,7 @@ class MeetupRequest( object ):
             self._logger.error( "request: '%s'", r.url)
             self._logger.error( "headers:" )
             self._logger.error( pprint.pformat( r.headers ))
-            self._logger.error( "text:'" )
-            self._logger.error( r.text + "'" )
+            self._logger.error( "text:'%s'", r.text )
             raise
         
         except requests.HTTPError, e :
