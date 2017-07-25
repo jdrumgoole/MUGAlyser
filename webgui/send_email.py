@@ -2,6 +2,7 @@ import smtplib
 import email.utils
 import os
 import signal
+import requests
 import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -22,9 +23,11 @@ port = 465
 
 sender = smtp_username = smtp_password = ""
 
-f = os.popen('ifconfig en0')
-local_ip=f.read().split("inet ")[1].split(" ")[0]
-
+try:
+    f = os.popen('ifconfig en0')
+    local_ip=f.read().split("inet ")[1].split(" ")[0]
+except:
+    local_ip=requests.get('http://ip.42.pl/raw').text
 msg = MIMEMultipart('alternative')
 msg['Subject'] = subject
 
