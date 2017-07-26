@@ -280,11 +280,11 @@ def graph():
                    "group.members" : 1,
                    "timestamp" : 1
                 }
-            },
-            {"$group": {"_id": "$group.name"}}
+            }
         ]
         groupCurs = groupCollection.aggregate(pipeline)
-        print "Group is", groupCurs.next()
+        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"], 'Time': d["timestamp"]} for d in groupCurs]
+
     elif curGroup != 'None':
         # groupCurs = proGrpCollection.find( {"group.name": curGroup}, 
         #                           { "_id"           : 0, 
