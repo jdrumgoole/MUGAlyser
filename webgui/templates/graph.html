@@ -124,7 +124,7 @@
     {% elif country != "None" %}
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
       // var s = myChart.addSeries("Member Count", dimple.plot.line);
-      var s2 = myChart.addSeries("Name", dimple.plot.line);
+      var s = myChart.addSeries("Name", dimple.plot.line);
 
       x.timePeriod = d3.timeMonday;
       x.timeInterval = 1;
@@ -132,12 +132,12 @@
       y.ticks = 4;
       y.tickInterval = 1;
 
-      s.getTooltipText = function (e) {
-                  return [
-                      new Date( e.cx ),
-                      "Member count: " + e.cy
-                  ];
-      };
+      // s.getTooltipText = function (e) {
+      //             return [
+      //                 new Date( e.cx ),
+      //                 "Member count: " + e.cy
+      //             ];
+      // };
       s.lineMarkers = true;
     {% else %}
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
