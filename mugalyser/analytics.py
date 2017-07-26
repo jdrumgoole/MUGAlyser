@@ -431,7 +431,6 @@ class MUG_Analytics( object ):
         if filename :
             self._filename = filename
 
-            
         if self._view :
             agg.create_view( self._mdb.database(), "rsvps_view" )
             
