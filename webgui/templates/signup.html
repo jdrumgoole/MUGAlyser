@@ -17,28 +17,13 @@
   </head>
 
   <body>
-    <div class = "menu">
-      <ul>
-      <li><a href="/">Home</a></li>
-      <li><a href="/login">Login</a></li>
-      <li><a href="/members/0">Member List</a></li>
-      <li><a href="/groups">Groups</a></li>
-      <li class = "dropdown">
-        <a href="javascript:void(0)" class="dropbtn">Graphs</a>
-        <div class="dropdown-content">
-          <a href="/graph">Member Count</a>
-          <a href="/graph/yearly">RSVP</a>
-        </div>
-      </li>
-      </ul>
-    </div>
     <p>
     <div align = "center" class = "signup">
       <form method="post">
-        <table align = "center">
+        <table>
           <tr>
             <td>
-              <input type="text" name="username" placeholder = "username" value="{{username}}">
+              <input style = "margin:auto; width:65%; display:inline-block;" type="text" name="username" placeholder = "username" value="{{username}}"><span style = "font-size: 12px;">@mongodb.com</span>
             </td>
           </tr>
 
@@ -48,7 +33,7 @@
 
           <tr>
             <td>
-              <input type="password" placeholder = "password" name="password" value="">
+              <input style = "margin:auto; display:inline-block;" type="password" placeholder = "password" name="password" value="">
             </td>
 <!--             <td class="error">
   	    {{password_error}}
@@ -58,26 +43,18 @@
 
           <tr>
             <td>
-              <input type="password" placeholder = "verify password" name="verify" value="">
+              <input style = "margin:auto; display:inline-block;" type="password" placeholder = "verify password" name="verify" value="">
             </td>
 <!--             <td class="error">
   	    {{verify_error}}
               
             </td> -->
           </tr>
-
           <tr>
-            <td>
-              <input type="email" placeholder = "email" name="email" value="{{email}}" required>
-            </td>
-<!--             <td class="error">
-  	    {{email_error}}
-              
-            </td> -->
-          </tr>
+          <td><input style = "margin: auto; display:block;" type="submit" class = "butt" value = "SIGNUP"></td></tr>
         </table>
 
-        <input type="submit" class = "butt" value = "SIGNUP">
+        
 
       </form>
     </div>

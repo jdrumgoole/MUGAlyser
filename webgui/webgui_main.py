@@ -7,6 +7,7 @@ Created on 4 Oct 2016
 
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
+from mugalyser.analytics import MUG_Analytics
 from flask import Flask, jsonify, request, session, redirect, url_for, send_file, Response
 from flask.templating import render_template
 from pymongo import MongoClient
@@ -14,12 +15,16 @@ from cgi import escape
 from hashlib import sha512
 from os import urandom
 from datetime import datetime
+from OpenSSL import SSL
 
 import time
 import os
 import re
 import webbrowser
 
+context = SSL.Context(SSL.SSLv23_METHOD)
+cer = os.path.join('/home/ec2-user/*.joedrumgoole.com.ssl/joedrumgoole.com.crt')
+key = os.path.join('/home/ec2-user/*.joedrumgoole.com.ssl/*.joedrumgoole.com.key')
 
 DEBUG = False
 
@@ -31,7 +36,6 @@ import send_email
 
 app = Flask(__name__)
 
-
 with open('keys.txt', 'r') as f:
     skey = f.readline().strip("\n")
     app.config['SECRET_KEY'] = skey
@@ -40,13 +44,14 @@ with open('uri.txt', 'r') as f:
 
 try:
     print "Connecting to database..."
-    mdb = MUGAlyserMongoDB(uri=uri)
+    mdb = MUGAlyserMongoDB(uri = uri)
 
 except Exception as e:
     print "URI isn't valid, trying to run on localhost now"
     mdb = MUGAlyserMongoDB()
 
 auditdb = Audit( mdb )
+an = MUG_Analytics(mdb)
 membersCollection = mdb.membersCollection()
 proMemCollection = mdb.proMembersCollection()
 groupCollection = mdb.groupsCollection()
@@ -59,8 +64,14 @@ db = connection.MUGS
 userColl = db.users
 resetColl = db.resets
 
+@app.before_request    #somehow works to redirect all http requests to https
+def secure_redirect():
+    pass
+
 @app.errorhandler(404)
 def not_found(error):
+    if not verify_login():
+        return redirect(url_for('show_login'))
     return render_template('404.html', error = error), 404
 
 def verify_login():
@@ -101,12 +112,12 @@ def get_batch_list():
 def index():
     if 'username' in session:
         return render_template("index.html", user = session['username'], batch = auditdb.get_last_valid_batch_id(), groupn = len(get_group_list()))
-    return render_template("index.html", batch = auditdb.get_last_valid_batch_id(), groupn = len(get_group_list()))
+    return redirect(url_for('show_login'))
 
 @app.route('/groups')
 def groups():
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
     curGroups = proGrpCollection.find( { "batchID" : currentBatch}, 
                                       { "_id"           : 0, 
                                         "group.name" : 1,
@@ -122,7 +133,7 @@ def groups():
 @app.route( "/members/<int:pg>", methods = ['POST', 'GET'])
 def members(pg):
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
     query = "N0NE"
     interest = "nothing."
     output = []
@@ -181,7 +192,7 @@ def members(pg):
 @app.route("/graph/yearly")
 def graph_yearly():
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
     now = datetime.now()
     curYear = int(now.year)
     dates = [i for i in range(2009, curYear + 1)]
@@ -212,57 +223,93 @@ def graph_yearly():
 @app.route("/graph", methods=['POST', 'GET'])
 def graph():
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
 
     if request.method == 'GET' or request.form.get('res'):  #sets options to default values
         curbat = session['batch'] = currentBatch
         curGroup = session['group'] = "None"
         amt = session['amount'] = 0
+        country = session['country'] = "None"
     else:
         curbat = request.form.get('bat')
         curGroup = request.form.get('grp')
         amt = request.form.get('amt')
+        country = request.form.get('country')
 
         if curbat is None:
             curbat = session['batch']
         else:
             session['batch'] = curbat
+            country = session['country'] = "None"
 
         if curGroup is None:
             curGroup = session['group']
         else:
-            session['group'] = curGroup 
+            session['group'] = curGroup
+            country = session['country'] = "None"
         
         if amt is None:
             amt = session['amount']
         else:
             session['amount'] = int(amt)
+            country = session['country'] = "None"
+
+        if country is None:
+            country = session['country']
+        else:
+            session['country'] = country
 
     output = []
-    if curGroup == 'None':
-        groupCurs = proGrpCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
+
+    if curGroup == 'None' and country == 'None':
+        groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}, "group.members" : {"$exists" : True}}, 
                                           { "_id"           : 0, 
                                             "group.name" : 1,
-                                            "group.member_count" : 1}).sort([("group.member_count", -1)]).limit(int(amt))
-        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"]} for d in groupCurs]
-    else:
-        groupCurs = proGrpCollection.find( {"group.name": curGroup}, 
+                                            "group.members" : 1}).sort([("group.members", -1)]).limit(int(amt))
+        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"]} for d in groupCurs]
+        # print output
+
+    if country in ['EU', 'US', 'ALL']:
+        groupList = an.get_group_names(country)
+        # print groupList
+        pipeline = [
+            {"$match": {"group.members" : {"$exists" : True}, "group.urlname": {"$in" : groupList}}},
+            {"$project":
+                {
+                   "group.name" : 1,
+                   "group.members" : 1,
+                   "timestamp" : 1
+                }
+            }
+        ]
+        groupCurs = groupCollection.aggregate(pipeline)
+        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"], 'Time': d["timestamp"]} for d in groupCurs]
+
+    elif curGroup != 'None':
+        # groupCurs = proGrpCollection.find( {"group.name": curGroup}, 
+        #                           { "_id"           : 0, 
+        #                             "group.name" : 1,
+        #                             "group.member_count" : 1,
+        #                             "timestamp" : 1})
+        # # print datetime.utcfromtimestamp(groupCurs.next()["timestamp"])
+        # output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in groupCurs]
+        groupCurs = groupCollection.find( {"group.name": curGroup, "group.members" : {"$exists" : True}}, 
                                   { "_id"           : 0, 
                                     "group.name" : 1,
-                                    "group.member_count" : 1,
+                                    "group.members" : 1,
                                     "timestamp" : 1})
         # print datetime.utcfromtimestamp(groupCurs.next()["timestamp"])
-        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in groupCurs]
+        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"], 'Time': d["timestamp"]} for d in groupCurs]
 
     # groupl = get_group_list()
     # batchl = get_batch_list()
-
-    return render_template("graph.html", groups = output, grouplist = get_group_list(), batches = get_batch_list(), curbat = int(curbat), curamt = int(amt), curgroup = curGroup)
+    # print "------------\n", output
+    return render_template("graph.html", groups = output, grouplist = get_group_list(), batches = get_batch_list(), curbat = int(curbat), curamt = int(amt), curgroup = curGroup, country = country)
 
 @app.route("/graph/batch", methods=['POST', 'GET'])
 def graph_batch():
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
 
     pipeline = [
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$group.member_count"}}}
@@ -276,39 +323,49 @@ def graph_batch():
 def get_member(member):
     # show the user profile for that user
     if not verify_login():
-        return render_template("error.html")
+        return redirect(url_for('show_login'))
     member = membersCollection.find_one({"member.name" : member, "batchID" : currentBatch }, { "_id":0})
     return render_template("user.html", user = member)
 
 @app.route('/signup')
 def show_signup():
-    if verify_login():   #if user is already logged in, gives them an error
-        return """<link rel="stylesheet" type="text/css" href="/static/style.css"><a href="/"> Home </a><p> You are already logged in! </p></a>"""
+    if verify_login():   #if user is already logged in, redirects them to index
+        return redirect(url_for('index'))
     return render_template("signup.html")
 
 @app.route('/signup', methods = ['POST'])
 def get_signup():
+    if verify_login():   #if user is already logged in, redirects them to index
+        return redirect(url_for('index'))
     user = escape(request.form.get('username'))
     password = escape(request.form.get('password'))
     vpassword = escape(request.form.get('verify'))
-    email = escape(request.form.get('email'))
+    email = user + '@mongodb.com'
 
     userreg = re.compile(user, re.IGNORECASE)
 
     if userColl.find({'_id':userreg}).count() != 0 or len(user) < 1:  #checks if username is in use already, prevents empty username
-        return render_template("signup.html", error = "User with that name already exists. Please try a different name.", email = email)
+        return render_template("signup.html", error = "User with that name already exists. Please try a different name.")
+    if '@' in user:
+        return render_template("signup.html", error = "The @ symbol is not allowed. Please try a different name.")
+    if re.search(r"\s", user):
+        return render_template("signup.html", error = "Whitespace is not allowed. Please try a different name.")
     if userColl.find({'email':email}).count() != 0:                #checks if email is in use
         return render_template("signup.html", username = user, error = "That email is already in use. Please try a different name.")
-    if not email.endswith(('mongodb.com', '10gen.com')):
-        return render_template("signup.html", username = user, error = "Invalid email address.")
+    # if not email.endswith(('mongodb.com', '10gen.com')):
+    #     return render_template("signup.html", username = user, error = "Invalid email address.")
     if len(password) < 5:                                          #only permits passwords over 4 characters
-        return render_template("signup.html", username = user, email = email, error = "Passwords must be over 4 characters long")
+        return render_template("signup.html", username = user, error = "Passwords must be over 4 characters long")
     if vpassword != password:                                      #checks if password and verification match
-        return render_template("signup.html", username = user, email = email, error = "Passwords don't match")
+        return render_template("signup.html", username = user, error = "Passwords don't match")
 
     create_account(user, password, email)
     print "Account created with username", user
-    return redirect(url_for('index'))
+    return """
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <a href="/">Home</a>
+    <h4> Signup email sent! Please check your inbox.</h4>
+    """
 
 @app.route('/verify/<ID>')
 def verify_account(ID):
@@ -323,27 +380,29 @@ def verify_account(ID):
 
 @app.route('/login')
 def show_login():
-    if verify_login():  #if user is already logged in, gives them an error
-        return """<link rel="stylesheet" type="text/css" href="/static/style.css"><a href="/"> Home </a><p> You are already logged in! </p></a>"""
+    if verify_login():   #if user is already logged in, redirects them to index
+        return redirect(url_for('index'))
     return render_template("login.html")
 
 @app.route('/login', methods = ['POST'])
 def get_login():
+    if verify_login():   #if user is already logged in, redirects them to index
+        return redirect(url_for('index'))
     user = escape(request.form.get('username'))
     password = escape(request.form.get('password'))
 
     if userColl.find({'_id':user}).count() == 0: #checks if user exists
-        error = "Username not found"
+        error = "Invalid login"
         return render_template("login.html", login_error = error)
 
-    if userColl.find_one({'_id':user})['verified'] != True:
-        error = "Account not verified yet. Please check your email."
+    if userColl.find_one({'_id':user})['verified'] != True:   #has to explicitly check against bool since value may be interpreted as True otherwise
+        error = "Account not verified yet. Please check your email"
         return render_template("login.html", login_error = error)
 
     salt = userColl.find_one({'_id': user})['salt']  #gets the user's salt
 
     if userColl.find_one({'_id': user}, {'_id': 0, 'pass' : 1})['pass'] != sha512(password + salt).hexdigest():  #salts and hashes password input with the stored salt
-        return render_template("login.html", username = user, login_error = "Password doesn't match.")          #and verifies it matches the hash in database
+        return render_template("login.html", username = user, login_error = "Invalid login")          #and verifies it matches the hash in database
 
     print "User", user, "logged in"
     userColl.update({'_id': user}, {"$set": {'last_login': datetime.utcnow()}})
@@ -361,10 +420,6 @@ def logout():
 def track():   
     print "Email viewed by:", request.headers.get('X-Forwarded-For', request.remote_addr)
     return send_file('static/pixel.gif', mimetype = 'image/gif')
-
-@app.route('/woowee')
-def tester():
-    return render_template('reset.html')
 
 @app.route('/forgotpw', methods = ['GET', 'POST'])
 def forgot_pw():
@@ -401,9 +456,9 @@ def reset_pw(ID):
     vpassword = escape(request.form.get('verify'))
     doc = resetColl.find_one({'_id': ID})
     if len(password) < 5:
-        return render_template("reset.html", error = "Please enter a new password.", password_error = "Passwords must be over 4 characters long")
+        return render_template("reset.html", error = "Passwords must be over 4 characters long")
     if vpassword != password:
-        return render_template("reset.html", error = "Please enter a new password.", password_error = "Passwords don't match")
+        return render_template("reset.html", error = "Passwords don't match")
     if doc:
         user = doc['user']
         create_account(user, password, None)
@@ -414,5 +469,6 @@ def reset_pw(ID):
     <a href="/">Home</a>
     <p>Reset link is invalid."""
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug = DEBUG)
+    context = (cer, key)
+    app.run(host='0.0.0.0', port = 443, debug = DEBUG, threaded = True, ssl_context = context)
 

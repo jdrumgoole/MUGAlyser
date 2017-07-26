@@ -67,8 +67,17 @@
   </select>
 </form>
 
+<form id = "country" class = "_country" method="post">
+  <select id = "countsel" name = "country" onchange="this.form.submit()">
+    <option value = "None"> None </option>
+    <option value = "EU" {% if country  == "EU" %} selected = "selected" {% endif %}> Europe </option>
+    <option value = "US" {% if country == "US" %} selected = "selected" {% endif %}> North America</option>
+    <option value = "ALL" {% if country == "ALL" %} selected = "selected" {% endif %}> World </option>
+  </select>
+</form>
+
 <form method="post" style="float: right;">
-<input name = "res" type = "submit" value="Reset"/>
+  <input name = "res" type = "submit" value="Reset"/>
 </form>
 <div id="chartContainer"></div>
 
@@ -99,7 +108,7 @@
     y.overrideMin = min - 2;
     y.overrideMax = max + 2;
 
-    {% if curgroup == "None" %}
+    {% if curgroup == "None" and country == "None" %}
       var x = myChart.addCategoryAxis("x", "Name");
       var s = myChart.addSeries("Member Count", dimple.plot.bar);
       s.getTooltipText = function (e) {
@@ -107,12 +116,34 @@
                       e.cx,
                       "Member count: " + e.cy
                   ];
-              };
+      };
+      d3.selectAll("rect").on("click", function (e) {
+        document.getElementById("groupsel").value = e.cx;
+        document.getElementById("group").submit();
+      });
+    {% elif country != "None" %}
+      var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
+      // var s = myChart.addSeries("Member Count", dimple.plot.line);
+      var s = myChart.addSeries("Name", dimple.plot.line);
+
+      x.timePeriod = d3.timeMonday;
+      x.timeInterval = 1;
+
+      y.ticks = 4;
+      y.tickInterval = 1;
+
+      // s.getTooltipText = function (e) {
+      //             return [
+      //                 new Date( e.cx ),
+      //                 "Member count: " + e.cy
+      //             ];
+      // };
+      s.lineMarkers = true;
     {% else %}
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
       var s = myChart.addSeries("Member Count", dimple.plot.line);
-      x.timePeriod = d3.timeHour;
-      x.timeInterval = 24;
+      x.timePeriod = d3.timeMonday;
+      x.timeInterval = 1;
 
       y.ticks = 4;
       y.tickInterval = 1;
@@ -146,10 +177,7 @@
     // myChart.staggerDraw = true;
     // myChart.ease = "sin";
     myChart.draw(/*500*/);
-    d3.selectAll("rect").on("click", function (e) {
-       document.getElementById("groupsel").value = e.cx;
-       document.getElementById("group").submit();
-      });
+
     window.onresize = function () {
       myChart.draw(0, true);
     };

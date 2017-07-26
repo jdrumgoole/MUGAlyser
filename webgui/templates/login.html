@@ -18,24 +18,7 @@
   </head>
 
   <body>
-    <div class = "menu">
-      <ul>
-      <li><a href="/">Home</a></li>
-      <li><a href="/signup">Signup</a></li>
-      <li><a href="/members/0">Member List</a></li>
-      <li><a href="/groups">Groups</a></li>
-      <li class = "dropdown">
-        <a href="javascript:void(0)" class="dropbtn">Graphs</a>
-        <div class="dropdown-content">
-          <a href="/graph">Member Count</a>
-          <a href="/graph/yearly">RSVP</a>
-        </div>
-      </li>
-      {% if user %}
-      <li><a id = "logout" href="/logout">Logout</a></li>
-      {% endif %}
-      </ul>
-    </div>
+  
     <p>
 
     <div align = "center" class = "login">
@@ -55,7 +38,8 @@
           <tr>
             <td>
               <input type="password" placeholder = "password" name="password" value="">
-              <a href="/forgotpw"> Forgot password? </a>
+              <a href="/forgotpw"> Forgot password?</a>
+              <a href="/signup" style = "float:right; padding-top:4px">Signup</a>
             </td>
             
           </tr>
