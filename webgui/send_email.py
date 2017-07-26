@@ -28,10 +28,10 @@ smtp_username = smtp_password = ""
 try:
     f = os.popen('ifconfig en0')
     ip = f.read().split("inet ")[1].split(" ")[0]
-    print "Running locally on http://"+ ip + ":5000"
+    print "Running locally on http://"+ ip
 except Exception as e:
     ip = requests.get('http://ip.42.pl/raw').text
-    print "Running externally on http://"+ ip + ":5000"
+    print "Running externally on http://"+ ip
 msg = MIMEMultipart('alternative')
 msg['Subject'] = subject
 

@@ -219,9 +219,9 @@ def graph():
         curGroup = session['group'] = "None"
         amt = session['amount'] = 0
     else:
-        curbat = request.form.get('bat')
-        curGroup = request.form.get('grp')
-        amt = request.form.get('amt')
+        curbat = escape(request.form.get('bat'))
+        curGroup = escape(request.form.get('grp'))
+        amt = escape(request.form.get('amt'))
 
         if curbat is None:
             curbat = session['batch']
@@ -315,7 +315,11 @@ def get_signup():
 
     create_account(user, password, email)
     print "Account created with username", user
-    return redirect(url_for('index'))
+    return """
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <a href="/">Home</a>
+    <h4> Signup email sent! Please check your inbox.</h4>
+    """
 
 @app.route('/verify/<ID>')
 def verify_account(ID):
@@ -340,17 +344,17 @@ def get_login():
     password = escape(request.form.get('password'))
 
     if userColl.find({'_id':user}).count() == 0: #checks if user exists
-        error = "Username not found"
+        error = "Invalid login"
         return render_template("login.html", login_error = error)
 
-    if userColl.find_one({'_id':user})['verified'] != True:
-        error = "Account not verified yet. Please check your email."
+    if userColl.find_one({'_id':user})['verified'] != True:   #has to explicitly check against bool since value may be interpreted as True otherwise
+        error = "Account not verified yet. Please check your email"
         return render_template("login.html", login_error = error)
 
     salt = userColl.find_one({'_id': user})['salt']  #gets the user's salt
 
     if userColl.find_one({'_id': user}, {'_id': 0, 'pass' : 1})['pass'] != sha512(password + salt).hexdigest():  #salts and hashes password input with the stored salt
-        return render_template("login.html", username = user, login_error = "Password doesn't match.")          #and verifies it matches the hash in database
+        return render_template("login.html", username = user, login_error = "Invalid login")          #and verifies it matches the hash in database
 
     print "User", user, "logged in"
     userColl.update({'_id': user}, {"$set": {'last_login': datetime.utcnow()}})
@@ -421,5 +425,5 @@ def reset_pw(ID):
     <a href="/">Home</a>
     <p>Reset link is invalid."""
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug = DEBUG)
+    app.run(host='0.0.0.0', port = 80, debug = DEBUG, threaded = True)
 
