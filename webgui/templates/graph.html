@@ -115,8 +115,8 @@
                       e.cx,
                       "Member count: " + e.cy
                   ];
-              };
-    {% elif %}
+      };
+    {% else %}
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
       var s = myChart.addSeries("Member Count", dimple.plot.line);
       x.timePeriod = d3.timeMonday;
