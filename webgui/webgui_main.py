@@ -15,6 +15,7 @@ from hashlib import sha512
 from os import urandom
 from datetime import datetime
 from OpenSSL import SSL
+from flask_sslify import SSLify
 
 import time
 import os
@@ -62,16 +63,7 @@ db = connection.MUGS
 userColl = db.users
 resetColl = db.resets
 
-@app.before_request
-def before_request():
-    if request.url.startswith('http://'):
-        url = request.url.replace('http://', 'https://', 1)
-        code = 301
-        return redirect(url, code=code)
-    if request.url.startswith('mugalyser'):
-        url = request.url.replace('mugalyser', 'https://mugalyser', 1)
-        code = 301
-        return redirect(url, code=code)
+sslify = SSLify(app)
 
 @app.errorhandler(404)
 def not_found(error):
