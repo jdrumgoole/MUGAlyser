@@ -108,7 +108,7 @@
     y.overrideMin = min - 2;
     y.overrideMax = max + 2;
 
-    {% if curgroup == "None" and country != "None" %}
+    {% if curgroup == "None" and country == "None" %}
       var x = myChart.addCategoryAxis("x", "Name");
       var s = myChart.addSeries("Member Count", dimple.plot.bar);
       s.getTooltipText = function (e) {
@@ -124,7 +124,7 @@
     {% elif country != "None" %}
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
       var s = myChart.addSeries("Member Count", dimple.plot.line);
-      var s2 = chart.addSeries("Name", dimple.plot.line);
+      var s2 = myChart.addSeries("Name", dimple.plot.line);
 
       x.timePeriod = d3.timeMonday;
       x.timeInterval = 1;
