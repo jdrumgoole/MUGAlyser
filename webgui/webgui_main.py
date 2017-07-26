@@ -307,6 +307,10 @@ def get_signup():
 
     if userColl.find({'_id':userreg}).count() != 0 or len(user) < 1:  #checks if username is in use already, prevents empty username
         return render_template("signup.html", error = "User with that name already exists. Please try a different name.")
+    if '@' in user 
+        return render_template("signup.html", error = "The @ symbol is not allowed. Please try a different name.")
+    if re.search(r"\s", user):
+        return render_template("signup.html", error = "Whitespace is not allowed. Please try a different name.")
     if userColl.find({'email':email}).count() != 0:                #checks if email is in use
         return render_template("signup.html", username = user, error = "That email is already in use. Please try a different name.")
     # if not email.endswith(('mongodb.com', '10gen.com')):
