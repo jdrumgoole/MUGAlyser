@@ -64,7 +64,7 @@ resetColl = db.resets
 
 @app.before_request
 def secure_redirect():
-    print "OK"
+    
 
 @app.errorhandler(404)
 def not_found(error):
