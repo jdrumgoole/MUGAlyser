@@ -21,9 +21,11 @@ charset = "UTF-8"
 host = "smtp.gmail.com"
 port = 465
 bcc = "mugalyser_app_log@10gen.com"
+SENT = False
 
 sender = "mugalyser@mongodb.com"
 smtp_username = smtp_password = ""
+
 
 try:
     f = os.popen('ifconfig en0')
@@ -65,14 +67,18 @@ def send(recipient, user, ID = "", type= ""):
     part2 = MIMEText(html, 'html')
     msg.attach(part1)
     msg.attach(part2)
-    try:
-        server.sendmail(sender, [recipient, bcc], msg.as_string())
-    except Exception as e:
-        print "Error: ", e
+    while not SENT:
+        try:
+            server.sendmail(sender, [recipient, bcc], msg.as_string())
+            sent = True
+        except Exception as e:
+            print "Error: ", e
+            sent = False
     else:
         del msg['From']
         del msg['To']
         del msg['Bcc']
+        sent = False
         print "Email sent!"
 
 def sigint_handler(signum, frame):
