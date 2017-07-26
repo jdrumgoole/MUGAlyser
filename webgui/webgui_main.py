@@ -256,6 +256,7 @@ def graph():
             session['country'] = country
 
     output = []
+    print country
 
     if curGroup == 'None':
         groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}, "group.members" : {"$exists" : True}}, 
