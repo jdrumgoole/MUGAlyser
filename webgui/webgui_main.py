@@ -51,6 +51,7 @@ except Exception as e:
     mdb = MUGAlyserMongoDB()
 
 auditdb = Audit( mdb )
+an = MUG_Analytics(mdb)
 membersCollection = mdb.membersCollection()
 proMemCollection = mdb.proMembersCollection()
 groupCollection = mdb.groupsCollection()
@@ -256,7 +257,6 @@ def graph():
             session['country'] = country
 
     output = []
-    print country
 
     if curGroup == 'None':
         groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}, "group.members" : {"$exists" : True}}, 
@@ -264,8 +264,8 @@ def graph():
                                             "group.name" : 1,
                                             "group.members" : 1}).sort([("group.members", -1)]).limit(int(amt))
         output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"]} for d in groupCurs]
+        print output
     if country in ['EU', 'US', 'ALL']:
-        an = MUG_Analytics(mdb)
         groupList = an.get_group_names(country)
         print groupList
         pipeline = [
@@ -281,7 +281,6 @@ def graph():
         ]
         groupCurs = groupCollection.aggregate(pipeline)
         print "Group is", groupCurs.next()
-        # output = [{'Name' : d["_id"], 'Count': d["group"]["members"], 'Time': d["timestamp"]} for d in groupCurs]
     else:
         # groupCurs = proGrpCollection.find( {"group.name": curGroup}, 
         #                           { "_id"           : 0, 
