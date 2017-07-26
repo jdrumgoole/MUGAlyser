@@ -243,11 +243,11 @@ def graph():
 
     output = []
     if curGroup == 'None':
-        groupCurs = proGrpCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}}, 
+        groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}, "group.members" : {"$exists" : True}}, 
                                           { "_id"           : 0, 
                                             "group.name" : 1,
-                                            "group.member_count" : 1}).sort([("group.member_count", -1)]).limit(int(amt))
-        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"]} for d in groupCurs]
+                                            "group.members" : 1}).sort([("group.members", -1)]).limit(int(amt))
+        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"]} for d in groupCurs]
     else:
         # groupCurs = proGrpCollection.find( {"group.name": curGroup}, 
         #                           { "_id"           : 0, 
