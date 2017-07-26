@@ -69,9 +69,10 @@
 
 <form id = "country" class = "_country" method="post">
   <select id = "countsel" name = "country" onchange="this.form.submit()">
-    <option value = "EU"> Europe </option>
-    <option value = "US"> North America</option>
-    <option value = "ALL"> World </option>
+    <option value = "None"> None </option>
+    <option value = "EU" {% if country  == "EU" %} selected = "selected" {% endif %}> Europe </option>
+    <option value = "US" {% if country == "US" %} selected = "selected" {% endif %}> North America</option>
+    <option value = "ALL" {% if country == "ALL" %} selected = "selected" {% endif %}> World </option>
   </select>
 </form>
 
