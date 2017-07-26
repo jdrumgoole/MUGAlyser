@@ -15,7 +15,6 @@ from hashlib import sha512
 from os import urandom
 from datetime import datetime
 from OpenSSL import SSL
-from flask_sslify import SSLify
 
 import time
 import os
@@ -35,7 +34,6 @@ if not os.path.isfile('keys.txt') or os.stat('keys.txt').st_size == 0:
 import send_email
 
 app = Flask(__name__)
-sslify = SSLify(app)
 
 with open('keys.txt', 'r') as f:
     skey = f.readline().strip("\n")
@@ -64,6 +62,9 @@ db = connection.MUGS
 userColl = db.users
 resetColl = db.resets
 
+@app.before_request
+def secure_redirect():
+    print "OK"
 
 @app.errorhandler(404)
 def not_found(error):
