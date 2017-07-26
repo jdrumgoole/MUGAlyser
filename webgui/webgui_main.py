@@ -432,5 +432,5 @@ def reset_pw(ID):
     <p>Reset link is invalid."""
 if __name__ == "__main__":
     context = (cer, key)
-    app.run(host='0.0.0.0', port = 80, debug = DEBUG, threaded = True, ssl_context = context)
+    app.run(host='0.0.0.0', port = 443, debug = DEBUG, threaded = True, ssl_context = context)
 
