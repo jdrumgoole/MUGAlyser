@@ -35,12 +35,11 @@
     <p>
     <div align = "center" class = "signup">
       <form method="post">
-        <table align = "center">
+        <table>
           <tr>
             <td>
-              <input type="text" name="username" placeholder = "username" value="{{username}}">
+              <input style = "margin:auto; display:inline-block;" type="text" name="username" placeholder = "username" value="{{username}}"><span style = "font-size: 12px;">@mongodb.com</span>
             </td>
-            <td><span style = "font-size: 10px">@mongodb.com</span></td>
           </tr>
 
           <tr>
@@ -49,7 +48,7 @@
 
           <tr>
             <td>
-              <input type="password" placeholder = "password" name="password" value="">
+              <input style = "margin:auto; display:inline-block;" type="password" placeholder = "password" name="password" value="">
             </td>
 <!--             <td class="error">
   	    {{password_error}}
@@ -59,17 +58,18 @@
 
           <tr>
             <td>
-              <input type="password" placeholder = "verify password" name="verify" value="">
+              <input style = "margin:auto; display:inline-block;" type="password" placeholder = "verify password" name="verify" value="">
             </td>
 <!--             <td class="error">
   	    {{verify_error}}
               
             </td> -->
           </tr>
-
+          <tr>
+          <td><input style = "margin-left:20%; display:block;" type="submit" class = "butt" value = "SIGNUP"></td></tr>
         </table>
 
-        <input type="submit" class = "butt" value = "SIGNUP">
+        
 
       </form>
     </div>
