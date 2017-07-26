@@ -18,42 +18,34 @@
   </head>
 
   <body>
-  <div class = "menu">
-    <ul>
-    <li><a href="/">Home</a></li>
-    </ul>
-  </div>
-    <h2>{{ error }}</h2>
-    <div class = "reset">
+
+  <h4>Please enter a new password</h4>
+    <div align = "center" class = "reset">
       <form method="post">
         <table>
-
           <tr>
-            <td class="label">
-            </td>
+          <text style = "color: red;"> {{error}} </text>           
+          <tr>
+           
             <td>
-              <input type="password" name="password" value="">
-            </td>
-            <td class="error">
-          {{password_error}}
-              
+              <input type="password" name="password" placeholder = "password">
             </td>
           </tr>
 
           <tr>
-            <td class="label">
-              Verify Password
-            </td>
             <td>
-              <input type="password" name="verify" value="">
+              <input type="password" name="verify" placeholder = "verify password">
             </td>
+            
           </tr>
 
         </table>
 
-        <input type="submit">
+        <input class = "butt" type="submit">
+
       </form>
-    </div>
+
+      </div>
   </body>
 
 </html>

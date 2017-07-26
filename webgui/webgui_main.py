@@ -62,7 +62,7 @@ db = connection.MUGS
 userColl = db.users
 resetColl = db.resets
 
-@app.before_request
+@app.before_request    #somehow works to redirect all http requests to https
 def secure_redirect():
     pass
 
@@ -296,12 +296,14 @@ def get_member(member):
 
 @app.route('/signup')
 def show_signup():
-    if verify_login():   #if user is already logged in, gives them an error
-        return """<link rel="stylesheet" type="text/css" href="/static/style.css"><a href="/"> Home </a><p> You are already logged in! </p></a>"""
+    if verify_login():   #if user is already logged in, redirects them to index
+        return redirect(url_for('index'))
     return render_template("signup.html")
 
 @app.route('/signup', methods = ['POST'])
 def get_signup():
+    if verify_login():   #if user is already logged in, redirects them to index
+        return redirect(url_for('index'))
     user = escape(request.form.get('username'))
     password = escape(request.form.get('password'))
     vpassword = escape(request.form.get('verify'))
@@ -345,12 +347,14 @@ def verify_account(ID):
 
 @app.route('/login')
 def show_login():
-    if verify_login():  #if user is already logged in, gives them an error
-        return """<link rel="stylesheet" type="text/css" href="/static/style.css"><a href="/"> Home </a><p> You are already logged in! </p></a>"""
+    if verify_login():   #if user is already logged in, redirects them to index
+        return redirect(url_for('index'))
     return render_template("login.html")
 
 @app.route('/login', methods = ['POST'])
 def get_login():
+    if verify_login():   #if user is already logged in, redirects them to index
+        return redirect(url_for('index'))
     user = escape(request.form.get('username'))
     password = escape(request.form.get('password'))
 
@@ -423,9 +427,9 @@ def reset_pw(ID):
     vpassword = escape(request.form.get('verify'))
     doc = resetColl.find_one({'_id': ID})
     if len(password) < 5:
-        return render_template("reset.html", error = "Please enter a new password.", password_error = "Passwords must be over 4 characters long")
+        return render_template("reset.html", error = "Passwords must be over 4 characters long")
     if vpassword != password:
-        return render_template("reset.html", error = "Please enter a new password.", password_error = "Passwords don't match")
+        return render_template("reset.html", error = "Passwords don't match")
     if doc:
         user = doc['user']
         create_account(user, password, None)
