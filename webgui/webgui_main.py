@@ -16,8 +16,6 @@ from os import urandom
 from datetime import datetime
 from OpenSSL import SSL
 
-
-
 import time
 import os
 import re
@@ -37,7 +35,6 @@ import send_email
 
 app = Flask(__name__)
 
-
 with open('keys.txt', 'r') as f:
     skey = f.readline().strip("\n")
     app.config['SECRET_KEY'] = skey
@@ -46,7 +43,7 @@ with open('uri.txt', 'r') as f:
 
 try:
     print "Connecting to database..."
-    mdb = MUGAlyserMongoDB(uri=uri)
+    mdb = MUGAlyserMongoDB(uri = uri)
 
 except Exception as e:
     print "URI isn't valid, trying to run on localhost now"
@@ -225,9 +222,9 @@ def graph():
         curGroup = session['group'] = "None"
         amt = session['amount'] = 0
     else:
-        curbat = escape(request.form.get('bat'))
-        curGroup = escape(request.form.get('grp'))
-        amt = escape(request.form.get('amt'))
+        curbat = escape(int(request.form.get('bat')))
+        curGroup = escape(str(request.form.get('grp')))
+        amt = escape(int(request.form.get('amt')))
 
         if curbat is None:
             curbat = session['batch']

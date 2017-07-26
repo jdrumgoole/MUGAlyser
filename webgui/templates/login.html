@@ -18,6 +18,7 @@
   </head>
 
   <body>
+    {% if user %}
     <div class = "menu">
       <ul>
       <li><a href="/">Home</a></li>
@@ -31,11 +32,12 @@
           <a href="/graph/yearly">RSVP</a>
         </div>
       </li>
-      {% if user %}
+
       <li><a id = "logout" href="/logout">Logout</a></li>
-      {% endif %}
+
       </ul>
     </div>
+    {% endif %}
     <p>
 
     <div align = "center" class = "login">
