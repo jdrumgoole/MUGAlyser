@@ -14,6 +14,11 @@ from cgi import escape
 from hashlib import sha512
 from os import urandom
 from datetime import datetime
+from OpenSSL import SSL
+
+context = SSL.Context(SSL.SSLv23_METHOD)
+cer = os.path.join('/home/ec2-user', '/\*.joedrumgoole.com.ssl/joedrumgoole.com.crt')
+key = os.path.join('/home/ec2-user', '/\*.joedrumgoole.com.ssl/\*.joedrumgoole.com.key')
 
 import time
 import os
@@ -425,5 +430,6 @@ def reset_pw(ID):
     <a href="/">Home</a>
     <p>Reset link is invalid."""
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port = 80, debug = DEBUG, threaded = True)
+    context = (cer, key)
+    app.run(host='0.0.0.0', port = 80, debug = DEBUG, threaded = True, ssl_context = context)
 
