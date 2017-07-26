@@ -264,10 +264,11 @@ def graph():
                                             "group.name" : 1,
                                             "group.members" : 1}).sort([("group.members", -1)]).limit(int(amt))
         output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"]} for d in groupCurs]
-        print output
+        # print output
+
     if country in ['EU', 'US', 'ALL']:
         groupList = an.get_group_names(country)
-        print groupList
+        # print groupList
         pipeline = [
             {"$match": {"group.members" : {"$exists" : True}, "group.urlname": {"$in" : groupList}}},
             {"$project":
@@ -281,7 +282,7 @@ def graph():
         ]
         groupCurs = groupCollection.aggregate(pipeline)
         print "Group is", groupCurs.next()
-    else:
+    elif curGroup != 'None':
         # groupCurs = proGrpCollection.find( {"group.name": curGroup}, 
         #                           { "_id"           : 0, 
         #                             "group.name" : 1,
@@ -299,7 +300,7 @@ def graph():
 
     # groupl = get_group_list()
     # batchl = get_batch_list()
-    print "------------\n", output
+    # print "------------\n", output
     return render_template("graph.html", groups = output, grouplist = get_group_list(), batches = get_batch_list(), curbat = int(curbat), curamt = int(amt), curgroup = curGroup, country = country)
 
 @app.route("/graph/batch", methods=['POST', 'GET'])
