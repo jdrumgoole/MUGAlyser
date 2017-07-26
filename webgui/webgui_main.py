@@ -264,7 +264,7 @@ def graph():
                                             "group.name" : 1,
                                             "group.members" : 1}).sort([("group.members", -1)]).limit(int(amt))
         output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"]} for d in groupCurs]
-    elif country in ['EU', 'US', 'ALL']:
+    else if country in ['EU', 'US', 'ALL']:
         an = MUG_Analytics(mdb)
         groupList = an.get_group_names(country)
         pipeline = [
@@ -278,7 +278,7 @@ def graph():
             },
             {"$group": {"_id": "$group.name"}}
         ]
-        groupCurs = group.collection.aggregate(pipeline)
+        groupCurs = groupCollection.aggregate(pipeline)
         print "Group is", groupCurs.next()
         # output = [{'Name' : d["_id"], 'Count': d["group"]["members"], 'Time': d["timestamp"]} for d in groupCurs]
     else:
