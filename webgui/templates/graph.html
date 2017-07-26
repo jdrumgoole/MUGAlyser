@@ -67,8 +67,16 @@
   </select>
 </form>
 
+<form id = "country" class = "_country" method="post">
+  <select id = "countsel" name = "country" onchange="this.form.submit()">
+    <option value = "EU"> Europe </option>
+    <option value = "US"> North America</option>
+    <option value = "ALL"> World </option>
+  </select>
+</form>
+
 <form method="post" style="float: right;">
-<input name = "res" type = "submit" value="Reset"/>
+  <input name = "res" type = "submit" value="Reset"/>
 </form>
 <div id="chartContainer"></div>
 
@@ -108,7 +116,7 @@
                       "Member count: " + e.cy
                   ];
               };
-    {% else %}
+    {% else if %}
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
       var s = myChart.addSeries("Member Count", dimple.plot.line);
       x.timePeriod = d3.timeMonday;

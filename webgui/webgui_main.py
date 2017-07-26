@@ -7,6 +7,7 @@ Created on 4 Oct 2016
 
 from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
+from mugalyser.analytics import MUG_Analytics
 from flask import Flask, jsonify, request, session, redirect, url_for, send_file, Response
 from flask.templating import render_template
 from pymongo import MongoClient
@@ -68,6 +69,8 @@ def secure_redirect():
 
 @app.errorhandler(404)
 def not_found(error):
+    if not verify_login():
+        return redirect(url_for('show_login'))
     return render_template('404.html', error = error), 404
 
 def verify_login():
@@ -225,10 +228,12 @@ def graph():
         curbat = session['batch'] = currentBatch
         curGroup = session['group'] = "None"
         amt = session['amount'] = 0
+        country = session['country'] = "None"
     else:
         curbat = request.form.get('bat')
         curGroup = request.form.get('grp')
         amt = request.form.get('amt')
+        country = request.form.get('country')
 
         if curbat is None:
             curbat = session['batch']
@@ -245,13 +250,36 @@ def graph():
         else:
             session['amount'] = int(amt)
 
+        if country is None:
+            country = session['country']
+        else:
+            session['country'] = country
+
     output = []
+
     if curGroup == 'None':
         groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}, "group.members" : {"$exists" : True}}, 
                                           { "_id"           : 0, 
                                             "group.name" : 1,
                                             "group.members" : 1}).sort([("group.members", -1)]).limit(int(amt))
         output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"]} for d in groupCurs]
+    elif country in ['EU', 'US', 'ALL']:
+        an = MUG_Analytics(mdb)
+        groupList = an.get_group_names(country)
+        pipeline = [
+            {"$match": {"group.members" : {"$exists" : True}, "group.name": {"$in" : groupList}}},
+            {"$project":
+                {
+                   "group.name" : 1,
+                   "group.members" : 1,
+                   "timestamp" : 1
+                }
+            },
+            {"$group": {"_id": "$group.name"}}
+        ]
+        groupCurs = group.collection.aggregate(pipeline)
+        print groupCurs.next()
+        # output = [{'Name' : d["_id"], 'Count': d["group"]["members"], 'Time': d["timestamp"]} for d in groupCurs]
     else:
         # groupCurs = proGrpCollection.find( {"group.name": curGroup}, 
         #                           { "_id"           : 0, 
