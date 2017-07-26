@@ -178,6 +178,12 @@
     // myChart.ease = "sin";
     myChart.draw(/*500*/);
 
+    {% if curgroup == "None" and country == "None" %}
+      d3.selectAll("rect").on("click", function (e) {
+        document.getElementById("groupsel").value = e.cx;
+        document.getElementById("group").submit();
+      });
+    {% endif %}
     window.onresize = function () {
       myChart.draw(0, true);
     };
