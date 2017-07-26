@@ -62,6 +62,17 @@ db = connection.MUGS
 userColl = db.users
 resetColl = db.resets
 
+@app.before_request
+def before_request():
+    if request.url.startswith('http://'):
+        url = request.url.replace('http://', 'https://', 1)
+        code = 301
+        return redirect(url, code=code)
+    if request.url.startswith('mugalyser'):
+        url = request.url.replace('mugalyser', 'https://mugalyser', 1)
+        code = 301
+        return redirect(url, code=code)
+
 @app.errorhandler(404)
 def not_found(error):
     return render_template('404.html', error = error), 404
