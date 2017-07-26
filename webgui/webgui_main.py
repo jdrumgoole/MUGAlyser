@@ -24,8 +24,8 @@ import re
 import webbrowser
 
 context = SSL.Context(SSL.SSLv23_METHOD)
-cer = os.path.join('/home/ec2-user', '/\*.joedrumgoole.com.ssl/joedrumgoole.com.crt')
-key = os.path.join('/home/ec2-user', '/\*.joedrumgoole.com.ssl/\*.joedrumgoole.com.key')
+cer = os.path.join('/home/ec2-user', '/*.joedrumgoole.com.ssl/joedrumgoole.com.crt')
+key = os.path.join('/home/ec2-user', '/*.joedrumgoole.com.ssl/*.joedrumgoole.com.key')
 
 DEBUG = False
 
