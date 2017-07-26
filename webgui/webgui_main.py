@@ -222,9 +222,9 @@ def graph():
         curGroup = session['group'] = "None"
         amt = session['amount'] = 0
     else:
-        curbat = escape(int(request.form.get('bat')))
-        curGroup = escape(str(request.form.get('grp')))
-        amt = escape(int(request.form.get('amt')))
+        curbat = request.form.get('bat')
+        curGroup = request.form.get('grp')
+        amt = request.form.get('amt')
 
         if curbat is None:
             curbat = session['batch']
