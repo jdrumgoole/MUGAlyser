@@ -388,10 +388,6 @@ def track():
     print "Email viewed by:", request.headers.get('X-Forwarded-For', request.remote_addr)
     return send_file('static/pixel.gif', mimetype = 'image/gif')
 
-@app.route('/woowee')
-def tester():
-    return render_template('reset.html')
-
 @app.route('/forgotpw', methods = ['GET', 'POST'])
 def forgot_pw():
     if request.method == 'GET':
