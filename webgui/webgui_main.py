@@ -299,7 +299,7 @@ def graph():
 
     # groupl = get_group_list()
     # batchl = get_batch_list()
-
+    print "------------\n", output
     return render_template("graph.html", groups = output, grouplist = get_group_list(), batches = get_batch_list(), curbat = int(curbat), curamt = int(amt), curgroup = curGroup, country = country)
 
 @app.route("/graph/batch", methods=['POST', 'GET'])
