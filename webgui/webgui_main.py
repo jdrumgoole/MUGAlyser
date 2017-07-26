@@ -307,7 +307,7 @@ def get_signup():
 
     if userColl.find({'_id':userreg}).count() != 0 or len(user) < 1:  #checks if username is in use already, prevents empty username
         return render_template("signup.html", error = "User with that name already exists. Please try a different name.")
-    if '@' in user 
+    if '@' in user:
         return render_template("signup.html", error = "The @ symbol is not allowed. Please try a different name.")
     if re.search(r"\s", user):
         return render_template("signup.html", error = "Whitespace is not allowed. Please try a different name.")
