@@ -240,16 +240,19 @@ def graph():
             curbat = session['batch']
         else:
             session['batch'] = curbat
+            country = session['country'] = "None"
 
         if curGroup is None:
             curGroup = session['group']
         else:
-            session['group'] = curGroup 
+            session['group'] = curGroup
+            country = session['country'] = "None"
         
         if amt is None:
             amt = session['amount']
         else:
             session['amount'] = int(amt)
+            country = session['country'] = "None"
 
         if country is None:
             country = session['country']
@@ -258,7 +261,7 @@ def graph():
 
     output = []
 
-    if curGroup == 'None':
+    if curGroup == 'None' and country == 'None':
         groupCurs = groupCollection.find( { "batchID" : int(curbat), "group.name": {"$ne": "Meetup API Testing Sandbox"}, "group.members" : {"$exists" : True}}, 
                                           { "_id"           : 0, 
                                             "group.name" : 1,
