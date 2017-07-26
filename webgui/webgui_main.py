@@ -269,7 +269,7 @@ def graph():
         groupList = an.get_group_names(country)
         print groupList
         pipeline = [
-            {"$match": {"group.members" : {"$exists" : True}, "group.name": {"$in" : groupList}}},
+            {"$match": {"group.members" : {"$exists" : True}, "group.urlname": {"$in" : groupList}}},
             {"$project":
                 {
                    "group.name" : 1,
