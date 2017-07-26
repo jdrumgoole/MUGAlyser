@@ -267,6 +267,7 @@ def graph():
     if country in ['EU', 'US', 'ALL']:
         an = MUG_Analytics(mdb)
         groupList = an.get_group_names(country)
+        print groupList
         pipeline = [
             {"$match": {"group.members" : {"$exists" : True}, "group.name": {"$in" : groupList}}},
             {"$project":
