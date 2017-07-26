@@ -301,20 +301,20 @@ def get_signup():
     user = escape(request.form.get('username'))
     password = escape(request.form.get('password'))
     vpassword = escape(request.form.get('verify'))
-    email = escape(request.form.get('email'))
+    email = user + '@mongodb.com'
 
     userreg = re.compile(user, re.IGNORECASE)
 
     if userColl.find({'_id':userreg}).count() != 0 or len(user) < 1:  #checks if username is in use already, prevents empty username
-        return render_template("signup.html", error = "User with that name already exists. Please try a different name.", email = email)
+        return render_template("signup.html", error = "User with that name already exists. Please try a different name.")
     if userColl.find({'email':email}).count() != 0:                #checks if email is in use
         return render_template("signup.html", username = user, error = "That email is already in use. Please try a different name.")
-    if not email.endswith(('mongodb.com', '10gen.com')):
-        return render_template("signup.html", username = user, error = "Invalid email address.")
+    # if not email.endswith(('mongodb.com', '10gen.com')):
+    #     return render_template("signup.html", username = user, error = "Invalid email address.")
     if len(password) < 5:                                          #only permits passwords over 4 characters
-        return render_template("signup.html", username = user, email = email, error = "Passwords must be over 4 characters long")
+        return render_template("signup.html", username = user, error = "Passwords must be over 4 characters long")
     if vpassword != password:                                      #checks if password and verification match
-        return render_template("signup.html", username = user, email = email, error = "Passwords don't match")
+        return render_template("signup.html", username = user, error = "Passwords don't match")
 
     create_account(user, password, email)
     print "Account created with username", user
