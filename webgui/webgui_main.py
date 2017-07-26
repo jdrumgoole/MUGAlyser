@@ -256,13 +256,13 @@ def graph():
         #                             "timestamp" : 1})
         # # print datetime.utcfromtimestamp(groupCurs.next()["timestamp"])
         # output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in groupCurs]
-        groupCurs = groupCollection.find( {"group.name": curGroup}, 
+        groupCurs = groupCollection.find( {"group.name": curGroup, "group.members" : {"$exists" : True}}, 
                                   { "_id"           : 0, 
                                     "group.name" : 1,
-                                    "group.member_count" : 1,
+                                    "group.members" : 1,
                                     "timestamp" : 1})
         # print datetime.utcfromtimestamp(groupCurs.next()["timestamp"])
-        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["member_count"], 'Time': d["timestamp"]} for d in groupCurs]
+        output = [{'Name' : d["group"]["name"], 'Count': d["group"]["members"], 'Time': d["timestamp"]} for d in groupCurs]
 
     # groupl = get_group_list()
     # batchl = get_batch_list()
