@@ -6,13 +6,13 @@
   <title> Batch: {{ curbat }} </title>
   <link rel="shortcut icon" href="/static/favicon.ico">
   <!-- Include Required Prerequisites -->
-  <script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
-  <script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/3/css/bootstrap.css" />
-   
-  <!-- Include Date Range Picker -->
-  <script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
-  <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+<script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
+<script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<!-- <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/3/css/bootstrap.css" /> -->
+ 
+<!-- Include Date Range Picker -->
+<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
 </head>
 <body>
 
@@ -160,17 +160,6 @@
       // };
       s.lineMarkers = true;
       var leg = myChart.addLegend("15%", "2%", "90%", "90%", "left");
-      $(function() {
-      $('.daterange').daterangepicker({
-      "autoApply": true,
-      "startDate": "07/21/2017",
-      "endDate": "07/27/2017",
-      "minDate": "01/01/2011"
-        });
-      });
-      $('.daterange').on('apply.daterangepicker', function(ev, picker) {
-          $('.test').submit();
-      });
       // leg.fontSize = "auto";
     {% else %}
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
