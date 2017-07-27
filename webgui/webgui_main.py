@@ -273,7 +273,7 @@ def graph():
         groupList = an.get_group_names(country)
         # print groupList
         bound = 500
-        groupCurs = groupCollection.find({ "batchID" : int(curbat), "group.name": {"$in": groupList}, "group.members" : {"$gt" : bound}}, 
+        groupCurs = groupCollection.find({ "batchID" : int(curbat), "group.urlname": {"$in": groupList}, "group.members" : {"$gt" : bound}}, 
                                           { "_id"           : 0, 
                                             "group.urlname" : 1,
                                             "group.members" : 1})
