@@ -371,6 +371,7 @@ def graph_events():
     # events[year] = doc['numevents']
     for doc in eCurs:
         year = doc['_id']['year']
+        print doc['_id']['month'] - 1
         month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
         date = month, year
         output.append({'Date' : date, 'Total Events': doc['numevents']})

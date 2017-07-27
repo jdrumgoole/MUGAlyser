@@ -31,7 +31,6 @@
 <p>
 
 <h2> Events per Month</h2>
-<div id = "query"><p><h2><b>Please click a bar to view data</b></h2><p>&emsp;  <p> &emsp;<p>&emsp; </div>
 <div id="chartContainer"></div>
 
 </body>
@@ -83,10 +82,7 @@
     // myChart.staggerDraw = true;
     // myChart.ease = "sin";
     myChart.draw(500);
-    d3.selectAll("rect").on("click", function (e) {
-       var str = "<p>Year: " + e.cx + "<p>Total Events: " + e.cy.toLocaleString();
-       document.getElementById("query").innerHTML = str;
-      });
+
     window.onresize = function () {
       myChart.draw(0, true);
     };
