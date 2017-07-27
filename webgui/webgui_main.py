@@ -370,11 +370,12 @@ def graph_events():
     # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
     # events[year] = doc['numevents']
     for doc in eCurs:
-        year = doc['_id']['year']
         if doc['_id']['month'] - 1 == 0:
             month = "December"
+            year = doc['_id']['year'] - 1
         else:
             month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
+            year = doc['_id']['year']
         date = month, year
         output.append({'Date' : date, 'Total Events': doc['numevents']})
     return render_template("graphevents.html", output = output)
