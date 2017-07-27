@@ -349,25 +349,38 @@ def graph_events():
         return redirect(url_for('show_login'))
 
     euList = an.get_group_names('EU')
+    usList = an.get_group_names('US')
     now = datetime.now()
     curYear = int(now.year)
     dates = [i for i in range(2009, curYear + 1)]
     output = []
     # for year in dates:
-    pipeline = [
-        {"$match": {"batchID": currentBatch}},
+    pipelineEU = [
+        {"$match": {"batchID": currentBatch}, "group.urlname": {"$in": euList}},
         {"$project":
             {
                "year": { "$year": "$event.time" },
-               "month": { "$month": "$event.time"}#,
-               # "EU": { "$in" : ["$event.group.urlname", euList]}
+               "month": { "$month": "$event.time"}
             }
         },
         {"$match": {"year": {"$in": dates}}},
-        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}, 'EU' : {'$first' : '$EU'}}},
+        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}},
         { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
     ]
-    eCurs = eventsCollection.aggregate(pipeline)
+    pipelineUS = [
+        {"$match": {"batchID": currentBatch}, "group.urlname": {"$in": usList}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "month": { "$month": "$event.time"}
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}},
+        { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
+    ]
+    eCurs = eventsCollection.aggregate(pipelineEU)
+    uCurs = eventsCollection.aggregate(pipelineUS)
     # doc = eCurs.next()
     # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
     # events[year] = doc['numevents']
@@ -379,7 +392,16 @@ def graph_events():
             month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
             year = doc['_id']['year']
         date = month, year
-        output.append({'Date' : date, 'Total Events': doc['numevents']})
+        output.append({'Date' : date, 'Total Events': doc['numevents'], 'Region': 'EU'})
+    for doc in uCurs:
+        if doc['_id']['month'] - 1 == 0:
+            month = "December"
+            year = doc['_id']['year'] - 1
+        else:
+            month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
+            year = doc['_id']['year']
+        date = month, year
+        output.append({'Date' : date, 'Total Events': doc['numevents'], 'Region': 'US'})
     return render_template("graphevents.html", output = output)
 
 @app.route('/user/<member>')
