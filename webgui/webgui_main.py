@@ -337,7 +337,7 @@ def graph_batch():
     ]
 
     groupCurs = proGrpCollection.aggregate(pipeline)
-    output = [{'Batch' : d['_id']['id'], 'Count': d['total_members'], 'Time': d['id']['timestamp']} for d in groupCurs]
+    output = [{'Batch' : d['_id']['id'], 'Count': d['total_members'], 'Time': d['_id']['timestamp']} for d in groupCurs]
 
     return render_template("graphbatch.html", members = output)
 @app.route('/user/<member>')
