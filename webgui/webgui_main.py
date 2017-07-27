@@ -283,7 +283,7 @@ def graph():
             if country == 'ALL':
                 limit = 2000 #applies default limit to prevent slow rendering
             else:
-                limit = session['limit']
+                limit = 1000
         else:
             limit = int(limit)
             session['limit'] = limit
