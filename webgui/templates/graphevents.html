@@ -52,9 +52,9 @@
     // var y2 = myChart.addMeasureAxis("y", "Events");
 
     var x = myChart.addTimeAxis("x", "Date");
-    // x.timePeriod = d3.timeMonth;
-    // x.timeInterval = 1;
-    // x.tickFormat = "%B %Y";
+    x.timePeriod = d3.timeMonth;
+    x.timeInterval = 1;
+    x.tickFormat = "%B %Y";
     var s = myChart.addSeries("Region", dimple.plot.bar);
     x.fontSize = "14px";
     y.tickFormat = ",d";
