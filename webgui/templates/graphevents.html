@@ -37,6 +37,10 @@
 <script type="text/javascript">
     var data = {{output|tojson}};
 
+    for (var i = 0; i < data.length; i += 1) {
+      data[i].order = i;
+    }
+
     var svg = dimple.newSvg("#chartContainer", "100%", "100%");
     var myChart = new dimple.chart(svg, data);
 
@@ -51,7 +55,7 @@
     // var y2 = myChart.addMeasureAxis("y", "Events");
 
     var x = myChart.addCategoryAxis("x", ["Date", "Region"]);
-    // x.addOrderRule("Date", true);
+    x.addGroupOrderRule("order");
     // x.timePeriod = d3.timeMonth;
     // x.timeInterval = 1;
     // x.tickFormat = "%B %Y";
