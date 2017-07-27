@@ -348,6 +348,7 @@ def graph_events():
     if not verify_login():
         return redirect(url_for('show_login'))
 
+    euList = an.get_group_names('EU')
     now = datetime.now()
     curYear = int(now.year)
     dates = [i for i in range(2009, curYear + 1)]
@@ -358,11 +359,12 @@ def graph_events():
         {"$project":
             {
                "year": { "$year": "$event.time" },
-               "month": { "$month": "$event.time"}
+               "month": { "$month": "$event.time"},
+               "country": {'$cond': [{"$in" : euList}, 'EU', 'US']}
             }
         },
         {"$match": {"year": {"$in": dates}}},
-        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}},
+        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}, 'country' : {'$first' : '$country'}}},
         { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
     ]
     eCurs = eventsCollection.aggregate(pipeline)
