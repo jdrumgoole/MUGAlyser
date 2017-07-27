@@ -277,7 +277,10 @@ def graph():
         limit = request.form.get('limit')
         curGroup = country
         if limit is None:
-            limit = session['limit']
+            if country == 'ALL':
+                limit = 2000 #applies default limit to prevent slow rendering
+            else:
+                limit = session['limit']
         else:
             limit = int(limit)
             session['limit'] = limit
