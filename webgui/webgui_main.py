@@ -225,6 +225,7 @@ def graph():
     if not verify_login():
         return redirect(url_for('show_login'))
 
+    limit = 0
     if request.method == 'GET' or request.form.get('res'):  #sets options to default values
         curbat = session['batch'] = currentBatch
         curGroup = session['group'] = "None"
@@ -235,7 +236,6 @@ def graph():
         curGroup = request.form.get('grp')
         amt = request.form.get('amt')
         country = request.form.get('country')
-        limit = 0
 
         if curbat is None:
             curbat = session['batch']
