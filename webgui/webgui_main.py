@@ -387,9 +387,9 @@ def get_signup():
 @app.route('/verify/<ID>')
 def verify_account(ID):
     if userColl.find_one({'verified':ID}):
-        session['username'] = userColl.find_one({'verified': ID})['_id']
         userColl.update({'verified': ID}, {'$set': {'verified': True}})
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
+
     return """
     <link rel="stylesheet" type="text/css" href="/static/style.css">
     <a href="/">Home</a>
