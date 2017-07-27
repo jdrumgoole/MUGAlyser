@@ -16,6 +16,7 @@ from hashlib import sha512
 from os import urandom
 from datetime import datetime
 from OpenSSL import SSL
+from bson.son import SON
 
 import time
 import calendar
@@ -362,7 +363,7 @@ def graph_events():
         },
         {"$match": {"year": {"$in": dates}}},
         {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}},
-        { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
+        { "$sort" : SON([("_id.year", 1), ("_id.month", 1)])} 
     ]
     eCurs = eventsCollection.aggregate(pipeline)
     # doc = eCurs.next()
@@ -376,7 +377,6 @@ def graph_events():
         output.append({'Date' : date, 'Total Events': doc['numevents']})
     return render_template("graphevents.html", output = output)
 
-    return render_template("graphbatch.html", members = output)
 @app.route('/user/<member>')
 def get_member(member):
     # show the user profile for that user
