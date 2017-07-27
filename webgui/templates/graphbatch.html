@@ -61,15 +61,15 @@
 
     y.overrideMin = min * .998;
     // y.overrideMax = max + 2;
-    var x = myChart.addCategoryAxis("x", "Batch");
+    var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
     var s = myChart.addSeries("Member Count", dimple.plot.line);
     s.lineMarkers = true;
-    s.getTooltipText = function (e) {
-                return [
-                    "Batch: " + e.cx,
-                    "Member count: " + e.cy.toLocaleString()
-                ];
-            };
+    // s.getTooltipText = function (e) {
+    //             return [
+    //                 "Batch: " + e.cx,
+    //                 "Member count: " + e.cy.toLocaleString()
+    //             ];
+    //         };
 
 
       y.ticks = 4;
