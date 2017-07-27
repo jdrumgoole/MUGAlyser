@@ -340,6 +340,38 @@ def graph_batch():
     output = [{'Batch' : d['_id'], 'Count': d['total_members'], 'Time': d['timestamp']} for d in groupCurs]
 
     return render_template("graphbatch.html", members = output)
+
+@app.route("/graph/events", methods=['POST', 'GET'])
+def graph_events():
+    if not verify_login():
+        return redirect(url_for('show_login'))
+
+    now = datetime.now()
+    curYear = int(now.year)
+    dates = [i for i in range(2009, curYear + 1)]
+    output = []
+    # for year in dates:
+    pipeline = [
+        {"$match": {"batchID": currentBatch}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "yesrsvp" : "$event.yes_rsvp_count"
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": "$year", "numevents": {"$sum": 1}}}
+    ]
+    eCurs = eventsCollection.aggregate(pipeline)
+    # doc = eCurs.next()
+    # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
+    # events[year] = doc['numevents']
+    for doc in eCurs:
+        year = doc['_id']  
+        output.append({'Year' : year, 'Total Events': doc['numevents']})
+    return render_template("graphevents.html", events = events)
+
+    return render_template("graphbatch.html", members = output)
 @app.route('/user/<member>')
 def get_member(member):
     # show the user profile for that user
