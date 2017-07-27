@@ -228,7 +228,7 @@ def graph():
     if request.method == 'GET' or request.form.get('res'):  #sets options to default values
         curbat = session['batch'] = currentBatch
         curGroup = session['group'] = "None"
-        limit = amt = session['amount'] = 0
+        session['limit'] = limit = amt = session['amount'] = 0
         country = session['country'] = "None"
     else:
         curbat = request.form.get('bat')
