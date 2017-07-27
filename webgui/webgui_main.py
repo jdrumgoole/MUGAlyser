@@ -333,7 +333,7 @@ def graph_batch():
         return redirect(url_for('show_login'))
 
     pipeline = [
-        {"$group": {"_id": "$batchID", "total_members": {"$sum": "$group.member_count"}, "timestamp" : "$timestamp"}}
+        {"$group": {"_id": "$batchID", "total_members": {"$sum": "$group.member_count"}}}
     ]
 
     groupCurs = proGrpCollection.aggregate(pipeline)
