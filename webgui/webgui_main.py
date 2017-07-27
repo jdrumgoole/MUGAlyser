@@ -359,8 +359,8 @@ def graph_events():
         {"$project":
             {
                "year": { "$year": "$event.time" },
-               "month": { "$month": "$event.time"},
-               "EU": { "$in" : ["$event.group.urlname", euList]}
+               "month": { "$month": "$event.time"}#,
+               # "EU": { "$in" : ["$event.group.urlname", euList]}
             }
         },
         {"$match": {"year": {"$in": dates}}},
