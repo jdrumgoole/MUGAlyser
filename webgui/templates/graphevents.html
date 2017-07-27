@@ -52,11 +52,11 @@
     // var y2 = myChart.addMeasureAxis("y", "Events");
 
     var x = myChart.addCategoryAxis("x", "Date");
-    x.addOrderRule("Date", false);
+    x.addOrderRule("Date", true);
     var s = myChart.addSeries("Events", dimple.plot.bar);
     x.fontSize = "14px";
     y.tickFormat = ",d";
-    y.ticks = 4;
+    y.ticks = 10;
 
     var leg = myChart.addLegend("90%", "0%", 70, 70);
     leg.fontSize = "auto";

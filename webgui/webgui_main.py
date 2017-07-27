@@ -374,8 +374,6 @@ def graph_events():
         month = calendar.month_name[doc['_id']['month']]
         date = month, year
         output.append({'Date' : date, 'Total Events': doc['numevents']})
-    for a in output:
-        print a
     return render_template("graphevents.html", output = output)
 
 @app.route('/user/<member>')
