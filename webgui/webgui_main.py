@@ -356,7 +356,7 @@ def graph_events():
         {"$project":
             {
                "year": { "$year": "$event.time" },
-               "month": { "$month": "$event.month"}
+               "month": { "$month": "$event.time"}
             }
         },
         {"$match": {"year": {"$in": dates}}},
