@@ -46,15 +46,14 @@ sender = smtp_username = keys[1]
 smtp_password = keys[2]
 
 
-try:
-    print "Logging into GMail (this might take a while)..."  
-    server = smtplib.SMTP_SSL(host, port)
-    server.ehlo()
-    server.login(smtp_username, smtp_password)
-except Exception as e:
-    print "Error: ", e
 # Try to send the email.
 def send(recipient, user, ID = "", type= ""):
+    try:
+        server = smtplib.SMTP_SSL(host, port)
+        server.ehlo()
+        server.login(smtp_username, smtp_password)
+    except Exception as e:
+        print "Error: ", e
     msg['From'] = email.utils.formataddr((sendername, sender))
     msg['To'] = email.utils.formataddr((user, recipient))
     # msg['Bcc'] = email.utils.formataddr(("Logs", bcc))
@@ -67,19 +66,15 @@ def send(recipient, user, ID = "", type= ""):
     part2 = MIMEText(html, 'html')
     msg.attach(part1)
     msg.attach(part2)
-    while not SENT:
-        try:
-            server.sendmail(sender, [recipient, bcc], msg.as_string())
-            sent = True
-        except Exception as e:
-            print "Error: ", e
-            sent = False
-    else:
-        del msg['From']
-        del msg['To']
-        del msg['Bcc']
-        sent = False
-        print "Email sent!"
+    try:
+        server.sendmail(sender, [recipient, bcc], msg.as_string())
+    except Exception as e:
+        print "Error: ", e
+
+    del msg['From']
+    del msg['To']
+    del msg['Bcc']
+    print "Email sent to", recipient
 
 def sigint_handler(signum, frame):
     server.close()

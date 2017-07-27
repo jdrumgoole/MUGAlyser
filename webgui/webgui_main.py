@@ -275,6 +275,7 @@ def graph():
         groupList = an.get_group_names(country)
         # print groupList
         limit = request.form.get('limit')
+        curGroup = session['group'] = 
         if limit is None:
             limit = session['limit']
         else:
