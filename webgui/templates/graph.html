@@ -77,6 +77,14 @@
   </select>
 </form>
 
+{% if country != "None" %}
+
+<form class = "_lmt" method="post">
+  <input type="number" name="limit" {% if limit != 0} value = {{limit}} {% else %} value = 0 {% endif %} min="0" max="10000">
+</form>
+
+{% endif %}
+
 <form method="post" style="float: right;">
   <input name = "res" type = "submit" value="Reset"/>
 </form>
@@ -140,7 +148,7 @@
       //             ];
       // };
       s.lineMarkers = true;
-      var leg = myChart.addLegend("0%", "0%", "90%", "90%", "left");
+      var leg = myChart.addLegend("15%", "2%", "90%", "90%", "left");
       // leg.fontSize = "auto";
     {% else %}
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");

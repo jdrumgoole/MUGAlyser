@@ -228,13 +228,14 @@ def graph():
     if request.method == 'GET' or request.form.get('res'):  #sets options to default values
         curbat = session['batch'] = currentBatch
         curGroup = session['group'] = "None"
-        amt = session['amount'] = 0
+        limit = amt = session['amount'] = 0
         country = session['country'] = "None"
     else:
         curbat = request.form.get('bat')
         curGroup = request.form.get('grp')
         amt = request.form.get('amt')
         country = request.form.get('country')
+        bound = request.form.get('limit')
 
         if curbat is None:
             curbat = session['batch']
@@ -259,6 +260,11 @@ def graph():
         else:
             session['country'] = country
 
+        if limit is None:
+            limit = session['limit']
+        else:
+            session['limit'] = int(limit)
+
     output = []
 
     if curGroup == 'None' and country == 'None':
@@ -272,7 +278,7 @@ def graph():
     if country in ['EU', 'US', 'ALL']:
         groupList = an.get_group_names(country)
         # print groupList
-        bound = 500
+        bound = int(request.form.get('limit'))
         groupCurs = groupCollection.find({ "batchID" : int(curbat), "group.urlname": {"$in": groupList}, "group.members" : {"$gt" : bound}}, 
                                           { "_id"           : 0, 
                                             "group.urlname" : 1,
