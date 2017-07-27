@@ -5,14 +5,6 @@
   <link rel="stylesheet" type="text/css" href="/static/style.css">
   <title> Batch: {{ curbat }} </title>
   <link rel="shortcut icon" href="/static/favicon.ico">
-  <!-- Include Required Prerequisites -->
-<script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
-<script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-<!-- <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/3/css/bootstrap.css" /> -->
- 
-<!-- Include Date Range Picker -->
-<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
-<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
 </head>
 <body>
 
@@ -92,8 +84,6 @@
   Lower limit:<input type="number" name="limit" {% if limit != 0 %} value = {{limit}} {% else %} value = 0 {% endif %} min="0" max="10000">
 </form>
 
-<form class = "test"> <input type="text" class = "daterange" name="daterange"/> </form>
-
 {% endif %}
 
 <form method="post" style="float: right;">
@@ -145,17 +135,6 @@
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
       // var s = myChart.addSeries("Member Count", dimple.plot.line);
       var s = myChart.addSeries("Name", dimple.plot.line);
-      $(function() {
-        $('.daterange').daterangepicker({
-        "autoApply": true,
-        "startDate": "07/21/2017",
-        "endDate": "07/27/2017",
-        "minDate": "01/01/2011"
-      });
-        });
-        $('.daterange').on('apply.daterangepicker', function(ev, picker) {
-            $('.test').submit();
-        });
       x.timePeriod = d3.timeMonday;
       x.timeInterval = 1;
 
