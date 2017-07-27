@@ -278,6 +278,7 @@ def graph():
                                             "group.urlname" : 1,
                                             "group.members" : 1})
         groupList = [d["group"]["urlname"] for d in groupCurs]
+        print groupList
         pipeline = [
             {"$match": {"group.members" : {"$exists" : True}, "group.urlname": {"$in" : groupList}}},
             {"$project":
