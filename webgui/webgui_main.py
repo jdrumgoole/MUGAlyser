@@ -272,6 +272,12 @@ def graph():
     if country in ['EU', 'US', 'ALL']:
         groupList = an.get_group_names(country)
         # print groupList
+        bound = 500
+        groupCurs = groupCollection.find({ "batchID" : int(curbat), "group.name": {"$in": groupList}, "group.members" : {"$gt" : bound}}, 
+                                          { "_id"           : 0, 
+                                            "group.urlname" : 1,
+                                            "group.members" : 1})
+        groupList = [d["group"]["urlname"] for d in groupCurs]
         pipeline = [
             {"$match": {"group.members" : {"$exists" : True}, "group.urlname": {"$in" : groupList}}},
             {"$project":
