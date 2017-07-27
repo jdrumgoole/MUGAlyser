@@ -356,7 +356,6 @@ def graph_events():
         {"$project":
             {
                "year": { "$year": "$event.time" },
-               "yesrsvp" : "$event.yes_rsvp_count"
             }
         },
         {"$match": {"year": {"$in": dates}}},
@@ -369,7 +368,7 @@ def graph_events():
     for doc in eCurs:
         year = doc['_id']  
         output.append({'Year' : year, 'Total Events': doc['numevents']})
-    return render_template("graphevents.html", events = events)
+    return render_template("graphevents.html", output = output)
 
     return render_template("graphbatch.html", members = output)
 @app.route('/user/<member>')
