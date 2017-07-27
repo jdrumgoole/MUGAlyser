@@ -350,6 +350,7 @@ def graph_events():
 
     euList = an.get_group_names('EU')
     usList = an.get_group_names('US')
+    otherList = euList + usList
     now = datetime.now()
     curYear = int(now.year)
     dates = [i for i in range(2009, curYear + 1)]
@@ -379,8 +380,21 @@ def graph_events():
         {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}},
         { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
     ]
+    pipelineOther = [
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$nin": otherList}}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "month": { "$month": "$event.time"}
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}},
+        { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
+    ]
     eCurs = eventsCollection.aggregate(pipelineEU)
     uCurs = eventsCollection.aggregate(pipelineUS)
+    oCurs = eventsCollection.aggregate(pipelineOther)
     # doc = eCurs.next()
     # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
     # events[year] = doc['numevents']
@@ -402,6 +416,15 @@ def graph_events():
             year = doc['_id']['year']
         date = month, year
         output.append({'Date' : date, 'Total Events': doc['numevents'], 'Region': 'US'})
+    for doc in oCurs:
+        if doc['_id']['month'] - 1 == 0:
+            month = "December"
+            year = doc['_id']['year'] - 1
+        else:
+            month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
+            year = doc['_id']['year']
+        date = month, year
+        output.append({'Date' : date, 'Total Events': doc['numevents'], 'Region': 'Other'})
     return render_template("graphevents.html", output = output)
 
 @app.route('/user/<member>')
