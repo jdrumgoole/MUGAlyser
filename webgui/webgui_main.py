@@ -18,6 +18,7 @@ from datetime import datetime
 from OpenSSL import SSL
 
 import time
+import calendar
 import os
 import re
 import webbrowser
@@ -360,7 +361,8 @@ def graph_events():
             }
         },
         {"$match": {"year": {"$in": dates}}},
-        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}}
+        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}},
+        { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
     ]
     eCurs = eventsCollection.aggregate(pipeline)
     # doc = eCurs.next()
@@ -368,8 +370,8 @@ def graph_events():
     # events[year] = doc['numevents']
     for doc in eCurs:
         year = doc['_id']['year']
-        month = doc['_id']['month']
-        date = year, month
+        month = calendar.month_name[doc['_id']['month']]
+        date = month + ",", year
         output.append({'Date' : date, 'Total Events': doc['numevents']})
     return render_template("graphevents.html", output = output)
 
