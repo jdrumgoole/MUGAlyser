@@ -235,6 +235,7 @@ def graph():
         curGroup = request.form.get('grp')
         amt = request.form.get('amt')
         country = request.form.get('country')
+        limit = 0
 
         if curbat is None:
             curbat = session['batch']
