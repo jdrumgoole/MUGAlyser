@@ -273,7 +273,13 @@ def graph():
     if country in ['EU', 'US', 'ALL']:
         groupList = an.get_group_names(country)
         # print groupList
-        limit = int(request.form.get('limit'))
+        limit = request.form.get('limit')
+        if limit is None:
+            limit = session['limit']
+        else:
+            limit = int(limit)
+            session['limit'] = limit
+
         # session['limit'] = limit
         groupCurs = groupCollection.find({ "batchID" : int(curbat), "group.urlname": {"$in": groupList}, "group.members" : {"$gt" : limit}}, 
                                           { "_id"           : 0, 
