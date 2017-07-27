@@ -243,7 +243,7 @@ def graph():
             session['batch'] = curbat
             country = session['country'] = "None"
 
-        if curGroup is None:
+        if curGroup is None or curGroup in ['EU', 'US', 'ALL']:
             curGroup = session['group']
         else:
             session['group'] = curGroup
@@ -275,7 +275,7 @@ def graph():
         groupList = an.get_group_names(country)
         # print groupList
         limit = request.form.get('limit')
-        curGroup = session['group'] = 
+        curGroup = country
         if limit is None:
             limit = session['limit']
         else:
