@@ -80,7 +80,7 @@
 {% if country != "None" %}
 
 <form class = "_lmt" method="post">
-  <input type="number" name="limit" {% if limit != 0} value = {{limit}} {% else %} value = 0 {% endif %} min="0" max="10000">
+  <input type="number" name="limit" {% if limit != 0 %} value = {{limit}} {% else %} value = 0 {% endif %} min="0" max="10000">
 </form>
 
 {% endif %}
