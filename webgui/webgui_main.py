@@ -360,11 +360,11 @@ def graph_events():
             {
                "year": { "$year": "$event.time" },
                "month": { "$month": "$event.time"},
-               "country": {'$cond': [{"$in" : euList}, 'EU', 'US']}
+               "EU": { "$in" : ["$event.group.urlname", euList]}
             }
         },
         {"$match": {"year": {"$in": dates}}},
-        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}, 'country' : {'$first' : '$country'}}},
+        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}, 'EU' : {'$first' : '$EU'}}},
         { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
     ]
     eCurs = eventsCollection.aggregate(pipeline)
