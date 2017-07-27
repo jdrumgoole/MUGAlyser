@@ -356,7 +356,7 @@ def graph_events():
     output = []
     # for year in dates:
     pipelineEU = [
-        {"$match": {"batchID": currentBatch}, "group.urlname": {"$in": euList}},
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": euList}}},
         {"$project":
             {
                "year": { "$year": "$event.time" },
@@ -368,7 +368,7 @@ def graph_events():
         { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
     ]
     pipelineUS = [
-        {"$match": {"batchID": currentBatch}, "group.urlname": {"$in": usList}},
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": usList}}},
         {"$project":
             {
                "year": { "$year": "$event.time" },
