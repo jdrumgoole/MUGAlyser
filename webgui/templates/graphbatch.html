@@ -38,17 +38,17 @@
 <script type="text/javascript">
     var data = {{members|tojson}};
 
-    // var min = data[0].Count;
+    var min = data[0].Count;
     // var max = data[0].Count;
-    // for (var i = 0; i < data.length; i++){
-    //   data[i].order = i;
-    //   if(data[i].Count < min){ 
-    //     min = data[i].Count;
-    //   }
-    //   if(data[i].Count > max){
-    //     max = data[i].Count;
-    //   }
-    // };
+    for (var i = 0; i < data.length; i++){
+      data[i].order = i;
+      if(data[i].Count < min){ 
+        min = data[i].Count;
+      }
+      // if(data[i].Count > max){
+      //   max = data[i].Count;
+      // }
+    };
     var svg = dimple.newSvg("#chartContainer", "100%", "100%");
     var myChart = new dimple.chart(svg, data);
     myChart.setMargins("70px", "20px", "30px", "500px");
@@ -59,7 +59,7 @@
     y.fontSize = "12px";
     y.fontFamily = "Arial";
 
-    // y.overrideMin = min - 2;
+    y.overrideMin = min - 2;
     // y.overrideMax = max + 2;
     var x = myChart.addCategoryAxis("x", "Batch");
     var s = myChart.addSeries("Member Count", dimple.plot.bar);
