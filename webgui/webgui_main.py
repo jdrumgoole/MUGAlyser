@@ -433,9 +433,9 @@ def logout():
         session.pop('username')
     return redirect(url_for('index'))
 
-@app.route('/pixel.gif')   #tracking pixel for emails
-def track():   
-    print "Email viewed by:", request.headers.get('X-Forwarded-For', request.remote_addr)
+@app.route('/pixel<User>.gif')   #tracking pixel for emails
+def track(User):   
+    print "Email viewed by:", User
     return send_file('static/pixel.gif', mimetype = 'image/gif')
 
 @app.route('/forgotpw', methods = ['GET', 'POST'])
