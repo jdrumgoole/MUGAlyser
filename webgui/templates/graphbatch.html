@@ -59,10 +59,11 @@
     y.fontSize = "12px";
     y.fontFamily = "Arial";
 
-    y.overrideMin = min * .9;
+    y.overrideMin = min * .99998;
     // y.overrideMax = max + 2;
     var x = myChart.addCategoryAxis("x", "Batch");
     var s = myChart.addSeries("Member Count", dimple.plot.line);
+    s.lineMarkers = true;
     s.getTooltipText = function (e) {
                 return [
                     "Batch: " + e.cx,
