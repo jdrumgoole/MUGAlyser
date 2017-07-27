@@ -356,18 +356,21 @@ def graph_events():
         {"$project":
             {
                "year": { "$year": "$event.time" },
+               "month": { "$month": "$event.month"}
             }
         },
         {"$match": {"year": {"$in": dates}}},
-        {"$group": {"_id": "$year", "numevents": {"$sum": 1}}}
+        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}}
     ]
     eCurs = eventsCollection.aggregate(pipeline)
     # doc = eCurs.next()
     # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
     # events[year] = doc['numevents']
     for doc in eCurs:
-        year = doc['_id']  
-        output.append({'Year' : year, 'Total Events': doc['numevents']})
+        year = doc['_id']['year']
+        month = doc['_id']['month']
+        date = year, month
+        output.append({'Date' : date, 'Total Events': doc['numevents']})
     return render_template("graphevents.html", output = output)
 
     return render_template("graphbatch.html", members = output)
