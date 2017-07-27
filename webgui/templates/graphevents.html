@@ -52,6 +52,7 @@
     // var y2 = myChart.addMeasureAxis("y", "Events");
 
     var x = myChart.addCategoryAxis("x", "Date");
+    x.addOrderRule("Date", false);
     var s = myChart.addSeries("Events", dimple.plot.bar);
     x.fontSize = "14px";
     y.tickFormat = ",d";
@@ -75,22 +76,7 @@
           "Total Events: " + e.cy.toLocaleString(),
       ];
     };
-    s.afterDraw = function (s, d) {
 
-      var shape = d3.select(s);
-      svg.append("text")
-        .attr("x", parseFloat(shape.attr("x")) + shape.attr("width") / 2)
-        .attr("y", parseFloat(shape.attr("y")) + (shape.attr("height") > 30 ? (shape.attr("height") / 2 + 8) : - 10))
-        .style("text-anchor", "middle")
-        .style("font-size", "16px")
-        .style("fill", "c7c5ea")
-        // .style("stroke", "black")
-        // .style("stroke-width", "1px")
-        .style("text-shadow",   "-1px -1px 0 #000,  1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000")
-        .attr("class", "label")
-        .text(d.yValue.toLocaleString());
-
-    };
     // myChart.staggerDraw = true;
     // myChart.ease = "sin";
     myChart.draw(500);
