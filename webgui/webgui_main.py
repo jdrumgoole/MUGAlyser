@@ -235,7 +235,6 @@ def graph():
         curGroup = request.form.get('grp')
         amt = request.form.get('amt')
         country = request.form.get('country')
-        limit = request.form.get('limit')
 
         if curbat is None:
             curbat = session['batch']
@@ -260,10 +259,6 @@ def graph():
         else:
             session['country'] = country
 
-        if limit is None:
-            limit = session['limit']
-        else:
-            session['limit'] = int(limit)
 
     output = []
 
@@ -278,8 +273,9 @@ def graph():
     if country in ['EU', 'US', 'ALL']:
         groupList = an.get_group_names(country)
         # print groupList
-        bound = int(request.form.get('limit'))
-        groupCurs = groupCollection.find({ "batchID" : int(curbat), "group.urlname": {"$in": groupList}, "group.members" : {"$gt" : bound}}, 
+        limit = int(request.form.get('limit'))
+        # session['limit'] = limit
+        groupCurs = groupCollection.find({ "batchID" : int(curbat), "group.urlname": {"$in": groupList}, "group.members" : {"$gt" : limit}}, 
                                           { "_id"           : 0, 
                                             "group.urlname" : 1,
                                             "group.members" : 1})
@@ -317,7 +313,7 @@ def graph():
     # groupl = get_group_list()
     # batchl = get_batch_list()
     # print "------------\n", output
-    return render_template("graph.html", groups = output, grouplist = get_group_list(), batches = get_batch_list(), curbat = int(curbat), curamt = int(amt), curgroup = curGroup, country = country)
+    return render_template("graph.html", groups = output, grouplist = get_group_list(), batches = get_batch_list(), curbat = int(curbat), curamt = int(amt), curgroup = curGroup, country = country, limit = limit)
 
 @app.route("/graph/batch", methods=['POST', 'GET'])
 def graph_batch():
