@@ -18,6 +18,8 @@
       <div class="dropdown-content">
         <a href="/graph">Member Count</a>
         <a href="/graph/yearly">RSVP</a>
+        <a href="/graph/batch">Count per Batch</a>
+        <a href="/graph/events">Event Totals</a>
       </div>
     </li>
     <div class = "logout">
@@ -46,6 +48,7 @@
     {% endfor %}
   </select>
 </form>
+
 
 <!-- <form class = "_type" method="post">
   <select name = "type" onchange="this.form.submit()">
@@ -76,6 +79,14 @@
   </select>
 </form>
 
+{% if country != "None" %}
+
+<form class = "_lmt" method="post">
+  Lower limit:<input type="number" name="limit" {% if limit != 0 %} value = {{limit}} {% else %} value = 0 {% endif %} min="0" max="10000">
+</form>
+
+{% endif %}
+
 <form method="post" style="float: right;">
   <input name = "res" type = "submit" value="Reset"/>
 </form>
@@ -85,17 +96,19 @@
 <script type="text/javascript">
     var data = {{groups|tojson}};
 
-    var min = data[0].Count;
-    var max = data[0].Count;
-    for (var i = 0; i < data.length; i++){
-      data[i].order = i;
-      if(data[i].Count < min){ 
-        min = data[i].Count;
-      }
-      if(data[i].Count > max){
-        max = data[i].Count;
-      }
-    };
+    if(data.length != 0){
+      var min = data[0].Count;
+      var max = data[0].Count;
+      for (var i = 0; i < data.length; i++){
+        data[i].order = i;
+        if(data[i].Count < min){ 
+          min = data[i].Count;
+        }
+        if(data[i].Count > max){
+          max = data[i].Count;
+        }
+      };
+    }
     var svg = dimple.newSvg("#chartContainer", "100%", "100%");
     var myChart = new dimple.chart(svg, data);
     myChart.setMargins("60px", "30px", "30px", "500px");
@@ -125,11 +138,10 @@
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
       // var s = myChart.addSeries("Member Count", dimple.plot.line);
       var s = myChart.addSeries("Name", dimple.plot.line);
-
       x.timePeriod = d3.timeMonday;
       x.timeInterval = 1;
 
-      y.ticks = 4;
+      y.ticks = 8;
       y.tickInterval = 1;
 
       // s.getTooltipText = function (e) {
@@ -139,6 +151,8 @@
       //             ];
       // };
       s.lineMarkers = true;
+      var leg = myChart.addLegend("15%", "2%", "90%", "90%", "left");
+      // leg.fontSize = "auto";
     {% else %}
       var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
       var s = myChart.addSeries("Member Count", dimple.plot.line);
@@ -178,6 +192,12 @@
     // myChart.ease = "sin";
     myChart.draw(/*500*/);
 
+    {% if curgroup == "None" and country == "None" %}
+      d3.selectAll("rect").on("click", function (e) {
+        document.getElementById("groupsel").value = e.cx;
+        document.getElementById("group").submit();
+      });
+    {% endif %}
     window.onresize = function () {
       myChart.draw(0, true);
     };

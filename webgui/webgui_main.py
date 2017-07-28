@@ -17,7 +17,9 @@ from os import urandom
 from datetime import datetime
 from OpenSSL import SSL
 
+
 import time
+import calendar
 import os
 import re
 import webbrowser
@@ -64,6 +66,10 @@ db = connection.MUGS
 userColl = db.users
 resetColl = db.resets
 
+euList = an.get_group_names('EU')
+usList = an.get_group_names('US')
+otherList = euList + usList
+
 @app.before_request    #somehow works to redirect all http requests to https
 def secure_redirect():
     pass
@@ -101,7 +107,7 @@ def get_group_list():
     return groupl
 
 def get_batch_list():
-    batchIDs = auditdb.getBatchIDs()
+    batchIDs = auditdb.get_valid_batch_ids()
 
     batchIDList = [d for d in batchIDs]
     batchIDList = list(set(batchIDList))  #removes duplicates 
@@ -199,8 +205,8 @@ def graph_yearly():
     output = []
     events = {}
     # for year in dates:
-    pipeline = [
-        {"$match": {"batchID": currentBatch}},
+    pipelineEU = [
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": euList}}},
         {"$project":
             {
                "year": { "$year": "$event.time" },
@@ -210,13 +216,46 @@ def graph_yearly():
         {"$match": {"year": {"$in": dates}}},
         {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
     ]
-    eCurs = eventsCollection.aggregate(pipeline)
+    pipelineUS = [
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": usList}}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "yesrsvp" : "$event.yes_rsvp_count"
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
+    ]
+    pipelineOther = [
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$nin": otherList}}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "yesrsvp" : "$event.yes_rsvp_count"
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
+    ]
+    eCurs = eventsCollection.aggregate(pipelineEU)
+    uCurs = eventsCollection.aggregate(pipelineUS)
+    oCurs = eventsCollection.aggregate(pipelineOther)
+
     # doc = eCurs.next()
     # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
     # events[year] = doc['numevents']
     for doc in eCurs:
         year = doc['_id']  
-        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
+        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'EU'})
+        events[year] = doc['numevents']
+    for doc in uCurs:
+        year = doc['_id']  
+        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'US'})
+        events[year] = doc['numevents']
+    for doc in oCurs:
+        year = doc['_id']  
+        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'Other'})
         events[year] = doc['numevents']
     return render_template("graphyearly.html", groups = output, events = events)
 
@@ -225,12 +264,13 @@ def graph():
     if not verify_login():
         return redirect(url_for('show_login'))
 
+    limit = 0
     if request.method == 'GET' or request.form.get('res'):  #sets options to default values
         curbat = session['batch'] = currentBatch
         curGroup = session['group'] = "None"
-        amt = session['amount'] = 0
+        session['limit'] = limit = amt = session['amount'] = 0
         country = session['country'] = "None"
-    else:
+    else:    #this stores and swaps form values with session - allows for the selected value to remain consistent
         curbat = request.form.get('bat')
         curGroup = request.form.get('grp')
         amt = request.form.get('amt')
@@ -242,7 +282,7 @@ def graph():
             session['batch'] = curbat
             country = session['country'] = "None"
 
-        if curGroup is None:
+        if curGroup is None or curGroup in ['EU', 'US', 'ALL']:
             curGroup = session['group']
         else:
             session['group'] = curGroup
@@ -259,6 +299,7 @@ def graph():
         else:
             session['country'] = country
 
+
     output = []
 
     if curGroup == 'None' and country == 'None':
@@ -272,6 +313,25 @@ def graph():
     if country in ['EU', 'US', 'ALL']:
         groupList = an.get_group_names(country)
         # print groupList
+        limit = request.form.get('limit')
+
+        curGroup = country
+        if limit is None:
+            if country == 'ALL':
+                limit = 2000 #applies default limit to prevent slow rendering
+            else:
+                limit = 1000
+        else:
+            limit = int(limit)
+            session['limit'] = limit
+
+        # session['limit'] = limit
+        groupCurs = groupCollection.find({ "batchID" : int(curbat), "group.urlname": {"$in": groupList}, "group.members" : {"$gt" : limit}}, 
+                                          { "_id"           : 0, 
+                                            "group.urlname" : 1,
+                                            "group.members" : 1})
+        groupList = [d["group"]["urlname"] for d in groupCurs]
+        print groupList
         pipeline = [
             {"$match": {"group.members" : {"$exists" : True}, "group.urlname": {"$in" : groupList}}},
             {"$project":
@@ -304,21 +364,110 @@ def graph():
     # groupl = get_group_list()
     # batchl = get_batch_list()
     # print "------------\n", output
-    return render_template("graph.html", groups = output, grouplist = get_group_list(), batches = get_batch_list(), curbat = int(curbat), curamt = int(amt), curgroup = curGroup, country = country)
+    return render_template("graph.html", groups = output, grouplist = get_group_list(), batches = get_batch_list(), curbat = int(curbat), curamt = int(amt), curgroup = curGroup, country = country, limit = limit)
 
 @app.route("/graph/batch", methods=['POST', 'GET'])
 def graph_batch():
     if not verify_login():
         return redirect(url_for('show_login'))
 
-    pipeline = [
-        {"$group": {"_id": "$batchID", "total_members": {"$sum": "$group.member_count"}}}
-    ]
+    # pipeline = [
+    #     {"$group": {"_id": "$batchID", "total_members": {"$sum": "$group.member_count"}, 'timestamp': {'$first' : '$timestamp'} }}
+    # ]
 
-    groupCurs = proGrpCollection.aggregate(pipeline)
-    output = [{'Batch' : d['_id'], 'Count': d['total_members']} for d in groupCurs]
+    pipeline = [
+        {'$match': {'batchID': {'$in': get_batch_list()}}},
+        {'$project': {"batchID": 1, "timestamp": 1, "group.members": { "$ifNull": ["$group.members", 0]}, "group.member_count" : {'$ifNull': ["$group.member_count", 0]}}},
+        {'$project': {"batchID": 1, "timestamp": 1, "members" : {'$add': ["$group.members", "$group.member_count"]}}},
+        {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
+
+    ]
+    groupCurs = groupCollection.aggregate(pipeline)
+    output = [{'Batch' : d['_id'], 'Count': d['total_members'], 'Time': d['timestamp']} for d in groupCurs]
 
     return render_template("graphbatch.html", members = output)
+
+@app.route("/graph/events", methods=['POST', 'GET'])
+def graph_events():
+    if not verify_login():
+        return redirect(url_for('show_login'))
+
+    now = datetime.now()
+    curYear = int(now.year)
+    dates = [i for i in range(2009, curYear + 1)]
+    output = []
+    # for year in dates:
+    pipelineEU = [
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": euList}}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "month": { "$month": "$event.time"}
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}},
+        { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
+    ]
+    pipelineUS = [
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": usList}}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "month": { "$month": "$event.time"}
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}},
+        { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
+    ]
+    pipelineOther = [
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$nin": otherList}}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "month": { "$month": "$event.time"}
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": {"year" : "$year", "month" : "$month"}, "numevents": {"$sum": 1}}},
+        { "$sort" : { "_id.year" : 1, "_id.month": 1 }} 
+    ]
+    eCurs = eventsCollection.aggregate(pipelineEU)
+    uCurs = eventsCollection.aggregate(pipelineUS)
+    oCurs = eventsCollection.aggregate(pipelineOther)
+    # doc = eCurs.next()
+    # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
+    # events[year] = doc['numevents']
+    for doc in eCurs:
+        if doc['_id']['month'] - 1 == 0:
+            month = "December"
+            year = doc['_id']['year'] - 1
+        else:
+            month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
+            year = doc['_id']['year']
+        date = month, year
+        output.append({'Date' : date, 'Total Events': doc['numevents'], 'Region': 'EU'})
+    for doc in uCurs:
+        if doc['_id']['month'] - 1 == 0:
+            month = "December"
+            year = doc['_id']['year'] - 1
+        else:
+            month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
+            year = doc['_id']['year']
+        date = month, year
+        output.append({'Date' : date, 'Total Events': doc['numevents'], 'Region': 'US'})
+    for doc in oCurs:
+        if doc['_id']['month'] - 1 == 0:
+            month = "December"
+            year = doc['_id']['year'] - 1
+        else:
+            month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
+            year = doc['_id']['year']
+        date = month, year
+        output.append({'Date' : date, 'Total Events': doc['numevents'], 'Region': 'Other'})
+    return render_template("graphevents.html", output = output)
+
 @app.route('/user/<member>')
 def get_member(member):
     # show the user profile for that user
@@ -370,9 +519,9 @@ def get_signup():
 @app.route('/verify/<ID>')
 def verify_account(ID):
     if userColl.find_one({'verified':ID}):
-        session['username'] = userColl.find_one({'verified': ID})['_id']
         userColl.update({'verified': ID}, {'$set': {'verified': True}})
-        return redirect(url_for('index'))
+        return redirect(url_for('show_login'))
+
     return """
     <link rel="stylesheet" type="text/css" href="/static/style.css">
     <a href="/">Home</a>
@@ -416,9 +565,9 @@ def logout():
         session.pop('username')
     return redirect(url_for('index'))
 
-@app.route('/pixel.gif')   #tracking pixel for emails
-def track():   
-    print "Email viewed by:", request.headers.get('X-Forwarded-For', request.remote_addr)
+@app.route('/pixel<User>.gif')   #tracking pixel for emails
+def track(User):   
+    print "Email viewed by:", User
     return send_file('static/pixel.gif', mimetype = 'image/gif')
 
 @app.route('/forgotpw', methods = ['GET', 'POST'])

@@ -18,7 +18,8 @@
       <div class="dropdown-content">
         <a href="/graph">Member Count</a>
         <a href="/graph/yearly">RSVP</a>
-        <a href="/graph/batch">Counts per Batch</a>
+        <a href="/graph/batch">Count per Batch</a>
+        <a href="/graph/events">Event Totals</a>
       </div>
     </li>
     <div class = "logout">
@@ -39,15 +40,15 @@
     var data = {{members|tojson}};
 
     var min = data[0].Count;
-    var max = data[0].Count;
+    // var max = data[0].Count;
     for (var i = 0; i < data.length; i++){
       data[i].order = i;
       if(data[i].Count < min){ 
         min = data[i].Count;
       }
-      if(data[i].Count > max){
-        max = data[i].Count;
-      }
+      // if(data[i].Count > max){
+      //   max = data[i].Count;
+      // }
     };
     var svg = dimple.newSvg("#chartContainer", "100%", "100%");
     var myChart = new dimple.chart(svg, data);
@@ -59,20 +60,31 @@
     y.fontSize = "12px";
     y.fontFamily = "Arial";
 
-    y.overrideMin = min - 2;
-    y.overrideMax = max + 2;
-    var x = myChart.addCategoryAxis("x", "Batch");
-    var s = myChart.addSeries("Member Count", dimple.plot.bar);
-    s.getTooltipText = function (e) {
-                return [
-                    "Batch: " + e.cx,
-                    "Member count: " + e.cy.toLocaleString()
-                ];
-            };
+    // y.overrideMin = min * .998;
+    // console.log(min);
+    // console.log(min * .998);
+    y.overrideMin = 10000;
+    // y.overrideMax = max + 2;
+    var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%d %B %Y");
+    var s = myChart.addSeries("Member Count", dimple.plot.line);
+    var s1 = myChart.addSeries("Batch", dimple.plot.scatter);
+    myChart.defaultColors = [
+      new dimple.color("#FFFFFF", "#96B0C4")
+
+    ]; 
+    s.lineMarkers = true;
+    x.timePeriod = d3.timeMonth;
+    x.timeInterval = 1;
+    // s.getTooltipText = function (e) {
+    //             return [
+    //                 "Batch: " + e.cx,
+    //                 "Member count: " + e.cy.toLocaleString()
+    //             ];
+    //         };
 
 
-      y.ticks = 4;
-      y.tickInterval = 1;
+    y.ticks = 4;
+    y.tickInterval = 1;
     // var leg = myChart.addLegend("80%", "5%", 100, 100);
     // leg.fontSize = "auto";
     s.tooltipFontSize = "16px";
