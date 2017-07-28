@@ -40,15 +40,16 @@
         <tr> 
         <td><b>Name </td> 
         <td> <b>Member Count &emsp;</td>
-        <td> <b>Last event &emsp;&nbsp;&nbsp;</td> 
         <td> <b>Average RSVP </td> 
+        <td> <b>Last event &emsp;&nbsp;&nbsp;</td> 
+        
         </tr>
         {% for group in groups %}
         <tr>
         <td>{{ group.0 }} </td>
         <td>{{ group.1 }} </td>
-        <td>{{ group.2 }} </td>
         <td>{{ group.3 }} </td>
+        <td>{{ group.2 }} </td>
         </tr>
         {% endfor %}
 
