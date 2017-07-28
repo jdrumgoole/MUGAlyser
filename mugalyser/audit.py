@@ -119,7 +119,10 @@ class Audit( object ):
             yield i[ 'batchID' ]
         
     def start_batch(self, doc, name=None ):
-
+        '''
+        This needs to changed to lock against a doc in the database otherwise
+        two seperate programs may allocate the same batch number.
+        '''
         with self._lock :
             last_id = self.get_last_batch_id()
             if last_id is None :
@@ -138,8 +141,13 @@ class Audit( object ):
         if not self.is_batch( batchID):
             raise ValueError( "BatchID does not exist: %s" % batchID )
         
+        start = self._auditCollection.find_one( { "batchID" : batchID,
+                                                  "start"   : { "$type" : 9 }})
+        
         self._auditCollection.insert_one( { "batchID" : batchID,
+                                            "start"   : start[ "start"],
                                             "end"     : datetime.utcnow()})
+        
         self._open_batch_count = self._open_batch_count - 1
         return batchID   
     

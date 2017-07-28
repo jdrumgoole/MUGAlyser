@@ -79,7 +79,7 @@ def get_batches( mdb, start, end ):
     audit = Audit( mdb )
     
     for i in audit.get_valid_batches( start, end ):
-        print( i )
+        print( "BatchID :%i End : %s " % ( i[ "batchID"], i[ "end"].strftime( "%d-%b-%Y %H:%M.%S")))
     #c.output( [ "batchID" , "end", "start" ], datemap=[ "start", "end" ], limit=limit)
 
     

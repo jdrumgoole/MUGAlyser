@@ -49,6 +49,9 @@ class Test_groups(unittest.TestCase):
         
         self.assertRaises(ValueError, self._groups.get_region_group_urlnames, 27 )
 
+    def test_get_group_ids( self ):
+        _ = list( self._groups.get_region_group_ids())
+                    
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

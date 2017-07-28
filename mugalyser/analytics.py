@@ -227,7 +227,19 @@ class MUG_Analytics( object ):
             urls = groups.get_region_group_urlnames()
             
         return urls
-                    
+                  
+    def get_group_ids( self, region_arg ) :  
+        
+        groups = Groups( self._mdb )
+        if region_arg == "EU" :
+            urls = groups.get_region_group_ids( EU_COUNTRIES )
+        elif region_arg == "US" :
+            urls = groups.get_region_group_ids( [ "USA" ] )
+        else:
+            urls = groups.get_region_group_ids()
+            
+        return urls
+            
     def batchMatch( self, collection ):
         agg = Agg( collection )
         agg.addMatch({ "batchID" : self._batchID } )
