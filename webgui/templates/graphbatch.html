@@ -63,9 +63,10 @@
     y.overrideMin = min * .998;
     // y.overrideMax = max + 2;
     var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B");
-    var s = myChart.addSeries("Batch", dimple.plot.line);
-    s.lineMarkers = true;
-    x.timePeriod = d3.timeDay;
+    var s = myChart.addSeries("Member Count", dimple.plot.line);
+    var s1 = myChart.addSeries("Batch", dimple.plot.scatter);
+    // s.lineMarkers = true;
+    x.timePeriod = d3.timeMonth;
     x.timeInterval = 1;
     // s.getTooltipText = function (e) {
     //             return [
