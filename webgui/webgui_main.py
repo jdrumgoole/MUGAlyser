@@ -49,6 +49,7 @@ try:
     mdb = MUGAlyserMongoDB(uri = uri)
 
 except Exception as e:
+    print "Error", e
     print "URI isn't valid, trying to run on localhost now"
     mdb = MUGAlyserMongoDB()
 
