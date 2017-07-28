@@ -303,13 +303,13 @@ def graph_yearly():
         uCurs = eventsCollection.aggregate(pipelineUS)
         oCurs = eventsCollection.aggregate(pipelineOther)
         for doc in eCurs:
-            month = calendar.month_name[doc['_id'] - 1]  #need to subtract 1 since JS months start from 0
+            month = calendar.month_name[doc['_id']]  #need to subtract 1 since JS months start from 0
             output.append({'Year' : month, 'Total RSVP': doc['total_rsvp'], 'Region': 'EU'})
         for doc in uCurs:
-            month = calendar.month_name[doc['_id'] - 1]  #need to subtract 1 since JS months start from 0
+            month = calendar.month_name[doc['_id']]  #need to subtract 1 since JS months start from 0
             output.append({'Year' : month, 'Total RSVP': doc['total_rsvp'], 'Region': 'US'})
         for doc in oCurs:
-            month = calendar.month_name[doc['_id'] - 1]  #need to subtract 1 since JS months start from 0
+            month = calendar.month_name[doc['_id']]  #need to subtract 1 since JS months start from 0
             output.append({'Year' : month, 'Total RSVP': doc['total_rsvp'], 'Region': 'Other'})
     return render_template("graphyearly.html", groups = output, events = events, years = dates, year = Year)
 
