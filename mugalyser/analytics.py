@@ -234,7 +234,7 @@ class MUG_Analytics( object ):
         if region_arg == "EU" :
             urls = groups.get_region_group_ids( EU_COUNTRIES )
         elif region_arg == "US" :
-            urls = groups.get_region_group_ids [ "USA" ] )
+            urls = groups.get_region_group_ids( [ "USA" ] )
         else:
             urls = groups.get_region_group_ids()
             
