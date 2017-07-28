@@ -339,7 +339,7 @@ def graph_batch():
     # ]
 
     pipeline = [
-        {'$project' {"members" : {'$add': ["$group.members", "$group.member_count"]}}},
+        {'$project': {"members" : {'$add': ["$group.members", "$group.member_count"]}}},
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
 
     ]
