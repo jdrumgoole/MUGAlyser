@@ -59,7 +59,7 @@
     y.fontFamily = "Arial";
 
     // var y2 = myChart.addMeasureAxis("y", "Events");
-
+    {% if year != '0' %}
     var x = myChart.addCategoryAxis("x", ["Year", "Region"]);
     var s = myChart.addSeries("Region", dimple.plot.bar);
     x.fontSize = "14px";
@@ -87,6 +87,35 @@
           // "Average RSVP: " + (e.cy / events[e.cx]).toFixed(2)
       ];
     };
+    {% else %}
+    var x = myChart.addCategoryAxis("x", ["Year", "Region"]);
+    var s = myChart.addSeries("Region", dimple.plot.bar);
+    x.fontSize = "14px";
+    y.tickFormat = ",d";
+    y.ticks = 4;
+
+    var leg = myChart.addLegend("90%", "5%", 140, 140);
+    leg.fontSize = "auto";
+
+    s.tooltipFontSize = "16px";
+    s.tooltipFontFamily = "Arial";
+
+ 
+    // var s2 = myChart.addSeries(null, dimple.plot.line, [x,y2]);
+    // s2.data = ev;
+
+    //x.addOrderRule("Count");
+
+    s.getTooltipText = function (e) {
+      return [
+          "Region: " + e.aggField[0],
+          "Year: " + e.cx,
+          "Total RSVP: " + e.cy.toLocaleString(),
+          // "Total events: " + events[e.cx],
+          // "Average RSVP: " + (e.cy / events[e.cx]).toFixed(2)
+      ];
+    };
+    {% endif %}
     s.afterDraw = function (s, d) {
 
       var shape = d3.select(s);

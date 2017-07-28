@@ -263,8 +263,8 @@ def graph_yearly():
     else:
         Year = int(request.form.get('year'))
 
-        pipeline = [
-            {"$match": {"batchID": currentBatch}},
+        pipelineEU = [
+            {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": usList}}},
             {"$project":
                 {
                     "year": {"$year": "$event.time" },
@@ -275,13 +275,50 @@ def graph_yearly():
             {"$match": {"year": Year}},
             {"$group": {"_id": "$month", "total_rsvp": {"$sum": "$yesrsvp"}}}
         ]
-        eCurs = eventsCollection.aggregate(pipeline)
+        pipelineEU = [
+            {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": euList}}},
+            {"$project":
+                {
+                    "year": {"$year": "$event.time" },
+                    "month": {"$month": "$event.time"},
+                    "yesrsvp" : "$event.yes_rsvp_count"
+                }
+            },
+            {"$match": {"year": Year}},
+            {"$group": {"_id": "$month", "total_rsvp": {"$sum": "$yesrsvp"}}}
+        ]
+        pipelineOther = [
+            {"$match": {"batchID": currentBatch, "event.group.urlname": {"$nin": otherList}}},
+            {"$project":
+                {
+                    "year": {"$year": "$event.time" },
+                    "month": {"$month": "$event.time"},
+                    "yesrsvp" : "$event.yes_rsvp_count"
+                }
+            },
+            {"$match": {"year": Year}},
+            {"$group": {"_id": "$month", "total_rsvp": {"$sum": "$yesrsvp"}}}
+        ]
+        eCurs = eventsCollection.aggregate(pipelineEU)
+        uCurs = eventsCollection.aggregate(pipelineUS)
+        oCurs = eventsCollection.aggregate(pipelineOther)
         for doc in eCurs:
             if doc['_id'] - 1 == 0:
                 month = "December"
             else:
                 month = calendar.month_name[doc['_id'] - 1]  #need to subtract 1 since JS months start from 0
-
+            output.append({'Year' : month, 'Total RSVP': doc['total_rsvp'], 'Region': 'EU'})
+        for doc in uCurs:
+            if doc['_id'] - 1 == 0:
+                month = "December"
+            else:
+                month = calendar.month_name[doc['_id'] - 1]  #need to subtract 1 since JS months start from 0
+            output.append({'Year' : month, 'Total RSVP': doc['total_rsvp'], 'Region': 'US'})
+        for doc in oCurs:
+            if doc['_id'] - 1 == 0:
+                month = "December"
+            else:
+                month = calendar.month_name[doc['_id'] - 1]  #need to subtract 1 since JS months start from 0
             output.append({'Year' : month, 'Total RSVP': doc['total_rsvp'], 'Region': 'Other'})
     return render_template("graphyearly.html", groups = output, events = events, years = dates, year = Year)
 
