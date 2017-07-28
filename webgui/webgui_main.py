@@ -195,7 +195,7 @@ def members(pg):
         #     output.append( i )
     return render_template("members.html", members = output, cur = pg, query = query, filt = interest)
 
-@app.route("/graph/yearly")
+@app.route("/graph/yearly", methods=['POST', 'GET'])
 def graph_yearly():
     if not verify_login():
         return redirect(url_for('show_login'))
@@ -204,60 +204,80 @@ def graph_yearly():
     dates = [i for i in range(2009, curYear + 1)]
     output = []
     events = {}
+    Year = '0'
     # for year in dates:
-    pipelineEU = [
-        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": euList}}},
-        {"$project":
-            {
-               "year": { "$year": "$event.time" },
-               "yesrsvp" : "$event.yes_rsvp_count"
-            }
-        },
-        {"$match": {"year": {"$in": dates}}},
-        {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
-    ]
-    pipelineUS = [
-        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": usList}}},
-        {"$project":
-            {
-               "year": { "$year": "$event.time" },
-               "yesrsvp" : "$event.yes_rsvp_count"
-            }
-        },
-        {"$match": {"year": {"$in": dates}}},
-        {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
-    ]
-    pipelineOther = [
-        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$nin": otherList}}},
-        {"$project":
-            {
-               "year": { "$year": "$event.time" },
-               "yesrsvp" : "$event.yes_rsvp_count"
-            }
-        },
-        {"$match": {"year": {"$in": dates}}},
-        {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
-    ]
-    eCurs = eventsCollection.aggregate(pipelineEU)
-    uCurs = eventsCollection.aggregate(pipelineUS)
-    oCurs = eventsCollection.aggregate(pipelineOther)
+    if request.method == 'GET' or request.form.get('year') == '0':
+        pipelineEU = [
+            {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": euList}}},
+            {"$project":
+                {
+                   "year": { "$year": "$event.time" },
+                   "yesrsvp" : "$event.yes_rsvp_count"
+                }
+            },
+            {"$match": {"year": {"$in": dates}}},
+            {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
+        ]
+        pipelineUS = [
+            {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": usList}}},
+            {"$project":
+                {
+                   "year": { "$year": "$event.time" },
+                   "yesrsvp" : "$event.yes_rsvp_count"
+                }
+            },
+            {"$match": {"year": {"$in": dates}}},
+            {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
+        ]
+        pipelineOther = [
+            {"$match": {"batchID": currentBatch, "event.group.urlname": {"$nin": otherList}}},
+            {"$project":
+                {
+                   "year": { "$year": "$event.time" },
+                   "yesrsvp" : "$event.yes_rsvp_count"
+                }
+            },
+            {"$match": {"year": {"$in": dates}}},
+            {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
+        ]
+        eCurs = eventsCollection.aggregate(pipelineEU)
+        uCurs = eventsCollection.aggregate(pipelineUS)
+        oCurs = eventsCollection.aggregate(pipelineOther)
 
-    # doc = eCurs.next()
-    # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
-    # events[year] = doc['numevents']
-    for doc in eCurs:
-        year = doc['_id']  
-        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'EU'})
-        events[year] = doc['numevents']
-    for doc in uCurs:
-        year = doc['_id']  
-        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'US'})
-        events[year] = doc['numevents']
-    for doc in oCurs:
-        year = doc['_id']  
-        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'Other'})
-        events[year] = doc['numevents']
-    return render_template("graphyearly.html", groups = output, events = events, years = dates)
+        # doc = eCurs.next()
+        # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
+        # events[year] = doc['numevents']
+        for doc in eCurs:
+            year = doc['_id']  
+            output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'EU'})
+            events[year] = doc['numevents']
+        for doc in uCurs:
+            year = doc['_id']  
+            output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'US'})
+            events[year] = doc['numevents']
+        for doc in oCurs:
+            year = doc['_id']  
+            output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'Other'})
+            events[year] = doc['numevents']
+
+    else:
+        Year = int(request.form.get('year'))
+        pipeline = [
+            {"$match": {"batchID": currentBatch}},
+            {"$project":
+                {
+                    "year": {"$year": "$event.time" },
+                    "month": {"$month": "$event.time"}
+                }
+            },
+            {"$match": {"year": Year}},
+            {"$group": {"_id": "$month", "total_rsvp": {"$sum": "$yesrsvp"}}}
+        ]
+        eCurs = eventsCollection.aggregate(pipeline)
+        for doc in eCurs:
+            month = doc['_id']  
+            output.append({'Year' : month, 'Total RSVP': doc['total_rsvp'], 'Region': 'Other'})
+    return render_template("graphyearly.html", groups = output, events = events, years = dates, year = Year)
 
 @app.route("/graph", methods=['POST', 'GET'])
 def graph():

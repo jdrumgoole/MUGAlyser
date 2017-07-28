@@ -33,7 +33,7 @@
 <h2> RSVP per year</h2> 
 <form class = "_year" method="post">
   <select name = "year" onchange="this.form.submit()">
-    <option value = "0" {% if 0 == curamt  %} selected = "selected" {% endif %}> All </option>
+    <option value = "0" {% if '0' == year  %} selected = "selected" {% endif %}> All </option>
     {% for id in years %}
     <option value = "{{ id }}" {% if id == year %} selected = "selected" {% endif %}> {{id}} </option>
     {% endfor %}
