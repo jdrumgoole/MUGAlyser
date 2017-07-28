@@ -62,9 +62,10 @@
 
     y.overrideMin = min * .998;
     // y.overrideMax = max + 2;
-    var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%A, %d %B %Y");
-    var s = myChart.addSeries("Batch", dimple.plot.line);
-    // var s1 = myChart.addSeries("Batch", dimple.plot.scatter);
+    var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%d %B %Y");
+    var s = myChart.addSeries("Member Count", dimple.plot.line);
+    var s1 = myChart.addSeries("Batch", dimple.plot.scatter);
+    myChart.assignColor("Batch", "white");
     s.lineMarkers = true;
     x.timePeriod = d3.timeMonth;
     x.timeInterval = 1;
