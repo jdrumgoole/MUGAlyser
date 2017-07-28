@@ -129,7 +129,7 @@ def groups():
     
     output = []
     for d in curGroups:
-        output.append( [d["group"]["name"], "{:,}".format(d["group"]["member_count"]), round(d["group"]["average_age"], 2), d["group"]["last_event"]])
+        output.append( [d["group"]["name"], "{:,}".format(d["group"]["member_count"]), round(d["group"]["average_age"], 2), round(d["group"]["rsvps_per_event"], 2)])
         
     return render_template("groups.html", groups = output)
 
