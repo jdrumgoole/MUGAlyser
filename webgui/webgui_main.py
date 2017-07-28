@@ -275,7 +275,7 @@ def graph_yearly():
             {"$match": {"year": Year}},
             {"$group": {"_id": "$month", "total_rsvp": {"$sum": "$yesrsvp"}}}
         ]
-        pipelineEU = [
+        pipelineUS = [
             {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": euList}}},
             {"$project":
                 {
