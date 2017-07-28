@@ -66,6 +66,10 @@ db = connection.MUGS
 userColl = db.users
 resetColl = db.resets
 
+euList = an.get_group_names('EU')
+usList = an.get_group_names('US')
+otherList = euList + usList
+
 @app.before_request    #somehow works to redirect all http requests to https
 def secure_redirect():
     pass
@@ -201,8 +205,8 @@ def graph_yearly():
     output = []
     events = {}
     # for year in dates:
-    pipeline = [
-        {"$match": {"batchID": currentBatch}},
+    pipelineEU = [
+        {"$match": {"batchID": currentBatch}, "event.group.urlname": {"$in": euList}},
         {"$project":
             {
                "year": { "$year": "$event.time" },
@@ -212,13 +216,46 @@ def graph_yearly():
         {"$match": {"year": {"$in": dates}}},
         {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
     ]
-    eCurs = eventsCollection.aggregate(pipeline)
+    pipelineUS = [
+        {"$match": {"batchID": currentBatch}, "event.group.urlname": {"$in": usList}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "yesrsvp" : "$event.yes_rsvp_count"
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
+    ]
+    pipelineOther = [
+        {"$match": {"batchID": currentBatch}, "event.group.urlname": {"$nin": otherList}},
+        {"$project":
+            {
+               "year": { "$year": "$event.time" },
+               "yesrsvp" : "$event.yes_rsvp_count"
+            }
+        },
+        {"$match": {"year": {"$in": dates}}},
+        {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
+    ]
+    eCurs = eventsCollection.aggregate(pipelineEU)
+    uCurs = eventsCollection.aggregate(pipelineUS)
+    oCurs = eventsCollection.aggregate(pipelineOther)
+
     # doc = eCurs.next()
     # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
     # events[year] = doc['numevents']
     for doc in eCurs:
         year = doc['_id']  
-        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
+        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'EU'})
+        events[year] = doc['numevents']
+    for doc in uCurs:
+        year = doc['_id']  
+        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'US'})
+        events[year] = doc['numevents']
+    for doc in oCurs:
+        year = doc['_id']  
+        output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'Other'})
         events[year] = doc['numevents']
     return render_template("graphyearly.html", groups = output, events = events)
 
@@ -354,9 +391,6 @@ def graph_events():
     if not verify_login():
         return redirect(url_for('show_login'))
 
-    euList = an.get_group_names('EU')
-    usList = an.get_group_names('US')
-    otherList = euList + usList
     now = datetime.now()
     curYear = int(now.year)
     dates = [i for i in range(2009, curYear + 1)]
