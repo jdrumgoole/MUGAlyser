@@ -206,7 +206,7 @@ def graph_yearly():
     events = {}
     # for year in dates:
     pipelineEU = [
-        {"$match": {"batchID": currentBatch}, "event.group.urlname": {"$in": euList}},
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": euList}}},
         {"$project":
             {
                "year": { "$year": "$event.time" },
@@ -217,7 +217,7 @@ def graph_yearly():
         {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
     ]
     pipelineUS = [
-        {"$match": {"batchID": currentBatch}, "event.group.urlname": {"$in": usList}},
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$in": usList}}},
         {"$project":
             {
                "year": { "$year": "$event.time" },
@@ -228,7 +228,7 @@ def graph_yearly():
         {"$group": {"_id": "$year", "total_rsvp": {"$sum": "$yesrsvp"}, "numevents": {"$sum": 1}}}
     ]
     pipelineOther = [
-        {"$match": {"batchID": currentBatch}, "event.group.urlname": {"$nin": otherList}},
+        {"$match": {"batchID": currentBatch, "event.group.urlname": {"$nin": otherList}}},
         {"$project":
             {
                "year": { "$year": "$event.time" },
