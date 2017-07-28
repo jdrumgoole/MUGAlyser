@@ -257,7 +257,7 @@ def graph_yearly():
         year = doc['_id']  
         output.append({'Year' : year, 'Total RSVP': doc['total_rsvp'], 'Region': 'Other'})
         events[year] = doc['numevents']
-    return render_template("graphyearly.html", groups = output, events = events)
+    return render_template("graphyearly.html", groups = output, events = events, years = dates)
 
 @app.route("/graph", methods=['POST', 'GET'])
 def graph():

@@ -63,7 +63,7 @@
 
 <form id = "group" class = "_group" method="post">
   <select id = "groupsel" name = "grp" onchange="this.form.submit()">
-    <option value = "None"> None </option>
+    <option value = "None"> All </option>
     {% for group in grouplist %}
     <option value = "{{ group.Name }}"  {% if group.Name == curgroup %} selected = "selected" {% endif %}> {{ group.Name }} </option>
     {% endfor %}
