@@ -35,7 +35,7 @@
   <select name = "year" onchange="this.form.submit()">
     <option value = "0" {% if 0 == curamt  %} selected = "selected" {% endif %}> All </option>
     {% for id in years %}
-    <option value = "{{ id }}" {% if id == year %} selected = "selected" {% endif %}> {{year}} </option>
+    <option value = "{{ id }}" {% if id == year %} selected = "selected" {% endif %}> {{id}} </option>
     {% endfor %}
   </select>
 </form>
