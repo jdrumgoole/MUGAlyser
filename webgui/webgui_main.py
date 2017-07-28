@@ -512,30 +512,18 @@ def graph_events():
     # output.append({'Year' : year, 'Total RSVP': doc['total_rsvp']})
     # events[year] = doc['numevents']
     for doc in eCurs:
-        if doc['_id']['month'] - 1 == 0:
-            month = "December"
-            year = doc['_id']['year'] - 1
-        else:
-            month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
-            year = doc['_id']['year']
+        month = calendar.month_name[doc['_id']['month']]  
+        year = doc['_id']['year']
         date = month, year
         output.append({'Date' : date, 'Total Events': doc['numevents'], 'Region': 'EU'})
     for doc in uCurs:
-        if doc['_id']['month'] - 1 == 0:
-            month = "December"
-            year = doc['_id']['year'] - 1
-        else:
-            month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
-            year = doc['_id']['year']
+        month = calendar.month_name[doc['_id']['month']]  
+        year = doc['_id']['year']   
         date = month, year
         output.append({'Date' : date, 'Total Events': doc['numevents'], 'Region': 'US'})
     for doc in oCurs:
-        if doc['_id']['month'] - 1 == 0:
-            month = "December"
-            year = doc['_id']['year'] - 1
-        else:
-            month = calendar.month_name[doc['_id']['month'] - 1]  #need to subtract 1 since JS months start from 0
-            year = doc['_id']['year']
+        month = calendar.month_name[doc['_id']['month']] 
+        year = doc['_id']['year']
         date = month, year
         output.append({'Date' : date, 'Total Events': doc['numevents'], 'Region': 'Other'})
     return render_template("graphevents.html", output = output)
