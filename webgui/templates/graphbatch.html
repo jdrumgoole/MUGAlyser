@@ -60,7 +60,8 @@
     y.fontSize = "12px";
     y.fontFamily = "Arial";
 
-    y.overrideMin = min * .998;
+    // y.overrideMin = min * .998;
+    y.overrideMax = 10000;
     // y.overrideMax = max + 2;
     var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%d %B %Y");
     var s = myChart.addSeries("Member Count", dimple.plot.line);
