@@ -96,17 +96,19 @@
 <script type="text/javascript">
     var data = {{groups|tojson}};
 
-    var min = data[0].Count;
-    var max = data[0].Count;
-    for (var i = 0; i < data.length; i++){
-      data[i].order = i;
-      if(data[i].Count < min){ 
-        min = data[i].Count;
-      }
-      if(data[i].Count > max){
-        max = data[i].Count;
-      }
-    };
+    if(data.length != 0){
+      var min = data[0].Count;
+      var max = data[0].Count;
+      for (var i = 0; i < data.length; i++){
+        data[i].order = i;
+        if(data[i].Count < min){ 
+          min = data[i].Count;
+        }
+        if(data[i].Count > max){
+          max = data[i].Count;
+        }
+      };
+    }
     var svg = dimple.newSvg("#chartContainer", "100%", "100%");
     var myChart = new dimple.chart(svg, data);
     myChart.setMargins("60px", "30px", "30px", "500px");
