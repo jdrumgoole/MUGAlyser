@@ -61,7 +61,8 @@
     // var y2 = myChart.addMeasureAxis("y", "Events");
     {% if year != '0' %}
       var x = myChart.addCategoryAxis("x", ["Year", "Region"]);
-      var s = myChart.addSeries("Year", dimple.plot.bar);
+      x.addOrderRule(["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
+      var s = myChart.addSeries("Region", dimple.plot.bar);
       x.fontSize = "14px";
       y.tickFormat = ",d";
       y.ticks = 4;
