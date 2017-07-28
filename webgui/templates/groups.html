@@ -39,20 +39,16 @@
       <table class = "group-list">
         <tr> 
         <td><b>Name </td> 
-        <td> <b>Member Count &emsp;
-          <!-- <form class = "count" method="post">
-          <select name = "count_sort" onchange="">
-            <option value = "asc" {% if 0 == curamt  %} selected = "selected" {% endif %}> Member Count (asc) </option>
-            <option value = "desc" {% if 5 == curamt  %} selected = "selected" {% endif %}> Member Count (desc) </option>
-          </select>
-          </form> &emsp;  -->
-        </td>
-        <td> <b>Average Age </td> 
+        <td> <b>Member Count &emsp;</td>
+        <td> <b>Average RSVP </td> 
+        <td> <b>Last event &emsp;&nbsp;&nbsp;</td> 
+        
         </tr>
         {% for group in groups %}
         <tr>
         <td>{{ group.0 }} </td>
         <td>{{ group.1 }} </td>
+        <td>{{ group.3 }} </td>
         <td>{{ group.2 }} </td>
         </tr>
         {% endfor %}

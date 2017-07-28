@@ -30,7 +30,15 @@
 
 <p>
 
-<h2> RSVP per year</h2>
+<h2> RSVP per year</h2> 
+<form class = "_year" method="post">
+  <select name = "year" onchange="this.form.submit()">
+    <option value = "0" {% if '0' == year  %} selected = "selected" {% endif %}> All </option>
+    {% for id in years %}
+    <option value = "{{ id }}" {% if id == year %} selected = "selected" {% endif %}> {{id}} </option>
+    {% endfor %}
+  </select>
+</form>
 <div id = "query"><p><h2><b>Please click a bar to view data</b></h2><p>&emsp;  <p> &emsp;<p>&emsp; </div>
 <div id="chartContainer"></div>
 
@@ -51,34 +59,64 @@
     y.fontFamily = "Arial";
 
     // var y2 = myChart.addMeasureAxis("y", "Events");
+    {% if year != '0' %}
+      var x = myChart.addCategoryAxis("x", ["Year", "Region"]);
+      x.addOrderRule(["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
+      var s = myChart.addSeries("Region", dimple.plot.bar);
+      x.fontSize = "14px";
+      y.tickFormat = ",d";
+      y.ticks = 4;
 
-    var x = myChart.addCategoryAxis("x", ["Year", "Region"]);
-    var s = myChart.addSeries("Region", dimple.plot.bar);
-    x.fontSize = "14px";
-    y.tickFormat = ",d";
-    y.ticks = 4;
+      var leg = myChart.addLegend("90%", "5%", 140, 140);
+      leg.fontSize = "auto";
 
-    var leg = myChart.addLegend("90%", "5%", 140, 140);
-    leg.fontSize = "auto";
+      s.tooltipFontSize = "16px";
+      s.tooltipFontFamily = "Arial";
 
-    s.tooltipFontSize = "16px";
-    s.tooltipFontFamily = "Arial";
+   
+      // var s2 = myChart.addSeries(null, dimple.plot.line, [x,y2]);
+      // s2.data = ev;
 
- 
-    // var s2 = myChart.addSeries(null, dimple.plot.line, [x,y2]);
-    // s2.data = ev;
+      //x.addOrderRule("Count");
 
-    //x.addOrderRule("Count");
+      s.getTooltipText = function (e) {
+        return [
+            "Region: " + e.aggField[0],
+            "Year: " + e.cx,
+            "Total RSVP: " + e.cy.toLocaleString(),
+            // "Total events: " + events[e.cx],
+            // "Average RSVP: " + (e.cy / events[e.cx]).toFixed(2)
+        ];
+      };
+    {% else %}
+      var x = myChart.addCategoryAxis("x", ["Year", "Region"]);
+      var s = myChart.addSeries("Region", dimple.plot.bar);
+      x.fontSize = "14px";
+      y.tickFormat = ",d";
+      y.ticks = 4;
 
-    s.getTooltipText = function (e) {
-      return [
-          "Region: " + e.aggField[0],
-          "Year: " + e.cx,
-          "Total RSVP: " + e.cy.toLocaleString(),
-          // "Total events: " + events[e.cx],
-          // "Average RSVP: " + (e.cy / events[e.cx]).toFixed(2)
-      ];
-    };
+      var leg = myChart.addLegend("90%", "5%", 140, 140);
+      leg.fontSize = "auto";
+
+      s.tooltipFontSize = "16px";
+      s.tooltipFontFamily = "Arial";
+
+   
+      // var s2 = myChart.addSeries(null, dimple.plot.line, [x,y2]);
+      // s2.data = ev;
+
+      //x.addOrderRule("Count");
+
+      s.getTooltipText = function (e) {
+        return [
+            "Region: " + e.aggField[0],
+            "Year: " + e.cx,
+            "Total RSVP: " + e.cy.toLocaleString(),
+            // "Total events: " + events[e.cx],
+            // "Average RSVP: " + (e.cy / events[e.cx]).toFixed(2)
+        ];
+      };
+    {% endif %}
     s.afterDraw = function (s, d) {
 
       var shape = d3.select(s);

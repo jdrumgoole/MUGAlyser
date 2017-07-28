@@ -40,7 +40,11 @@
 	  width="600"
 	  height="450"
 	  frameborder="0" style="border:0"
+	  {% if user.member.location.coordinates %}
+	  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBAKc7bTfSeM26MImbqtO_twAbW1Qup70E&q={{ user.member.location.coordinates.1}}, {{ user.member.location.coordinates.0 }}" allowfullscreen>
+	  {% else %}
 	  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBAKc7bTfSeM26MImbqtO_twAbW1Qup70E&q={{ user.member.lat}}, {{ user.member.lon }}" allowfullscreen>
+	  {% endif %}
 	</iframe>
 </body>
 </html>
