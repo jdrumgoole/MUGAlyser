@@ -427,7 +427,7 @@ def graph_batch():
     output = []
 
     pipelineEU = [
-        {'$match': {'batchID': {'$in': get_batch_list()}''', "group.urlname": {"$in": euList}}'''},
+        {'$match': {'batchID': {'$in': get_batch_list()}''', "group.urlname": {"$in": euList}'''}},
         {'$project': {"batchID": 1, "timestamp": 1, "group.members": { "$ifNull": ["$group.members", 0]}, "group.member_count" : {'$ifNull': ["$group.member_count", 0]}}},
         {'$project': {"batchID": 1, "timestamp": 1, "members" : {'$add': ["$group.members", "$group.member_count"]}}},
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
