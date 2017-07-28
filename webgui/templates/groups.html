@@ -48,12 +48,14 @@
           </form> &emsp;  -->
         </td>
         <td> <b>Average Age </td> 
+        <td> <b>Avg. RSVP </td> 
         </tr>
         {% for group in groups %}
         <tr>
         <td>{{ group.0 }} </td>
         <td>{{ group.1 }} </td>
         <td>{{ group.2 }} </td>
+        <td>{{ group.3 }} </td>
         </tr>
         {% endfor %}
 
