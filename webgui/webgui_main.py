@@ -270,7 +270,7 @@ def graph():
         curGroup = session['group'] = "None"
         session['limit'] = limit = amt = session['amount'] = 0
         country = session['country'] = "None"
-    else:
+    else:    #this stores and swaps form values with session - allows for the selected value to remain consistent
         curbat = request.form.get('bat')
         curGroup = request.form.get('grp')
         amt = request.form.get('amt')
@@ -520,7 +520,7 @@ def get_signup():
 def verify_account(ID):
     if userColl.find_one({'verified':ID}):
         userColl.update({'verified': ID}, {'$set': {'verified': True}})
-        return redirect(url_for('login'))
+        return redirect(url_for('show_login'))
 
     return """
     <link rel="stylesheet" type="text/css" href="/static/style.css">
