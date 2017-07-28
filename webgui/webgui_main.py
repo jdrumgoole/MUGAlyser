@@ -71,6 +71,10 @@ euList = an.get_group_names('EU')
 usList = an.get_group_names('US')
 otherList = euList + usList
 
+euIDList = an.get_group_ids('EU')
+usIDList = an.get_group_ids('US')
+otherIDList = euIDList + usIDList
+
 @app.before_request    #somehow works to redirect all http requests to https
 def secure_redirect():
     pass
@@ -427,19 +431,19 @@ def graph_batch():
     output = []
 
     pipelineEU = [
-        {'$match': {'batchID': {'$in': get_batch_list()}, "group.urlname": {"$in": euList}}},
+        {'$match': {'batchID': {'$in': get_batch_list()}, "group.id": {"$in": euIDList}}},
         {'$project': {"batchID": 1, "timestamp": 1, "group.members": { "$ifNull": ["$group.members", 0]}, "group.member_count" : {'$ifNull': ["$group.member_count", 0]}}},
         {'$project': {"batchID": 1, "timestamp": 1, "members" : {'$add': ["$group.members", "$group.member_count"]}}},
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
     ]
     pipelineUS = [
-        {'$match': {'batchID': {'$in': get_batch_list()}, "group.urlname": {"$in": usList}}},
+        {'$match': {'batchID': {'$in': get_batch_list()}, "group.id": {"$in": usIDList}}},
         {'$project': {"batchID": 1, "timestamp": 1, "group.members": { "$ifNull": ["$group.members", 0]}, "group.member_count" : {'$ifNull': ["$group.member_count", 0]}}},
         {'$project': {"batchID": 1, "timestamp": 1, "members" : {'$add': ["$group.members", "$group.member_count"]}}},
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
     ]
     pipelineOther = [
-        {'$match': {'batchID': {'$in': get_batch_list()}, "group.urlname": {"$nin": otherList}}},
+        {'$match': {'batchID': {'$in': get_batch_list()}, "group.id": {"$nin": otherIDList}}},
         {'$project': {"batchID": 1, "timestamp": 1, "group.members": { "$ifNull": ["$group.members", 0]}, "group.member_count" : {'$ifNull': ["$group.member_count", 0]}}},
         {'$project': {"batchID": 1, "timestamp": 1, "members" : {'$add': ["$group.members", "$group.member_count"]}}},
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
@@ -452,7 +456,7 @@ def graph_batch():
     for doc in eCurs:
         output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'EU'})
     for doc in uCurs:
-        output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'o'})
+        output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'US'})
     for doc in oCurs:
         output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'Other'})
 
