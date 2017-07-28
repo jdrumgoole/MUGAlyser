@@ -374,16 +374,37 @@ def graph_batch():
     # pipeline = [
     #     {"$group": {"_id": "$batchID", "total_members": {"$sum": "$group.member_count"}, 'timestamp': {'$first' : '$timestamp'} }}
     # ]
+    output = []
 
-    pipeline = [
-        {'$match': {'batchID': {'$in': get_batch_list()}}},
+    pipelineEU = [
+        {'$match': {'batchID': {'$in': get_batch_list()}, "group.urlname": {"$in": euList}}},
         {'$project': {"batchID": 1, "timestamp": 1, "group.members": { "$ifNull": ["$group.members", 0]}, "group.member_count" : {'$ifNull': ["$group.member_count", 0]}}},
         {'$project': {"batchID": 1, "timestamp": 1, "members" : {'$add': ["$group.members", "$group.member_count"]}}},
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
-
     ]
-    groupCurs = groupCollection.aggregate(pipeline)
-    output = [{'Batch' : d['_id'], 'Count': d['total_members'], 'Time': d['timestamp']} for d in groupCurs]
+    pipelineUS = [
+        {'$match': {'batchID': {'$in': get_batch_list()}, "group.urlname": {"$in": usList}}},
+        {'$project': {"batchID": 1, "timestamp": 1, "group.members": { "$ifNull": ["$group.members", 0]}, "group.member_count" : {'$ifNull': ["$group.member_count", 0]}}},
+        {'$project': {"batchID": 1, "timestamp": 1, "members" : {'$add': ["$group.members", "$group.member_count"]}}},
+        {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
+    ]
+    pipelineOther = [
+        {'$match': {'batchID': {'$in': get_batch_list()}, "group.urlname": {"$in": otherList}}},
+        {'$project': {"batchID": 1, "timestamp": 1, "group.members": { "$ifNull": ["$group.members", 0]}, "group.member_count" : {'$ifNull': ["$group.member_count", 0]}}},
+        {'$project': {"batchID": 1, "timestamp": 1, "members" : {'$add': ["$group.members", "$group.member_count"]}}},
+        {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
+    ]
+
+    eCurs = eventsCollection.aggregate(pipelineEU)
+    uCurs = eventsCollection.aggregate(pipelineUS)
+    oCurs = eventsCollection.aggregate(pipelineOther)
+
+    for doc in eCurs:
+        output.append({'Time' : doc['timestamp'], 'Count': doc['total_rsvp'], 'Region': 'EU'})
+    for doc in uCurs:
+        output.append({'Time' : doc['timestamp'], 'Count': doc['total_rsvp'], 'Region': 'US'})
+    for doc in oCurs:
+        output.append({'Time' : doc['timestamp'], 'Count': doc['total_rsvp'], 'Region': 'Other'})
 
     return render_template("graphbatch.html", members = output)
 

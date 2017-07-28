@@ -30,7 +30,16 @@
 
 <p>
 
-<h2> RSVP per year</h2>
+<h2> RSVP per year</h2> 
+<form class = "_year" method="post">
+  <select name = "year" onchange="this.form.submit()">
+    <option value = "0" {% if 0 == curamt  %} selected = "selected" {% endif %}> All </option>
+    <option value = "5" {% if 5 == curamt  %} selected = "selected" {% endif %}> Top 5 </option>
+    <option value = "10" {% if 10 == curamt  %} selected = "selected" {% endif %}> Top 10 </option>
+    <option value = "15" {% if 15 == curamt  %} selected = "selected" {% endif %}> Top 15 </option>
+    <option value = "20" {% if 20 == curamt  %} selected = "selected" {% endif %}> Top 20 </option>
+  </select>
+</form>
 <div id = "query"><p><h2><b>Please click a bar to view data</b></h2><p>&emsp;  <p> &emsp;<p>&emsp; </div>
 <div id="chartContainer"></div>
 
