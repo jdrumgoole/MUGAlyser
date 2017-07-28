@@ -342,11 +342,14 @@ class MUG_Analytics( object ):
         if self._start_date or self._end_date :
             agg.addRangeMatch( "event.time", self._start_date, self._end_date )
             
-        agg.addProject( { "_id": 0, 
+        agg.addProject( { "_id"          : 0, 
                           "group"        : u"$event.group.urlname", 
                           "name"         : u"$event.name",
+                          "country"      : "$event.venue.country",
                           "rsvp_count"   : "$event.yes_rsvp_count",
-                          "date"         :"$event.time" }) 
+                          "month"        : { "$month" : "$event.time" },
+                          "year"         : { "$year"  : "$event.time" }}) 
+    
      
         if self._sorter:
             agg.addSort( self._sorter)
@@ -361,6 +364,51 @@ class MUG_Analytics( object ):
         formatter = CursorFormatter( agg, self._filename, self._format )
         filename = formatter.output( fieldNames= [ "group", "name", "rsvp_count", "date" ], datemap=[ "date"], limit=self._limit)
 
+        if self._filename != "-":
+            self._files.append( self._filename )
+            
+    def get_total_events( self, urls, when="past", filename=None ) :
+    
+        agg = None
+        
+        if when == "past" : 
+            agg = Agg( self._mdb.pastEventsCollection())
+
+        elif when == "upcoming" :
+            agg = Agg( self._mdb.upcomingEventsCollection())
+
+        
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "event.time", self._start_date, self._end_date )
+            
+        agg.addMatch({ "batchID"             : self._batchID,
+                       "event.status"        : when,
+                       "event.group.urlname" : { "$in" : urls }} )
+        
+        agg.addProject( { "_id"       : 0,
+                          "group"     : "$event.group.urlname",
+                          "rsvp"      : "$event.group.yes_rsvp_count",
+                          "month"     : { "$month" : "$event.time" },
+                          "year"      : { "$year"  : "$event.time" }})
+        
+        agg.addGroup( { "_id" : { "month" : "$month",
+                                  "year"  : "$year" },
+                        "count" : { "$sum": 1 }})
+        
+        agg.addProject( { "month" : "$_id.month",
+                          "year"  : "$_id.year",
+                          "count" : "$count"} )
+        
+        
+        if self._sorter:
+            agg.addSort( self._sorter)
+            
+        if self._view :
+            agg.create_view( self._mdb.database(), "total_events" )
+            
+        formatter = CursorFormatter( agg, self._filename, self._format )
+        filename = formatter.output( fieldNames= [ "month", "year", "count" ], limit=self._limit)
+        
         if self._filename != "-":
             self._files.append( self._filename )
             

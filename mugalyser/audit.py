@@ -210,6 +210,7 @@ class Audit( object ):
         for i in results :
             return i
         
+    
             
     def get_valid_batches( self, start=None, end=None):
 
@@ -218,9 +219,9 @@ class Audit( object ):
         if end and not isinstance( end, datetime ):
             raise ValueError( "end is not a datetime object")
         
-        batches = self._auditCollection.find( { "start" : { "$exists" : 0},
-                                                "end" : { "$exists" : 1 }}, 
-                                              { "_id" : 0 } ).sort( "end", pymongo.DESCENDING )
+        batches = self._auditCollection.find( #{ "start" : { "$exists" : 0},
+                                                 { "end" : { "$type" : 9 }}, 
+                                              { "_id" : 0, "batchID"  : 1, "start" : 1, "end" : 1 } ).sort( "end", pymongo.DESCENDING )
          
         for i in batches:
 #             if i['end'] is None : # some older batches may have null end values
