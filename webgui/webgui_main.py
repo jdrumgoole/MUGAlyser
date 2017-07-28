@@ -125,11 +125,7 @@ def index():
 def groups():
     if not verify_login():
         return redirect(url_for('show_login'))
-    curGroups = proGrpCollection.find( { "batchID" : currentBatch}, 
-                                      { "_id"           : 0, 
-                                        "group.name" : 1,
-                                        "group.member_count": 1,
-                                        "group.average_age": 1 }).sort([("group.member_count", -1)])
+    curGroups = proGrpCollection.find( { "batchID" : currentBatch}).sort([("group.member_count", -1)])
     
     output = []
     for d in curGroups:
