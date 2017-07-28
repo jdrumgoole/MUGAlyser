@@ -439,7 +439,7 @@ def graph_batch():
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
     ]
     pipelineOther = [
-        {'$match': {'batchID': {'$in': get_batch_list()}, "group.urlname": {"$in": otherList}}},
+        {'$match': {'batchID': {'$in': get_batch_list()}, "group.urlname": {"$nin": otherList}}},
         {'$project': {"batchID": 1, "timestamp": 1, "group.members": { "$ifNull": ["$group.members", 0]}, "group.member_count" : {'$ifNull': ["$group.member_count", 0]}}},
         {'$project': {"batchID": 1, "timestamp": 1, "members" : {'$add': ["$group.members", "$group.member_count"]}}},
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
@@ -452,7 +452,7 @@ def graph_batch():
     for doc in eCurs:
         output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'EU'})
     for doc in uCurs:
-        output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'US'})
+        output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'o'})
     for doc in oCurs:
         output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'Other'})
 
