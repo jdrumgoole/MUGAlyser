@@ -89,7 +89,14 @@ class Groups(MUGData):
         else:
             return [ x[ "group"]["urlname" ] for x in self.find() ]
 
-            
+    def get_region_group_ids(self, regions = None ):
+        if regions:
+            if type( regions ) is list:
+                return [ x[ "group"]["id" ] for x in self.find( {  "group.localized_country_name" : { "$in" : regions }}) ]
+            else:
+                raise ValueError( "regions parameter must be a list ( type=%s)" % type( regions ))  
+        else:
+            return [ x[ "group"]["id" ] for x in self.find() ]
 
     @staticmethod
     def summary( g ):
