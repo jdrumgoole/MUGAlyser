@@ -53,12 +53,12 @@
     // var y2 = myChart.addMeasureAxis("y", "Events");
 
     var x = myChart.addCategoryAxis("x", ["Year", "Region"]);
-    var s = myChart.addSeries("RSVP", dimple.plot.bar);
+    var s = myChart.addSeries("Region", dimple.plot.bar);
     x.fontSize = "14px";
     y.tickFormat = ",d";
     y.ticks = 4;
 
-    var leg = myChart.addLegend("90%", "0%", 70, 70);
+    var leg = myChart.addLegend("90%", "0%", 140, 140);
     leg.fontSize = "auto";
 
     s.tooltipFontSize = "16px";
@@ -85,7 +85,7 @@
         .attr("x", parseFloat(shape.attr("x")) + shape.attr("width") / 2)
         .attr("y", parseFloat(shape.attr("y")) + (shape.attr("height") > 30 ? (shape.attr("height") / 2 + 8) : - 10))
         .style("text-anchor", "middle")
-        .style("font-size", "16px")
+        .style("font-size", "14px")
         .style("fill", "c7c5ea")
         // .style("stroke", "black")
         // .style("stroke-width", "1px")
