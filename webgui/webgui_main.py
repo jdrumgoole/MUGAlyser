@@ -371,9 +371,6 @@ def graph_batch():
     if not verify_login():
         return redirect(url_for('show_login'))
 
-    # pipeline = [
-    #     {"$group": {"_id": "$batchID", "total_members": {"$sum": "$group.member_count"}, 'timestamp': {'$first' : '$timestamp'} }}
-    # ]
     output = []
 
     pipelineEU = [
