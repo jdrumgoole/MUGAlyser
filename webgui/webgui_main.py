@@ -400,11 +400,11 @@ def graph_batch():
     oCurs = groupCollection.aggregate(pipelineOther)
 
     for doc in eCurs:
-        output.append({'Time' : doc['timestamp'], 'Count': doc['total_rsvp'], 'Region': 'EU'})
+        output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'EU'})
     for doc in uCurs:
-        output.append({'Time' : doc['timestamp'], 'Count': doc['total_rsvp'], 'Region': 'US'})
+        output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'US'})
     for doc in oCurs:
-        output.append({'Time' : doc['timestamp'], 'Count': doc['total_rsvp'], 'Region': 'Other'})
+        output.append({'Time' : doc['timestamp'], 'Count': doc['total_members'], 'Region': 'Other'})
 
     return render_template("graphbatch.html", members = output)
 
