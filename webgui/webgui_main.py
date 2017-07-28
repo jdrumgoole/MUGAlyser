@@ -262,6 +262,7 @@ def graph_yearly():
 
     else:
         Year = int(request.form.get('year'))
+
         pipeline = [
             {"$match": {"batchID": currentBatch}},
             {"$project":
@@ -276,7 +277,11 @@ def graph_yearly():
         ]
         eCurs = eventsCollection.aggregate(pipeline)
         for doc in eCurs:
-            month = doc['_id']  
+            if doc['_id'] - 1 == 0:
+                month = "December"
+            else:
+                month = calendar.month_name[doc['_id'] - 1]  #need to subtract 1 since JS months start from 0
+
             output.append({'Year' : month, 'Total RSVP': doc['total_rsvp'], 'Region': 'Other'})
     return render_template("graphyearly.html", groups = output, events = events, years = dates, year = Year)
 
