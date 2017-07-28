@@ -130,7 +130,7 @@ def groups():
     output = []
     for d in curGroups:
         if "last_event" in d["group"]:
-            output.append( [d["group"]["name"], "{:,}".format(d["group"]["member_count"]), d["group"]["last_event"], round(d["group"]["rsvps_per_event"], 2)])
+            output.append( [d["group"]["name"], "{:,}".format(d["group"]["member_count"]), time.strftime("%a, %d %b %Y", d["group"]["last_event"]), round(d["group"]["rsvps_per_event"], 2)])
         else:
             output.append( [d["group"]["name"], "{:,}".format(d["group"]["member_count"]), "N/A", round(d["group"]["rsvps_per_event"], 2)])
     return render_template("groups.html", groups = output)
