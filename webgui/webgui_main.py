@@ -395,9 +395,9 @@ def graph_batch():
         {"$group": {"_id": "$batchID", "total_members": {"$sum": "$members"}, 'timestamp': {'$first' : '$timestamp'} }}
     ]
 
-    eCurs = eventsCollection.aggregate(pipelineEU)
-    uCurs = eventsCollection.aggregate(pipelineUS)
-    oCurs = eventsCollection.aggregate(pipelineOther)
+    eCurs = groupCollection.aggregate(pipelineEU)
+    uCurs = groupCollection.aggregate(pipelineUS)
+    oCurs = groupCollection.aggregate(pipelineOther)
 
     for doc in eCurs:
         output.append({'Time' : doc['timestamp'], 'Count': doc['total_rsvp'], 'Region': 'EU'})
