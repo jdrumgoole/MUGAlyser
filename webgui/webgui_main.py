@@ -107,7 +107,7 @@ def get_group_list():
     return groupl
 
 def get_batch_list():
-    batchIDs = auditdb.getBatchIDs()
+    batchIDs = auditdb.get_valid_batch_ids()
 
     batchIDList = [d for d in batchIDs]
     batchIDList = list(set(batchIDList))  #removes duplicates 
