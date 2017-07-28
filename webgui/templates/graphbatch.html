@@ -65,7 +65,10 @@
     var x = myChart.addTimeAxis("x", "Time", "%a, %d %b %Y %H:%M:%S GMT", "%d %B %Y");
     var s = myChart.addSeries("Member Count", dimple.plot.line);
     var s1 = myChart.addSeries("Batch", dimple.plot.scatter);
-    myChart.assignColor("Batch", "white");
+    myChart.defaultColors = [
+      new dimple.color("#FFFFFF", "Blue")
+
+    ]; 
     s.lineMarkers = true;
     x.timePeriod = d3.timeMonth;
     x.timeInterval = 1;

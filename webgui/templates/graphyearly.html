@@ -99,7 +99,7 @@
     // myChart.ease = "sin";
     myChart.draw(500);
     d3.selectAll("rect").on("click", function (e) {
-       var str = "<p>Year: " + e.cx + "<p>Total RSVP: " + e.cy.toLocaleString() + "<p>Total events: " + events[e.cx] + "<p>Average RSVP: " + (e.cy / events[e.cx]).toFixed(2);
+       var str = "<p>Region: " + e.aggField[0] + "<p>Year: " + e.cx + "<p>Total RSVP: " + e.cy.toLocaleString() + "<p>Total events: " + events[e.cx] + "<p>Average RSVP: " + (e.cy / events[e.cx]).toFixed(2);
        document.getElementById("query").innerHTML = str;
       });
     window.onresize = function () {
