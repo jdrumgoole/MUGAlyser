@@ -97,7 +97,7 @@ def main( args ):
     
     cmds = [ "grouptotals", "groups", "pastevents", "rsvps", 
             "activeusers", "newmembers", "memberhistory", "rsvphistory",
-            "totals", "rsvpevents", "collections", "upcomingevents", "members" ]
+            "totalevents", "totals", "rsvpevents", "collections", "upcomingevents", "members" ]
 
     parser = ArgumentParser( args )
         
@@ -243,6 +243,9 @@ def main( args ):
         
     if "rsvpevents" in args.stats:
         analytics.get_rsvp_by_event(urls, filename=filename.suffix( "rsvpevents" ))
+        
+    if "totalevents" in args.stats :
+        analytics.get_total_events(urls, filename=filename.suffix( "totalevents" ))
         
     if "members" in args.stats :
         analytics.get_members(urls, filename=filename.suffix( "members" ))
