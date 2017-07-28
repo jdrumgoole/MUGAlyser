@@ -267,7 +267,8 @@ def graph_yearly():
             {"$project":
                 {
                     "year": {"$year": "$event.time" },
-                    "month": {"$month": "$event.time"}
+                    "month": {"$month": "$event.time"},
+                    "yesrsvp" : "$event.yes_rsvp_count"
                 }
             },
             {"$match": {"year": Year}},
