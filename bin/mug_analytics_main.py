@@ -192,10 +192,10 @@ def main( args ):
         batchID = None
         
     #print( "Processing : %i urls" % len( urls ))
-    analytics = MUG_Analytics( mdb, output, formatter, batchID = batchID, limit=args.limit, view=args.createview )
+    analytics = MUG_Analytics( mdb, formatter, batchID = batchID, limit=args.limit, view=args.createview )
     analytics.setRange(args.start, args.end )
     
-    filename = Filename( prefix=prefix, name=args.output, suffix="", ext=formatter)
+    filename = Filename( prefix=prefix, name=output, suffix="", ext=formatter)
     
     if args.stats is None:
         args.stats = []
@@ -259,7 +259,7 @@ def main( args ):
             print( "Format is JSON, automatic upload is not supported" )
             print( "Right now we convert uploaded files from CSV to a gsheet automatically")
             print( "This won't work for JSON, so we ignore them for now during upload")
-        elif args.output == "-" :
+        elif output == "-" :
             print( "--output is '-' (stdout), ignoring --upload" )
             print( "Please specify a --output filename to upload files")
         else:

@@ -163,7 +163,7 @@ class MeetupRequest( object ):
                 yield i
                
             count = 0 
-            ( nxt, prev ) = self.getNextPrev(headers)
+            ( nxt, _ ) = self.getNextPrev(headers)
 
             
             while ( nxt is not None ) : # no next link in last page
@@ -173,7 +173,7 @@ class MeetupRequest( object ):
                     
                 #print( "V2 Paged SimpleRequest( %s, %s)" % ( nxt, params))
                 ( headers, body ) = self.simple_request( nxt, params )
-                ( nxt,prev ) = self.getNextPrev(headers)
+                ( nxt, _ ) = self.getNextPrev(headers)
                 for i in body :
                     yield i
     
