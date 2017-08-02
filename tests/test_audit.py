@@ -51,13 +51,13 @@ class Test_audit(unittest.TestCase):
     def test_get_last_batch_id(self):
         id1 = self._audit.start_batch( doc = { "test" : "doc"})
         id2 = self._audit.start_batch( doc = { "test" : "doc"})
-        self.assertEqual( 2, self._audit.get_last_batch_id())
+        self.assertEqual( 101, self._audit.get_last_batch_id())
         self._audit.end_batch( id2 )
-        self.assertEqual( 2, self._audit.get_last_batch_id())
+        self.assertEqual( 101, self._audit.get_last_batch_id())
         self._audit.end_batch( id1 )
         
         id1 = self._audit.start_batch( doc = { "test" : "doc"})
-        self.assertEqual( 3, self._audit.get_last_batch_id())
+        self.assertEqual( 102, self._audit.get_last_batch_id())
         self._audit.end_batch( id1 )
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
