@@ -245,26 +245,33 @@ class MUG_Analytics( object ):
         '''
         Get all the groups listed by urls and their start dates
         '''
-        
-        agg = Agg( self._mdb.groupsCollection())
-        agg.addMatch( { "batchID" : self._batchID,
-                        "group.urlname" : { "$in" : urls }} )
 
         if self._pro_account:
+            agg = Agg( self._mdb.proGroupsCollection())
+            agg.addMatch( { "batchID"       : self._batchID,
+                            "group.urlname" : { "$in" : urls }} )
             if self._start_date or self._end_date :
                 agg.addRangeMatch( "group.founded_date", self._start_date, self._end_date )
             agg.addProject( { "_id" : 0,
-                              "urlname" : "$group.urlname",
-                              "members" : "$group.member_count",
-                              "founded" : "$group.founded_date" } )
-            print( "Using pro search" )
+                              "urlname"    : "$group.urlname",
+                              "url"        : { "$concat"  : [ "http://www.meetup.com/", "$group.urlname" ] }, 
+                              "members"    : "$group.member_count",
+                              "last_event" : "$group.last_event",
+                              "founded"    : "$group.founded_date" } )
+            print( "Using pro search : %i" % self._batchID )
+            #agg.echo()
         else:
+            agg = Agg( self._mdb.groupsCollection())
+            agg.addMatch( { "batchID"       : self._batchID,
+                            "group.urlname" : { "$in" : urls }} )
             if self._start_date or self._end_date :
                 agg.addRangeMatch( "group.created", self._start_date, self._end_date )
             agg.addProject( { "_id" : 0,
-                              "urlname" : "$group.urlname",
-                              "members" : "$group.members",
-                              "founded" : "$group.created" } ) 
+                              "urlname"    : "$group.urlname",
+                              "url"        : { "$concat"  : [ "http://www.meetup.com/", "$group.urlname" ] },
+                              "members"    : "$group.members",
+                              "last_event" : "not present",
+                              "founded"    : "$group.created" } ) 
             print( "Using nopro search")
         if self._sorter:
             agg.addSort( self._sorter)        
@@ -272,8 +279,8 @@ class MUG_Analytics( object ):
         if self._view :
             agg.create_view( self._mdb.database(), "groups_view" )
             
-        formatter = CursorFormatter( agg, filename, self._format )
-        filename = formatter.output( fieldNames= [ "urlname", "members", "founded" ], datemap=[ "founded" ], limit=self._limit )
+        formatter = CursorFormatter( agg, self._filename, self._format )
+        filename = formatter.output( fieldNames= [ "urlname", "url", "last_event", "members", "founded" ], datemap=[ "last_event", "founded" ], limit=self._limit )
         
         if filename != "-":
             self._files.append( filename )
@@ -395,8 +402,11 @@ class MUG_Analytics( object ):
         if self._view :
             agg.create_view( self._mdb.database(), "total_events" )
             
-        formatter = CursorFormatter( agg, filename, self._format )
-        formatter.output( fieldNames= [ "month", "year", "count" ], limit=self._limit)
+        if filename :
+            self._filename = filename
+            
+        formatter = CursorFormatter( agg, self._filename, self._format )
+        filename = formatter.output( fieldNames= [ "month", "year", "count" ], limit=self._limit)
         
         if filename != "-":
             self._files.append( filename )

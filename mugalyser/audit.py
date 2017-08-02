@@ -105,9 +105,13 @@ class Audit( object ):
     def isProBatch(self, ID ):
         doc = self.get_batch( ID )
 
-        return ( doc.has_key( "info") and 
-                 doc[ "info"].has_key( "pro_account" ) and 
-                 ( doc[ "info" ][ "pro_account"] == True ))
+        if doc.has_key( "info"):
+            if doc[ "info"].has_key( "pro_account"):
+                return  doc[ "info" ][ "pro_account"]
+            elif doc[ "info"].has_key( "collect") :
+                return ( doc[ "info"][ "collect"] == "all" ) or ( doc[ "info"][ "collect"] == "pro" )
+            
+        return False
 
 
     
@@ -120,21 +124,35 @@ class Audit( object ):
         
     def start_batch(self, doc, name=None ):
         '''
-        This needs to changed to lock against a doc in the database otherwise
-        two seperate programs may allocate the same batch number.
+        The hack at the start is just a way to handle the old an new way of counting batches
+        once all the audit collections are past 100 we can remove this code.
         '''
-        with self._lock :
-            last_id = self.get_last_batch_id()
-            if last_id is None :
-                last_id = 0
-            new_batch_id = last_id + 1
-            self._open_batch_count = self._open_batch_count + 1
-            self._auditCollection.insert_one( { "batchID" : new_batch_id,
-                                                "start"   : datetime.utcnow(),
-                                                "name"    : name,
-                                                "info"    : doc })
         
-        return new_batch_id
+        last_id = self.count_to_end()
+        
+        if last_id :
+            if last_id < 100 :
+                increment = 100 - last_id
+            else:
+                increment = 1
+        else:
+            increment = 100
+            
+        doc = self._auditCollection.find_one_and_update( { "batchID" : 0,
+                                                           "name" : "Current Batch" },
+                                                         { "$inc" : { "currentID" : increment}},
+                                                          upsert=True,
+                                                          return_document=pymongo.ReturnDocument.AFTER )
+
+#         if doc[ "currentID"] < 100 :
+#             raise ValueError( "BatchIDs must be greated than 100: (current value: %i" % doc[ "currentID"])
+        self._open_batch_count = self._open_batch_count + 1
+        self._auditCollection.insert_one( { "batchID" : doc[ "currentID"],
+                                            "start"   : datetime.utcnow(),
+                                            "name"    : name,
+                                            "info"    : doc })
+        
+        return doc[ "currentID" ]
     
     def end_batch(self, batchID ):
             
@@ -188,12 +206,9 @@ class Audit( object ):
     def auditCollection(self):
         return self._auditCollection
     
-#     def getLastBatchID(self):
-#         curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
-#         if curBatch[ "currentID" ] < 2 :
-#             raise ValueError( "No valid last batch")
-#         else:
-#             return curBatch[ "currentID"] - 1
+    def get_last_batch_id(self):
+        curBatch = self._auditCollection.find_one( { "name" : 'Current Batch'} )
+        return curBatch[ "currentID"]
     
     def get_batches(self):
         
@@ -206,17 +221,13 @@ class Audit( object ):
         for i in self.get_batches():
             yield i[ "batchID" ]
             
-            
-    def get_last_batch_id(self):
-        '''
-        There may be incomplete batches int he mix. We make sure the next batch ID we select
-        does not overlap with an incomplete batch ID.
-        '''
-        
-        results = self.get_batch_ids()
-        
-        for i in results :
+         
+    def count_to_end(self):
+        for i in self.get_batch_ids():
             return i
+        
+    def get_batch_zero(self):
+        return self._auditCollection.find_one( { "batchID"  : 0 })  
         
     
             
