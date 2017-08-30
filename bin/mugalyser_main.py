@@ -118,7 +118,7 @@ access to the admin APIs.
             apikey = get_meetup_key()
 
         mugalyser_logger = Logger( __programName__, args.loglevel )
-        mugalyser_logger.add_stream_handler( args.loglevel )
+        #mugalyser_logger.add_stream_handler( args.loglevel )
         mugalyser_logger.add_file_handler( "mugalyser.log", args.loglevel )
         
         logger = mugalyser_logger.log()

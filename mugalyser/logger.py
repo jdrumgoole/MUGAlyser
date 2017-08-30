@@ -24,6 +24,8 @@ class Logger(object):
         else:
             self._logger.setLevel( logging.INFO )
         
+        self.add_stream_handler(log_level)
+        
     @staticmethod
     def formatter():
         return logging.Formatter( Logger.format_string )

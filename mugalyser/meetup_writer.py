@@ -6,7 +6,7 @@ Created on 21 Nov 2016
 
 from mongodb_utils.batchwriter import BatchWriter
 from requests import HTTPError
-from mugalyser.logger import Logger
+import logging
 
 from datetime import datetime
 #import pprint
@@ -21,7 +21,7 @@ def mergeEvents( writer ):
         
 def feedback( doc ):
     print( ".")
-    logger = Logger( __programName__ ).log()
+    logger = logging.getLogger( __programName__ )
     if doc.has_key( "name") :
         logger.info( "Processing: %s", doc[ 'name' ])
     else:
@@ -62,7 +62,7 @@ class MeetupWriter(object):
 #         self._mugs = []
         self._unordered = unordered
         
-        self._logger = Logger( __programName__ ).log()
+        self._logger = logging.getLogger( __programName__ )
         
         
     def write(self, collection, retrievalGenerator, processFunc, newFieldName ):
