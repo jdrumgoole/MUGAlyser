@@ -443,6 +443,43 @@ class MUG_Analytics( object ):
         if filename != "-":
             self._files.append( filename )
             
+    def get_organisers( self, urls, filename=None ):
+        '''
+        Get all the members of all the groups (urls). Range is join_time.
+        '''
+        
+        agg = Agg( self._mdb.proGroupsCollection())
+
+
+        agg.addMatch({ "batchID"       : self._batchID } )
+        agg.addMatch({ "group.urlname" : { "$in" : urls }} ) 
+        
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "group.created", self._start_date, self._end_date )
+         
+        agg.addUnwind( "$group.organizers" )
+            
+        agg.addGroup( { "_id" : "$group.organizers",
+                        "groups" : { "$addToSet" : "$group.urlname"}})
+        
+        agg.addProject( { "_id" : 0,
+                          "name" : "$_id.name",
+                          "role" : "$_id.permission",
+                          "groups" : "$groups" })
+        
+        print( agg )
+        if self._sorter:
+            agg.addSort( self._sorter)
+
+        if self._view :
+            agg.create_view( self._mdb.database(), "new_members_view" )
+            
+        formatter = CursorFormatter( agg, filename, self._format )
+        formatter.output( fieldNames= [ "name", "role", "groups" ], limit=self._limit)
+        
+        if filename != "-":
+            self._files.append( filename )
+
     def get_rsvps( self, urls, filename=None):   
         '''
         Lookup RSVPs by user. So for each user collect how many events they RSVPed to.
