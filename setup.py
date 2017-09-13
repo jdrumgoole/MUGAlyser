@@ -47,23 +47,18 @@ You can analyse the data with apps/mug_analytics_main.py
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 2.7' ],
    
-    install_requires = [ "requests", "pymongo", "mongodb_utils", "enum", "nose" ],
+    install_requires = [ "requests", "dateutils", "httplib2", "google-api-python-client", "pymongo", "mongodb_utils", "enum", "nose" ],
        
     packages = find_packages(),
     
-    scripts  = [ "bin/getstats.sh",
-                 "bin/makeapikeyfile_main.py",
-                 "bin/meetup_info_main.py",
-                 "bin/mug_analytics_main.py",
-                 "bin/mug_db_setup.py",
-                 "bin/mugalyser_main.py",
-                 "bin/muginfo_main.py",
-                 "bin/mugs.sh",
-                 "bin/pugs.sh",
-                 "bin/range_query.sh",
-                 "bin/run_prog.sh",
-                 "bin/update_atlas.sh" ],
-
+    entry_points={
+        'console_scripts': [
+            'mugalyser=mugalyser.mugalyser_main:mugalyser',
+            'muganalytics=mugalyser.mug_analytics_main:split_file',
+            'multiimport=pymongodbimport.multiimport:multi_import',
+            'pwc=pymongodbimport.pwc:pwc',
+        ]
+    },
     test_suite='nose.collector',
     tests_require=['nose'],
 )

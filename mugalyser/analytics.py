@@ -465,7 +465,8 @@ class MUG_Analytics( object ):
         agg.addProject( { "_id" : 0,
                           "name" : "$_id.name",
                           "role" : "$_id.permission",
-                          "groups" : "$groups" })
+                          "groups" : "$groups"
+                          ""})
         
         print( agg )
         if self._sorter:

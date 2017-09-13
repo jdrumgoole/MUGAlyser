@@ -91,7 +91,7 @@ def all_collection_stats( mdb ):
     for i in mdb.collection_names():
         yield collection_stats( mdb, i )
     
-def main( args ):
+def main( argv ):
     
 #if __name__ == '__main__':
     
@@ -99,7 +99,7 @@ def main( args ):
             "activeusers", "newmembers", "memberhistory", "rsvphistory",
             "totalevents", "totals", "rsvpevents", "collections", "upcomingevents", "members", "organisers" ]
 
-    parser = ArgumentParser( args )
+    parser = ArgumentParser( argv )
         
     parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", 
                          help="URI for connecting to MongoDB [default: %(default)s]" )
@@ -283,4 +283,4 @@ def main( args ):
             pprint.pprint( i[ "storageSize"] )
         
 if __name__ == '__main__':
-    main( sys.argv )
+    main( sys.argv[1:] )

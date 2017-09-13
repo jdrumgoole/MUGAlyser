@@ -64,11 +64,8 @@ def cleanUp( procs ) :
         i.terminate()
         i.join()
              
-def main(argv=None): # IGNORE:C0111
+def mugalyser(argv=None): # IGNORE:C0111
     '''Command line options.'''
-
-    if argv:
-        sys.argv.extend( argv )
 
     try:
         # Setup argument parser
@@ -87,10 +84,7 @@ access to the admin APIs.
         # MongoDB Args
 
         parser.add_argument( '--host', default="mongodb://localhost:27017/MUGS", help='URI to connect to : [default: %(default)s]')
-
         parser.add_argument( "-v", "--version", action='version', version=__programName__ + " " + __version__ )
-        parser.add_argument( '--trialrun', action="store_true", default=False, help='Trial run, no updates [default: %(default)s]')
-     
         parser.add_argument( '--mugs', nargs="+", default=[], help='Process MUGs list list mugs by name [default: %(default)s]')
    
         parser.add_argument( "--collect",  choices=[ "pro", "nopro", "all" ], default="all", help="Use pro API calls, no pro API calls or both")
@@ -108,7 +102,7 @@ access to the admin APIs.
                              help="File containing a list of MUG URLs to be used to parse data [ default: %(default)s]")
         
         # Process arguments
-        args = parser.parse_args()
+        args = parser.parse_args( argv )
             
         apikey=""
         
@@ -209,4 +203,4 @@ access to the admin APIs.
 
 if __name__ == "__main__":
 
-    sys.exit(main())
+    sys.exit(mugalyser( sys.argv[1:]))
