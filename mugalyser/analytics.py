@@ -258,7 +258,7 @@ class MUG_Analytics( object ):
                               "members"    : "$group.member_count",
                               "last_event" : "$group.last_event",
                               "founded"    : "$group.founded_date" } )
-            print( "Using pro search : %i" % self._batchID )
+            #print( "Using pro search : %i" % self._batchID )
             #agg.echo()
         else:
             agg = Agg( self._mdb.groupsCollection())
@@ -279,7 +279,7 @@ class MUG_Analytics( object ):
         if self._view :
             agg.create_view( self._mdb.database(), "groups_view" )
             
-        formatter = CursorFormatter( agg, self._filename, self._format )
+        formatter = CursorFormatter( agg, filename, self._format )
         filename = formatter.output( fieldNames= [ "urlname", "url", "last_event", "members", "founded" ], datemap=[ "last_event", "founded" ], limit=self._limit )
         
         if filename != "-":
@@ -517,6 +517,31 @@ class MUG_Analytics( object ):
         formatter = CursorFormatter( agg, filename, self._format )
         formatter.output( fieldNames= [ "attendee", "group", "date", "event_name" ], datemap=[ "date" ],  limit=self._limit )
 
+        if filename != "-":
+            self._files.append( filename )
+            
+    def get_attendees(self, urls, filename="attendees"):
+        
+        agg = Agg( self._mdb.attendeesCollection())
+        
+        agg.addMatch({ "batchID"             : self._batchID,
+                       "info.event.group.urlname" : { "$in" : urls }})
+        
+        if self._start_date or self._end_date :
+            agg.addRangeMatch( "info.event.time", self._start_date, self._end_date )
+        
+        agg.addProject( { "_id" : 0, 
+                          "name"        : "$info.attendee.member.name",
+                          "id"          : "$info.attendee.member.id",
+                          "event"       : "$info.event.name",
+                          "group"       : "$info.event.group.name",
+                          "date"        : "$info.event.time" })
+        if self._view : 
+            agg.create_view( self._mdb.database(), "attendees_view" )
+            
+        formatter = CursorFormatter( agg, filename, self._format )
+        formatter.output( fieldNames= [ "name", "id", "event", "group", "date" ], datemap=[ "date" ],  limit=self._limit )
+        
         if filename != "-":
             self._files.append( filename )
             
