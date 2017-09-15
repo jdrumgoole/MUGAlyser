@@ -31,44 +31,52 @@ class MeetupRequest( object ):
         self._logger.addHandler( sh )
         self._logger.addHandler( fh )
 
-    def simple_request(self, req, params=None ):
+    def request(self, req, params ):
         
         if params :
             r = requests.get( req, params )
         else:
             r = requests.get( req )
             
-        self._logger.debug( "simple_request( %s )",  r.url )
-        try:
-            r.raise_for_status()
-#           for req_data in r.iter_lines():
-#                     if req_data:
-#                         print( "req_data")
-#                         #pprint.pprint( req_data )
-#                         json_data = json.loads(req_data)
+        r.raise_for_status()
+        
+        '''
+        Rate limiting
+        '''
+        remaining = int( r.headers[ "X-RateLimit-Remaining"] )
+        resetDelay = int( r.headers[ "X-RateLimit-Reset"] )
+        if remaining <= 1 and resetDelay > 0 :
+            self._logger.debug( "Sleeping for : %i", resetDelay )
+            time.sleep( resetDelay )
+           
+        self._logger.debug( "request: '%s'" % r.url )
+         
+        return ( r.headers, r.json())
+
+    
+    def simple_request(self, req, params=None ):
+        
+        for i in range( 2 ):
+            try:
+                return self.request( req, params )
             
-            '''
-            Rate limiting
-            '''
-            remaining = int( r.headers[ "X-RateLimit-Remaining"] )
-            resetDelay = int( r.headers[ "X-RateLimit-Reset"] )
-            if remaining <= 1 and resetDelay > 0 :
-                self._logger.debug( "Sleeping for : %i", resetDelay )
-                time.sleep( resetDelay )
+            except ValueError:
+                self._logger.error( "Meetup API error in request: %i : req: '%s'  params: '%s'" % ( i, req, params ))
                 
-            return ( r.headers, r.json())
+            except requests.HTTPError, e :
+                self._logger.error( "HTTP Error  : %s:", e )
+                raise
+               
+        return  self.request( req, params )
+                
+            #self._logger.error( "request: '%s'", r.url)
+#             self._logger.error( "headers:" )
+#             self._logger.error( pprint.pformat( r.headers ))
+#             self._logger.error( "text:'%s'", r.text )
+            #retry
+            #return self.request( req, params )
         
-        except ValueError :
-            self._logger.error( "ValueError in simple_request:")
-            self._logger.error( "request: '%s'", r.url)
-            self._logger.error( "headers:" )
-            self._logger.error( pprint.pformat( r.headers ))
-            self._logger.error( "text:'%s'", r.text )
-            raise
-        
-        except requests.HTTPError, e :
-            self._logger.error( "HTTP Error  : %s:", e )
-            raise
+
 
     def getHref( self, s ):
         ( link, direction ) = s.split( ";", 2 )
