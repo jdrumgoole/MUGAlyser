@@ -138,21 +138,20 @@ class Audit( object ):
         else:
             increment = 100
             
-        doc = self._auditCollection.find_one_and_update( { "batchID" : 0,
-                                                           "name" : "Current Batch" },
-                                                         { "$inc" : { "currentID" : increment}},
-                                                          upsert=True,
-                                                          return_document=pymongo.ReturnDocument.AFTER )
+        updated_doc = self._auditCollection.find_one_and_update( { "batchID" : 0,
+                                                                   "name" : "Current Batch" },
+                                                                 { "$inc" : { "currentID" : increment}},
+                                                                 upsert=True,
+                                                                 return_document=pymongo.ReturnDocument.AFTER )
 
 #         if doc[ "currentID"] < 100 :
 #             raise ValueError( "BatchIDs must be greated than 100: (current value: %i" % doc[ "currentID"])
         self._open_batch_count = self._open_batch_count + 1
-        self._auditCollection.insert_one( { "batchID" : doc[ "currentID"],
+        self._auditCollection.insert_one( { "batchID" : updated_doc[ "currentID"],
                                             "start"   : datetime.utcnow(),
-                                            "name"    : name,
                                             "info"    : doc })
         
-        return doc[ "currentID" ]
+        return updated_doc[ "currentID" ]
     
     def end_batch(self, batchID ):
             

@@ -103,7 +103,7 @@ access to the admin APIs.
         
         parser.add_argument( '--apikey', default=None, help='Default API key for meetup')
         
-        parser.add_argument( "--batchname", default= "test " + __programName__, help="Batch name used in creating audit batches")
+        parser.add_argument( "--batchname", default= __programName__, help="Batch name used in creating audit batches")
         parser.add_argument( '--urlfile', 
                              help="File containing a list of MUG URLs to be used to parse data [ default: %(default)s]")
         
@@ -133,8 +133,7 @@ access to the admin APIs.
         
         batchID = audit.start_batch( { "args"   : vars( args ), 
                                       "version" : __programName__ + " " + __version__,
-                                      "name"    : args.batchname,
-                                      "collect" : args.collect } )
+                                      "name"    : args.batchname } )
 
         start = datetime.utcnow()
         logger.info( "Started MUG processing for batch ID: %i", batchID )
