@@ -91,15 +91,15 @@ def all_collection_stats( mdb ):
     for i in mdb.collection_names():
         yield collection_stats( mdb, i )
     
-def main( args ):
+def main( argv ):
     
 #if __name__ == '__main__':
     
     cmds = [ "grouptotals", "groups", "pastevents", "rsvps", 
             "activeusers", "newmembers", "memberhistory", "rsvphistory",
-            "totalevents", "totals", "rsvpevents", "collections", "upcomingevents", "members", "organisers" ]
+            "totalevents", "totals", "rsvpevents", "collections", "upcomingevents", "members", "organisers", "attendees"]
 
-    parser = ArgumentParser( args )
+    parser = ArgumentParser( argv )
         
     parser.add_argument( "--host", default="mongodb://localhost:27017/MUGS", 
                          help="URI for connecting to MongoDB [default: %(default)s]" )
@@ -253,6 +253,9 @@ def main( args ):
     if "members" in args.stats :
         analytics.get_members(urls, filename=filename.suffix( "members" ))
         
+    if "attendees" in args.stats:
+        analytics.get_attendees( urls, filename=filename.suffix( "attendees" ) )
+        
     if "totals" in args.stats:
         analytics.get_totals( urls, countries=countries )
         
@@ -283,4 +286,4 @@ def main( args ):
             pprint.pprint( i[ "storageSize"] )
         
 if __name__ == '__main__':
-    main( sys.argv )
+    main( sys.argv[1:] )

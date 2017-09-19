@@ -3,9 +3,8 @@ Created on 21 Nov 2016
 
 @author: jdrumgoole
 '''
-
-from mongodb_utils.bulkwriter import Bulk_Writer
 from requests import HTTPError
+
 import logging
 
 import datetime
@@ -65,6 +64,31 @@ class MeetupWriter(object):
         self._logger = logging.getLogger( __programName__ )
         
         
+    def update_members(self, collection,retrievalGenerator, processFunc, newFieldName ):
+        '''
+        For nopro collections we count the members in each group. To avoid double counting
+        we use update to overwrite previous records with the same member.
+        '''
+        
+        members = set()
+        docs = []
+        count = 0
+
+        #print( "update_members")
+        for i in retrievalGenerator :
+            
+            if i["id"] in members: #ignore already inserted members
+                continue
+            else:
+                members.add( i["id"])
+                #print( "inserting : %s" %i["id"] )
+                count = count + 1
+                docs.append( processFunc( newFieldName, i ))
+                if count == 500 :
+                    collection.insert_many( docs )
+                    docs = []
+                    count = 0
+        
     def write(self, collection, retrievalGenerator, processFunc, newFieldName ):
         '''
         Call batchWriter with a collection. Use retrievalGenerator to get a single
@@ -76,12 +100,24 @@ class MeetupWriter(object):
         is reached and then writes them as a batch using BatchWriter.
         
         '''
-        bw = Bulk_Writer( collection, processFunc, newFieldName )
         
-        writer = bw()
-        
+        #writer = bw()
+        count = 0
+        docs = []
+        #print( "write")
         for i in retrievalGenerator :
-            writer.send( i )
+
+            count = count + 1
+            docs.append( processFunc( newFieldName, i ))
+            if count == 500 :
+                #print( "inserted 500")
+                collection.insert_many( docs )
+                docs = []
+                count = 0
+
+            
+#             if not collection.find_one( { "member.id" : i[ "id"]}) :
+#                 writer.send( i )
     
     def write_Attendees( self, group ):
         
@@ -133,7 +169,7 @@ class MeetupWriter(object):
     
     def write_nopro_members(self, urls ):
         members = self._meetup_api.get_members( urls )
-        self.write( self._members, members, self._addTimestamp, "member" )
+        self.update_members( self._members, members, self._addTimestamp, "member" )
         
     def write_members( self, collect, urls  ):
         if collect == "nopro":
