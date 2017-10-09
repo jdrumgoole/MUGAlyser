@@ -118,6 +118,10 @@ class MeetupWriter(object):
                 count = 0
 
             
+        if count > 0 :
+            collection.insert_many( docs )
+            docs = []
+            count = 0
 #             if not collection.find_one( { "member.id" : i[ "id"]}) :
 #                 writer.send( i )
     

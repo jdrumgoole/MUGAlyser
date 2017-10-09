@@ -594,7 +594,7 @@ class MUG_Analytics( object ):
                           "name" : "$info.attendee.member.name",
                           "event" : "$info.event.name",
                           "date" : "$info.event.time" } )
-                         
+        print( agg )
         agg.addGroup( { "_id"    : "$name" ,
                         "count"  : { "$sum": 1 }} )
         
