@@ -3,12 +3,11 @@ Created on 21 Nov 2016
 
 @author: jdrumgoole
 '''
-
 from requests import HTTPError
 
 import logging
 
-from datetime import datetime
+import datetime
 #import pprint
 
 from mugalyser.meetup_api import MeetupAPI
@@ -42,7 +41,7 @@ class MeetupWriter(object):
     
     def _addTimestamp( self, name, doc ):
     
-        return { name : doc, "timestamp" : datetime.utcnow(), "batchID": self._batch_ID }
+        return { name : doc, "timestamp" : datetime.datetime.utcnow(), "batchID": self._batch_ID }
   
     
     def __init__(self, apikey, batch_ID, mdb, reshape=True, unordered=True ):
@@ -101,7 +100,6 @@ class MeetupWriter(object):
         is reached and then writes them as a batch using BatchWriter.
         
         '''
-        #bw = Bulk_Writer( collection, processFunc, newFieldName )
         
         #writer = bw()
         count = 0
