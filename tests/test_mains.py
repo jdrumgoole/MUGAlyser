@@ -15,7 +15,7 @@ class TestMains(unittest.TestCase):
         root = os.getenv( "HOME", "")
         root = os.path.join( root, "GIT", "MUGAlyser")
             
-        self._binPath =os.path.join( root, "bin" )
+        self._binPath =os.path.join( root, "mugalyser" )
         
     def redirect_cmd(self, programArgs, output_filename ):
 
@@ -24,6 +24,11 @@ class TestMains(unittest.TestCase):
 
     def test_main_help(self):
         result = self.redirect_cmd( [ "python", os.path.join( self._binPath, "muginfo_main.py" ), "-h" ], "junk" )
+        if result != 0 :
+            with open( "junk" , "r" ) as junkfile:
+                for i in junkfile:
+                    print( i )
+
         self.assertEqual( result, 0 )
         
         result = self.redirect_cmd( [ "python", os.path.join( self._binPath, "meetup_info_main.py" ), "-h" ], "junk" )
@@ -31,6 +36,8 @@ class TestMains(unittest.TestCase):
         
         result = self.redirect_cmd( [ "python", os.path.join( self._binPath, "mugalyser_main.py" ), "-h" ], "junk" )
         self.assertEqual( result, 0 )
+        
+        os.unlink( "junk" )
 
 
 

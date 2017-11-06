@@ -61,13 +61,17 @@ class MeetupRequest( object ):
                 return self.request( req, params )
             
             except ValueError:
-                self._logger.error( "Meetup API error in request: %i : req: '%s'  params: '%s'" % ( i, req, params ))
+                self._logger.error( "Meetup API error in request no. (retrying): %i : req: '%s'  params: '%s'" % ( i, req, params ))
                 
             except requests.HTTPError, e :
                 self._logger.error( "HTTP Error  : %s:", e )
                 raise
                
-        return  self.request( req, params )
+        try :
+            return  self.request( req, params )
+        except ValueError:
+            self._logger.fatal( "Meetup API error in final request no. %i : req: '%s'  params: '%s'" % ( i, req, params ))
+            raise
                 
             #self._logger.error( "request: '%s'", r.url)
 #             self._logger.error( "headers:" )
