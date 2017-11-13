@@ -59,6 +59,9 @@ class Test_audit(unittest.TestCase):
         id1 = self._audit.start_batch( doc = { "test" : "doc"})
         self.assertEqual( 102, self._audit.get_last_batch_id())
         self._audit.end_batch( id1 )
+        
+    def test_pro_batch_id(self):
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

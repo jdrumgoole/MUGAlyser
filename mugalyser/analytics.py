@@ -86,6 +86,9 @@ class MUG_Analytics( object ):
     def files(self):
         return self._files
     
+    def get_batch_ID(self):
+        return self._batchID
+    
     def setRange(self, start_date, end_date ):
         self._start_date = start_date
         self._end_date = end_date      
@@ -280,11 +283,13 @@ class MUG_Analytics( object ):
             agg.create_view( self._mdb.database(), "groups_view" )
             
         formatter = CursorFormatter( agg, filename, self._format )
-        filename = formatter.output( fieldNames= [ "urlname", "url", "last_event", "members", "founded" ], datemap=[ "last_event", "founded" ], limit=self._limit )
+        formatter.output( fieldNames= [ "urlname", "url", "last_event", "members", "founded" ], datemap=[ "last_event", "founded" ], limit=self._limit )
         
         if filename != "-":
             self._files.append( filename )
             
+        return filename
+    
     def get_group_totals( self, urls, filename=None ):
         '''
         get the total number of RSVPs by group.

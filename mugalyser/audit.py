@@ -108,8 +108,8 @@ class Audit( object ):
         if doc.has_key( "info"):
             if doc[ "info"].has_key( "pro_account"):
                 return  doc[ "info" ][ "pro_account"]
-            elif doc[ "info"].has_key( "collect") :
-                return ( doc[ "info"][ "collect"] == "all" ) or ( doc[ "info"][ "collect"] == "pro" )
+            elif "args" in doc[ "info"]  and "collect" in doc[ "info" ][ "args" ]:
+                return ( doc[ "info"]["args"][ "collect"] == "all" ) or ( doc[ "info"][ "args" ][ "collect"] == "pro" )
             
         return False
 
