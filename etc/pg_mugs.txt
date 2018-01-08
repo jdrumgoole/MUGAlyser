@@ -38,7 +38,6 @@ Triangle-Postgres-Users-Group
 s9s-Polyglot-Persistence-Amsterdam
 Pittsburgh-PostgreSQL-Users-Group
 Meetup-de-PostgreSQL-Santa-Fe
-Charlotte-PostgreSQL-User-Group
 off-to-BPUG
 Tallinn-PostgreSQL-Meetup
 PostgreSQL-MX
