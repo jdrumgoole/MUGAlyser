@@ -11,6 +11,7 @@ if __name__ == "__main__":
     parser.add_argument( "--username" )
     parser.add_argument( "--password" )
     parser.add_argument( "--database", default="test" )
+    parser.add_argument( "--role", default="readWrite")
 
     args = parser.parse_args()
     client = pymongo.MongoClient( host = args.host )
@@ -24,10 +25,12 @@ if __name__ == "__main__":
         for i in users:
             pprint.pprint( i )
     elif args.command == "adduser" :
+        print( "adduser")
         if args.username:
             try:
-                result = database.command("createUser", args.username, args.password,
-                                          roles=[{'role': 'readWrite', 'db': args.database}])
+                print( " Username: %s\n Password: %s\n role: %s\n  " % ( args.username, args.password, args.role ))
+                result = database.command("createUser", args.username, pwd=args.password,
+                                          roles=[{'role': args.role, 'db': args.database}])
                 print(result)
             except pymongo.errors.OperationFailure as e:
                 print(e)

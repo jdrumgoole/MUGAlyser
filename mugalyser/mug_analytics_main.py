@@ -91,7 +91,7 @@ def all_collection_stats( mdb ):
     for i in mdb.collection_names():
         yield collection_stats( mdb, i )
     
-def main( argv ):
+def main( *argv ):
     
 #if __name__ == '__main__':
     

@@ -54,9 +54,7 @@ You can analyse the data with apps/mug_analytics_main.py
     entry_points={
         'console_scripts': [
             'mugalyser=mugalyser.mugalyser_main:mugalyser',
-            'muganalytics=mugalyser.mug_analytics_main:split_file',
-            'multiimport=pymongodbimport.multiimport:multi_import',
-            'pwc=pymongodbimport.pwc:pwc',
+            'muganalytics=mugalyser.mug_analytics_main:main',
         ]
     },
     test_suite='nose.collector',
