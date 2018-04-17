@@ -14,11 +14,10 @@ from argparse import ArgumentParser, ArgumentTypeError
 from dateutil.parser import parse
 from mugalyser.gdrive import GDrive
 
-
-from mongodb_utils.agg import Sorter
+from pymongo_aggregation.agg_operation import Sorter
 from mugalyser.analytics import MUG_Analytics, Filename
-from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.audit import Audit
+from mugalyser.mongodb import MUGAlyserMongoDB
 from mugalyser.groups import EU_COUNTRIES, NORDICS_COUNTRIES, Groups
 from mugalyser.members import Members
     
@@ -154,7 +153,7 @@ def main( *argv ):
         output = "-"
     
     formatter = args.format.lower()
-    
+
     mdb = MUGAlyserMongoDB( uri=args.host )
         
     groups = Groups( mdb )
