@@ -9,7 +9,6 @@ Created on 23 Nov 2016
 from mugalyser.audit import Audit
 from mugalyser.feedback import Feedback
 import pprint
-
 from enum import Enum
 
 class Format( Enum ):
@@ -54,7 +53,10 @@ class MUGData( object ):
         return self._collection.find_one( batch_query )
         
     def find(self, q=None, *args, **kwargs ):
-        
+        """
+
+        :rtype:
+        """
         query = { "batchID" : self._audit.get_last_valid_batch_id() } 
         if q :
             query.update( q )

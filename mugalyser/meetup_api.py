@@ -113,7 +113,9 @@ class MeetupAPI(object):
     
     def get_members(self , urls ):
         for i in urls:
+            #print( "processing: %s" % i )
             for member in self.__get_members( i ):
+                #print("processing: %s" % member[ "name"])
                 yield member
                 
     def __get_members(self, url_name ):

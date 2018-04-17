@@ -32,7 +32,6 @@ pip install --upgrade pip
 pip install pymongo
 pip install requests
 pip install pydrive
-pip install enum
 pip install dateutils
 cd MUGAlyser
 pushd bin

@@ -47,7 +47,7 @@ You can analyse the data with apps/mug_analytics_main.py
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 2.7' ],
    
-    install_requires = [ "requests", "dateutils", "httplib2", "google-api-python-client", "pymongo", "mongodb_utils", "enum", "nose" ],
+    install_requires = [ "requests", "dateutils", "httplib2", "google-api-python-client", "pymongo", "mongodb_utils", "nose" ],
        
     packages = find_packages(),
     

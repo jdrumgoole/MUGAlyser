@@ -69,18 +69,16 @@ class MeetupWriter(object):
         For nopro collections we count the members in each group. To avoid double counting
         we use update to overwrite previous records with the same member.
         '''
-        
-        members = set()
+
         docs = []
         count = 0
 
         #print( "update_members")
         for i in retrievalGenerator :
             
-            if i["id"] in members: #ignore already inserted members
+            if collection.find_one( { "member.id" : i[ "id"] } ):  #ignore already inserted members
                 continue
             else:
-                members.add( i["id"])
                 #print( "inserting : %s" %i["id"] )
                 count = count + 1
                 docs.append( processFunc( newFieldName, i ))
@@ -88,6 +86,11 @@ class MeetupWriter(object):
                     collection.insert_many( docs )
                     docs = []
                     count = 0
+
+        if count > 0 :
+            collection.insert_many( docs )
+            docs = []
+            count = 0
         
     def write(self, collection, retrievalGenerator, processFunc, newFieldName ):
         '''
