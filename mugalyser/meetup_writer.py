@@ -213,7 +213,7 @@ class MeetupWriter(object):
                 else:
                     self._logger.warn( "ignoring phase '%s': not a valid execution phase", i )
     
-        except HTTPError, e :
+        except HTTPError as e:
             self._logger.fatal( "Stopped processing: %s", e )
             raise
 

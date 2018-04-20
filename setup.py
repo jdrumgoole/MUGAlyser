@@ -53,7 +53,8 @@ You can analyse the data with apps/mug_analytics_main.py
                          "google-api-python-client",
                          "pymongo",
                          "nose",
-                         "pymongo_aggregation"],
+                         "pymongo_aggregation",
+                         "mongodb_formatter"],
        
     packages = find_packages(),
     

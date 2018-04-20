@@ -37,7 +37,7 @@ class Reshaper( object ):
     @staticmethod  
     def reshape_time_doc( doc, field_name ): 
         if isinstance( field_name, str ):
-            if doc.has_key( field_name ):
+            if field_name in doc:
                 doc[ field_name ] = epochToDatetime( doc[ field_name ])
         return doc   
     
@@ -114,7 +114,7 @@ class Reshape_Event( Reshaper ):
                                                             "location",
                                                             [ "group_lon", "group_lat"] )
             
-        if self._doc.has_key( "venue"):
+        if "venue" in self._doc:
             self._doc[ "venue" ] = self.reshape_geospatial_doc( self._doc[ "venue"], 
                                                                 "location",
                                                                 [ "lon", "lat"] )

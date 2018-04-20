@@ -63,7 +63,7 @@ class MeetupRequest( object ):
             except ValueError:
                 self._logger.error( "Meetup API error in request no. (retrying): %i : req: '%s'  params: '%s'" % ( i, req, params ))
                 
-            except requests.HTTPError, e :
+            except requests.HTTPError as e :
                 self._logger.error( "HTTP Error  : %s:", e )
                 raise
                

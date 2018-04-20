@@ -6,7 +6,8 @@ Created on 7 Jul 2017
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
-from mongodb_utils.agg import Agg, CursorFormatter
+from mongodb_formatter.formatter import CursorFormatter
+from pymongo_aggregation.agg_operation import Agg_Operation, match, project, group, sort
 from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, Groups
 from mugalyser.members import Members
@@ -122,8 +123,9 @@ class MUG_Analytics(object):
             agg.create_view(self._mdb.database(), "member_view")
             # agg.create_view( self._mdb.database(), "members_view")
 
+
         formatter = CursorFormatter(agg.aggregate(), filename, self._format)
-        formatter.output(fieldNames=["urlname", "country", "batchID", "members"])
+        formatter.printCursor(fieldNames=["urlname", "country", "batchID", "members"])
 
         if filename != "-":
             self._files.append(filename)

@@ -195,7 +195,7 @@ access to the admin APIs.
         print("Keyboard interrupt : Exiting...")
         sys.exit( 2 )
 
-    except pymongo.errors.ServerSelectionTimeoutError, e :
+    except pymongo.errors.ServerSelectionTimeoutError as e :
         print( "Failed to connect to MongoDB Server (server timeout): %s" % e )
         sys.exit( 2 )
         
