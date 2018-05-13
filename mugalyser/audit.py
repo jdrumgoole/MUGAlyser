@@ -105,8 +105,8 @@ class Audit( object ):
     def isProBatch(self, ID ):
         doc = self.get_batch( ID )
 
-        if doc.has_key( "info"):
-            if doc[ "info"].has_key( "pro_account"):
+        if "info" in doc:
+            if "pro_account" in doc[ "info"]:
                 return  doc[ "info" ][ "pro_account"]
             elif "args" in doc[ "info"]  and "collect" in doc[ "info" ][ "args" ]:
                 return ( doc[ "info"]["args"][ "collect"] == "all" ) or ( doc[ "info"][ "args" ][ "collect"] == "pro" )

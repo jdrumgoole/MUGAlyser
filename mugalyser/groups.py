@@ -53,7 +53,7 @@ class Groups(MUGData):
 
     def __init__(self, mdb ):
         
-        super( Groups, self ).__init__( mdb, "groups")  
+        super().__init__( mdb, "groups")
 
         
     def get_group(self, url_name ):

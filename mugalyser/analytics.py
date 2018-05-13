@@ -7,7 +7,9 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
 from mongodb_formatter.formatter import CursorFormatter
+from mongodb_utils.agg import Agg,CursorFormatter
 from pymongo_aggregation.agg_operation import Agg_Operation, match, project, group, sort
+from pymongo_aggregation.pipeline import Pipeline
 from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, Groups
 from mugalyser.members import Members
@@ -105,26 +107,21 @@ class MUG_Analytics(object):
         Range doens't make sense here so its not used. If supplied it is ignored.
         '''
 
-        agg = Agg(self._mdb.groupsCollection())
+        matcher = match({"batchID": {"$in": [self._batchID]},
+                         "group.urlname": {"$in": urls}})
 
-        agg.addMatch({"batchID": {"$in": [self._batchID]},
-                      "group.urlname": {"$in": urls}})
+        projector = project({"_id": 0,
+                             "urlname": "$group.urlname",
+                             "country": "$group.country",
+                             "batchID": 1,
+                             "members": "$group.members"})
 
-        agg.addProject({"_id": 0,
-                        "urlname": "$group.urlname",
-                        "country": "$group.country",
-                        "batchID": 1,
-                        "members": "$group.members"})
-
+        pipeline = Pipeline( matcher, projector)
+        
         if self._sorter:
-            agg.addSort(self._sorter)
-
-        if self._view:
-            agg.create_view(self._mdb.database(), "member_view")
-            # agg.create_view( self._mdb.database(), "members_view")
-
-
-        formatter = CursorFormatter(agg.aggregate(), filename, self._format)
+            pipeline.append( self._sorter)
+            
+        formatter = CursorFormatter(pipelinr.aggregate(self._mdb.groupsCollection()), filename, self._format)
         formatter.printCursor(fieldNames=["urlname", "country", "batchID", "members"])
 
         if filename != "-":

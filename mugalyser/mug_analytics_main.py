@@ -14,7 +14,7 @@ from argparse import ArgumentParser, ArgumentTypeError
 from dateutil.parser import parse
 from mugalyser.gdrive import GDrive
 
-from pymongo_aggregation.agg_operation import Sorter
+from pymongo_aggregation.agg_operation import sort
 from mugalyser.analytics import MUG_Analytics, Filename
 from mugalyser.audit import Audit
 from mugalyser.mongodb import MUGAlyserMongoDB
@@ -201,7 +201,7 @@ def main( *argv ):
         
     sorter=None
     if args.sort :
-        sorter = Sorter()
+        sorter = sort()
         for i in range( len( args.sort )) :
             if i < len( args.direction )  :
                 sorter.add_sort( args.sort[ i ], convert_direction( args.direction[ i ]))

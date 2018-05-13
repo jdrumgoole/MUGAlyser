@@ -32,7 +32,6 @@ class MUGData( object ):
     def __init__( self, mdb, collection_name ):
         self._mdb = mdb
         self._audit = Audit( mdb )
-        self._feedback = Feedback()
         self._collection = mdb.make_collection( collection_name )
 
     def collection(self):
