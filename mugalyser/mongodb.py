@@ -47,7 +47,7 @@ class MUGAlyserMongoDB( object ):
         else:
             raise ValueError( "Invalid URL: %s" % self._uri )
         
-        self._database = self._client.get_default_database()
+        self._database = self._client.get_database()
         
 #         if self._username :
 #             #self._admindb = self._client[ self._admin ]

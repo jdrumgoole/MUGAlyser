@@ -155,6 +155,8 @@ def main( *argv ):
     formatter = args.format.lower()
 
     mdb = MUGAlyserMongoDB( uri=args.host )
+
+    print( "Analysing data from database: {}".format( mdb.database()))
         
     groups = Groups( mdb )
     
