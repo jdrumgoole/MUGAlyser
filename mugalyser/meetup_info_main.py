@@ -68,7 +68,7 @@ def main( ) :
                     #pprint.pprint( i )
                     count = count + 1
 
-                    if j.has_key( "name"):
+                    if "name" in j:
                         name = j[ "name"]
                         mid = j[ "id" ]
                     else:
@@ -102,7 +102,7 @@ def main( ) :
         print("Keyboard interrupt : Exiting...")
         sys.exit( 2 )
 
-    except Exception, e:
+    except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print_exception( exc_type, exc_value, exc_traceback )
         indent = len( "mug_info_main" ) * " "
