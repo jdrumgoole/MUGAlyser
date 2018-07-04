@@ -1,17 +1,17 @@
 from urllib.request import urlopen
 import re
 import ssl
-import sys
+import argparse
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
-if len(sys.argv) > 2:
-    sys.exit("Invalid arguments - command format: python3 getlinks.py <search string for meetup.com>")
+parser = argparse.ArgumentParser()
+parser.add_argument("searchfor")
+args = parser.parse_args()
 
-searchfor = sys.argv[1].replace(" ","+")
+searchfor = args.searchfor.replace(" ","+")
 
 website = urlopen("https://www.meetup.com/find/?allMeetups=false&keywords="+searchfor+ "&radius=Infinity&userFreeform=Dublin%2C+Ireland&mcId=z1017818&sort=recommended&eventFilter=mysugg")
-                   
 html = website.read().decode()
 
 links = re.findall('"((http|ftp)s?://.*?)"', html)
