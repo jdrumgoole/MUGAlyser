@@ -3,7 +3,7 @@ import argparse
 import requests
 
 parser = argparse.ArgumentParser()
-parser.add_argument("searchfor", nargs="*", help="list of search strings, the first to be used in meetup.com, the rest to further filter results")
+parser.add_argument("searchfor", nargs="*", default=("MongoDB", "MUG"), help="list of search strings, the first to be used in meetup.com, the rest to further filter results")
 args = parser.parse_args()
 
 r = requests.get("https://www.meetup.com/topics/"+args.searchfor[0]+"/all/")
