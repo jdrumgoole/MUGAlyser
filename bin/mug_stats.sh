@@ -4,7 +4,7 @@
 # Provide database name as first argument
 # csv file will be <databaseName>.csv
 
-echo "Name, Member_count, Upcoming_Events, Past_Events, Urlname, Link" > $1.csv
+echo "Name, Member_count, Past_Events, Upcoming_Events, Urlname, Link" > $1.csv
 	
 mongo $1 --quiet --eval "
 	db.groups.find().forEach(function(doc) {
