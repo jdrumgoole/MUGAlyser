@@ -74,7 +74,7 @@ class MeetupWriter(object):
         count = 0
 
         #print( "update_members")
-        for i in retrievalGenerator :
+        for (url, i ) in retrievalGenerator :
             
             if collection.find_one( { "member.id" : i[ "id"] } ):  #ignore already inserted members
                 continue

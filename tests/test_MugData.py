@@ -18,12 +18,12 @@ class Test(unittest.TestCase):
         pass
 
     def testFindSimple(self):
-        cursor = self._mugData.find( { "group.country" : "US" })
-        self.assertEqual( len( list( cursor )), 41 )
+        cursor = self._mugData.find( { "group.country" : "USA" })
+        self.assertEqual( len( list( cursor )), 82 )
 
     def testFind(self):
-        cursor = self._mugData.find( {  "group.country" : { "$in" : [ "US", "GB" ] }})
-        self.assertGreaterEqual( len( list( cursor )), 41 )
+        cursor = self._mugData.find( {  "group.country" : { "$in" : [ "USA", "United Kingdom" ] }})
+        self.assertGreaterEqual( len( list( cursor )), 96 )
 
     def testCombine(self):
         pass

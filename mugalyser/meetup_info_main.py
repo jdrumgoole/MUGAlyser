@@ -37,6 +37,7 @@ def main( ) :
         parser.add_argument( "--attendees", nargs="+", default=[], help="Get attendees for list of groups")
         parser.add_argument( "--loop", type=int, default=1, help="Loop call for --loop times")
         parser.add_argument( "--reshape", default=False, action="store_true", help="Reshape output for BSON" )
+        parser.add_argument( "--req", default=False, action="store_true", help="Report underlying request URL to meetup")
         # Process arguments
         args = parser.parse_args()
         
@@ -49,23 +50,28 @@ def main( ) :
             
         for i in range( args.loop ):
             if args.member_id :
-                member = m.get_member_by_id( args.member_id )
+                (url, member) = m.get_member_by_id( args.member_id )
+                if args.req:
+                    print("req: '{}'".format(url))
                 pprint.pprint( member )
                 
             if args.groups :
                 for i in args.mugs:
-                    mug = m.get_group( i )
+                    (url, mug)= m.get_group( i )
+                    if args.req:
+                        print("req: '{}'".format(url))
                     pprint.pprint( mug )
                 
             if args.members :
                 print( "args.members: %s" % args.mugs )
-                it = m.get_members( args.mugs )
+                #it = m.get_members( args.mugs )
     
                 count = 0 
                 name=""
                 mid=""
-                for j in it :
-                    #pprint.pprint( i )
+                for (url, j) in m.get_members( args.mugs ):
+                    if args.req:
+                        print("req: '{}'".format(url))
                     count = count + 1
 
                     if "name" in j:
@@ -79,11 +85,15 @@ def main( ) :
                 print( "%i total" % count )
             
             if args.pastevents :
-                past_events = m.get_past_events( args.pastevents )
+                ( url, past_events)  = m.get_past_events( args.pastevents )
+                if args.req:
+                    print("req: '{}'".format(url))
                 printCursor( past_events )
                 
             if args.upcomingevents :
-                upcoming_events = m.get_upcoming_events( args.upcomingevents )
+                (url, upcoming_events)= m.get_upcoming_events( args.upcomingevents )
+                if args.req:
+                    print("req: '{}'".format(url))
                 printCursor( upcoming_events )
                 
             if args.attendees :

@@ -28,7 +28,6 @@ class MeetupAPI(object):
     classdocs
     '''
 
-    
     def __init__(self, apikey, page=200, reshape=None):
         '''
         Constructor
@@ -45,12 +44,12 @@ class MeetupAPI(object):
             
     def get_group(self, url_name ):
         
-        ( _, group ) = self._requester.simple_request( self._api + url_name, params = self._params )
+        ( url, _, group ) = self._requester.simple_request( self._api + url_name, params = self._params )
         
         if self._reshape:
-            return Reshape_Group( group ).reshape()
+            return ( url, Reshape_Group( group ).reshape())
         else:
-            return group
+            return ( url, group)
 
     def get_groups_by_url(self, urls ):
         for i in urls:
@@ -98,25 +97,25 @@ class MeetupAPI(object):
         params[ "group_urlname"] = url_name
         
         if self._reshape:
-            return ( Reshape_Event( i ).reshape() for i in self._requester.paged_request( self._api + "2/events", params ))
+            return ( (url, Reshape_Event( i ).reshape()) for (url, i) in self._requester.paged_request( self._api + "2/events", params ))
         else:
             return self._requester.paged_request( self._api + "2/events", params )
 
     def get_member_by_id(self, member_id ):
 
-        ( _, body ) = self._requester.simple_request( self._api + "2/member/" + str( member_id ), params = self._params )
+        ( url, _, body ) = self._requester.simple_request( self._api + "2/member/" + str( member_id ), params = self._params )
     
         if self._reshape:
-            return Reshape_Member( body ).reshape()
+            return ( url, Reshape_Member( body ).reshape())
         else:
-            return body
+            return (url, body)
     
     def get_members(self , urls ):
         for i in urls:
             #print( "processing: %s" % i )
-            for member in self.__get_members( i ):
+            for (url, member) in self.__get_members( i ):
                 #print("processing: %s" % member[ "name"])
-                yield member
+                yield (url, member)
                 
     def __get_members(self, url_name ):
         
@@ -124,7 +123,7 @@ class MeetupAPI(object):
         params[ "group_urlname" ] = url_name
  
         if self._reshape:
-            return ( Reshape_Member( i ).reshape() for i in self._requester.paged_request( self._api + "2/members", params ))
+            return ((url, Reshape_Member( i ).reshape()) for (url, i) in self._requester.paged_request( self._api + "2/members", params ))
         else:
             return self._requester.paged_request( self._api + "2/members", params )
     
@@ -135,7 +134,7 @@ class MeetupAPI(object):
         self._logger.debug( "get_groups")
         
         if self._reshape :
-            return ( Reshape_Group( i ).reshape() for i in self._requester.paged_request(self._api + "self/groups",  self._params ))
+            return ((url, Reshape_Group( i ).reshape()) for (url, i) in self._requester.paged_request(self._api + "self/groups",  self._params ))
         else:
             return self._requester.paged_request(self._api + "self/groups",  self._params )
         
@@ -146,13 +145,13 @@ class MeetupAPI(object):
         self._logger.debug( "get_pro_groups")
         
         if self._reshape:
-            return ( Reshape_Pro_Group( i ).reshape() for i in self._requester.paged_request( self._api + "pro/MongoDB/groups", self._params ))
+            return ((url, Reshape_Pro_Group( i ).reshape()) for (url, i) in self._requester.paged_request( self._api + "pro/MongoDB/groups", self._params ))
         else:
             return self._requester.paged_request( self._api + "pro/MongoDB/groups", self._params )
         
     def get_pro_group_names( self ):
-        for i in self.get_pro_groups() :
-            yield i[ "urlname" ]
+        for (url, i) in self.get_pro_groups() :
+            yield (url, i[ "urlname" ])
             
     def get_pro_members(self ):
         
@@ -160,7 +159,7 @@ class MeetupAPI(object):
         #print( self._params )
         
         if self._reshape:
-            return ( Reshape_Member( i ).reshape() for i in self._requester.paged_request( self._api + "pro/MongoDB/members", self._params ))
+            return ((url, Reshape_Member( i ).reshape()) for (url, i) in self._requester.paged_request( self._api + "pro/MongoDB/members", self._params ))
         else:
             return self._requester.paged_request( self._api + "pro/MongoDB/members", self._params )
     

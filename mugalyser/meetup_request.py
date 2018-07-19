@@ -51,7 +51,7 @@ class MeetupRequest( object ):
            
         self._logger.debug( "request: '%s'" % r.url )
          
-        return ( r.headers, r.json())
+        return ( r.url, r.headers, r.json())
 
     
     def simple_request(self, req, params=None ):
@@ -120,7 +120,7 @@ class MeetupRequest( object ):
 
         #print( "Intiate paginated request") 
  
-        (header, body) = self.simple_request( req, params )
+        (url, header, body) = self.simple_request( req, params )
     
 #         print( "header" )
 #         pprint.pprint( header )
@@ -130,9 +130,9 @@ class MeetupRequest( object ):
         #r = requests.get( self._api + url_name + "/events", params = params )
         #print( "request: '%s'" % r.url )
         #print( "header: '%s' )
-        return self.next_page( header, body, params  )
+        return self.next_page( url, header, body, params  )
     
-    def next_page( self, headers, body, params ):
+    def next_page( self, url, headers, body, params ):
         '''
         Meetup API returns results as pages. The old API embeds the 
         page data in a meta data object in the response object. The new API
@@ -154,25 +154,25 @@ class MeetupRequest( object ):
         # old style format 
         if "meta" in body :
             for i in body[ "results"]:
-                yield i
+                yield (url, i)
         
             count = 0
             nested_body = body
             while ( nested_body[ 'meta' ][ "next" ] != ""  ) :
 
                 #print.pprint( nested_body[ 'meta' ] )
-                ( _, nested_body ) = self.simple_request( nested_body['meta'][ 'next' ] )
+                ( url, _, nested_body ) = self.simple_request( nested_body['meta'][ 'next' ] )
                 count = count + 1
                 #print( "Nested Body")
                 #print( nested_body )
                 if nested_body:
                     for i in nested_body[ "results"]:
-                        yield  i 
+                        yield  (url, i )
     
                     
         elif ( "Link" in headers ) : #new style pagination
             for i in body :
-                yield i
+                yield (url, i)
                
             count = 0 
             ( nxt, _ ) = self.getNextPrev(headers)
@@ -184,11 +184,11 @@ class MeetupRequest( object ):
                 #print( "make request (new): %i" % count )
                     
                 #print( "V2 Paged SimpleRequest( %s, %s)" % ( nxt, params))
-                ( headers, body ) = self.simple_request( nxt, params )
+                ( url, headers, body ) = self.simple_request( nxt, params )
                 ( nxt, _ ) = self.getNextPrev(headers)
                 for i in body :
-                    yield i
+                    yield (url, i)
     
         else: # new style but we have all the data
             for i in body:
-                yield  i
+                yield  (url, i)
