@@ -1,0 +1,49 @@
+body {
+    height: 100%;
+    width: 100%;
+    background-color: white;
+    color: black;
+    font-size: 30px;
+}
+
+#content {
+    display: inline-block;
+    vertical-align: middle;
+    width: 100%;
+}
+
+#inputForm {
+    color:#589636;
+}
+
+#userinput {
+    height: 30px;
+    width: 200px;
+    font-size: medium;
+}
+
+#mainDiv {
+    height: 30px;
+    width: 200px;
+}
+
+.stats {
+    vertical-align: middle;
+    width: 50%;
+    height: 60%;
+    position: absolute;
+}
+
+.results {
+    height: 100%;
+    width: 90%;
+    font-size: medium;
+}
+
+.getdataButton {
+    height: 50;
+    width: 200;
+    background-color:#589636;
+    color: white;
+    font-size: medium;
+}
