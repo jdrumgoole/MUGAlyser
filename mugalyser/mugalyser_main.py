@@ -138,7 +138,7 @@ access to the admin APIs.
             Use the pro API.
             '''
             logger.info( "Using pro API calls (pro account API key)")
-            mugList = list( MeetupAPI( apikey ).get_pro_group_names())
+            mugList = list( MeetupAPI(apikey).get_pro_group_names())
         elif args.collect in [ "nopro" ] :
             if args.urlfile:
                 urlfile = os.path.abspath( args.urlfile )
@@ -174,7 +174,7 @@ access to the admin APIs.
         
         if  "groups" in phases :
             logger.info( "processing group info for %i groups: collect=%s", len( mugList), args.collect )
-            writer.write_groups( args.collect, mugList )
+            writer.write_groups( args.collect, mugList)
             phases.remove( "groups")
         if "members" in phases :
             logger.info( "processing members info for %i groups: collect=%s", len( mugList), args.collect  )

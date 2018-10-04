@@ -108,7 +108,7 @@ class MeetupWriter(object):
         count = 0
         docs = []
         #print( "write")
-        for i in retrievalGenerator :
+        for i in retrievalGenerator:
 
             count = count + 1
             docs.append( processFunc( newFieldName, i ))
@@ -144,7 +144,7 @@ class MeetupWriter(object):
 #         
 #         return self._addTimestamp( groupName, doc )
         
-    def write_nopro_groups(self, mug_list ):
+    def write_nopro_groups(self, mug_list):
         groups = self._meetup_api.get_groups_by_url( mug_list )
         self.write( self._groups,  groups, self._addTimestamp, "group" )
         
@@ -152,7 +152,7 @@ class MeetupWriter(object):
         groups = self._meetup_api.get_pro_groups()
         self.write( self._pro_groups,  groups, self._addTimestamp, "group" )
         
-    def write_groups(self, collect, urls ):
+    def write_groups(self, collect, urls):
         if collect == "nopro":
             self.write_nopro_groups( urls )
         elif collect == "pro":

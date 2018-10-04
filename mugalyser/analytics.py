@@ -8,7 +8,7 @@ from datetime import datetime
 
 from mongodb_formatter.formatter import CursorFormatter
 from mongodb_utils.agg import Agg,CursorFormatter
-from pymongo_aggregation.agg_operation import Agg_Operation, match, project, group, sort
+from pymongo_aggregation.agg_operation import Agg_Operation, range_match, match, project, group, sort
 from pymongo_aggregation.pipeline import Pipeline
 from mugalyser.audit import Audit
 from mugalyser.groups import EU_COUNTRIES, Groups
@@ -300,33 +300,49 @@ class MUG_Analytics(object):
         get the total number of RSVPs by group.
         '''
 
-        agg = Agg(self._mdb.pastEventsCollection())
+        #agg = Agg(self._mdb.pastEventsCollection())
 
-        agg.addMatch({"batchID": self._batchID,
-                      "event.status": "past",
-                      "event.group.urlname": {"$in": urls}})
+        agg_pipeline = Pipeline()
+
+        agg_pipeline.append( match({"batchID"            : self._batchID,
+                                    "event.status"       : "past",
+                                    "event.group.urlname": {"$in": urls}}))
+
+        # agg.addMatch({"batchID": self._batchID,
+        #               "event.status": "past",
+        #               "event.group.urlname": {"$in": urls}})
 
         if self._start_date or self._end_date:
-            agg.addRangeMatch("event.time", self._start_date, self._end_date)
+            agg_pipeline.append(range_match("event.time", self._start_date, self._end_date))
 
-        agg.addGroup({"_id": {"urlname": "$event.group.urlname",
-                              "year": {"$year": "$event.time"}},
-                      "event_count": {"$sum": 1},
-                      "rsvp_count": {"$sum": "$event.yes_rsvp_count"}})
+        agg_pipeline.append( group({"_id": { "urlname"     : "$event.group.urlname",
+                                             "year"        : {"$year": "$event.time"}},
+                                             "event_count" : {"$sum": 1},
+                                             "rsvp_count"  : {"$sum": "$event.yes_rsvp_count"}}))
 
-        agg.addProject({"_id": 0,
-                        "group": "$_id.urlname",
-                        "year": "$_id.year",
-                        "event_count": 1,
-                        "rsvp_count": 1})
+
+        # agg.addGroup({"_id": {"urlname": "$event.group.urlname",
+        #                       "year": {"$year": "$event.time"}},
+        #               "event_count": {"$sum": 1},
+        #               "rsvp_count": {"$sum": "$event.yes_rsvp_count"}})
+
+        agg_pipeline.append( project( {"_id": 0,
+                                       "group": "$_id.urlname",
+                                       "year": "$_id.year",
+                                       "event_count": 1,
+                                       "rsvp_count": 1}))
+        # agg.addProject({"_id": 0,
+        #                 "group": "$_id.urlname",
+        #                 "year": "$_id.year",
+        #                 "event_count": 1,
+        #                 "rsvp_count": 1})
+
 
         if self._sorter:
-            agg.addSort(self._sorter)
+            agg_pipeline.append(sort(self._sorter))
 
-        if self._view:
-            agg.create_view(self._mdb.database(), "group_totals_view")
-
-        formatter = CursorFormatter(agg, filename, self._format)
+        agg_pipeline.pp()
+        formatter = CursorFormatter(agg_pipeline.aggregate(self._mdb.pastEventsCollection()), filename, self._format)
         formatter.output(fieldNames=["year", "group", "event_count", "rsvp_count"], limit=self._limit)
 
         if filename != "-":

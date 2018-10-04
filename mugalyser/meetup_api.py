@@ -43,7 +43,7 @@ class MeetupAPI(object):
     
             
     def get_group(self, url_name ):
-        
+
         ( url, _, group ) = self._requester.simple_request( self._api + url_name, params = self._params )
         
         if self._reshape:
@@ -51,7 +51,7 @@ class MeetupAPI(object):
         else:
             return ( url, group)
 
-    def get_groups_by_url(self, urls ):
+    def get_groups_by_url(self, urls):
         for i in urls:
             yield self.get_group( i )
             
@@ -151,7 +151,8 @@ class MeetupAPI(object):
         
     def get_pro_group_names( self ):
         for (url, i) in self.get_pro_groups() :
-            yield (url, i[ "urlname" ])
+            print("pro name:'{}'".format(i["urlname"]))
+            yield i["urlname"]
             
     def get_pro_members(self ):
         
@@ -162,4 +163,3 @@ class MeetupAPI(object):
             return ((url, Reshape_Member( i ).reshape()) for (url, i) in self._requester.paged_request( self._api + "pro/MongoDB/members", self._params ))
         else:
             return self._requester.paged_request( self._api + "pro/MongoDB/members", self._params )
-    
