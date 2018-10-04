@@ -1,0 +1,28 @@
+<!-- this app uses cross site references not supported in chrome without an additional plugin. Use safari instead. -->
+
+<html>
+   <head>
+        <script src="https://s3.amazonaws.com/stitch-sdks/js/bundles/4.0.0/stitch.js"></script>
+        <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+        <script type="text/javascript" src="statapp.js"></script>
+        <link rel="stylesheet" type="text/css" href="statapp.css">
+   </head>
+
+   <body align="center">
+      <div id="content">
+        <form id="inputForm" autocomplete="off" spellcheck="false" autocapitalize="false" autocorrect="false">Search Meetup
+            <input id="userInput" type="text" value=""></input>
+        </form>
+        <div id="mainDiv">
+            <div class="stats" style="left:0px;">Exact Matches
+                <textarea id="exactresults" type="text" value="" class="results" style="left: 0px;"></textarea>
+                <button type="button" id="getexactdata" class="getdataButton" onclick="getdataButtonClick(false)">Retrieve and Store Data</button>
+            </div>
+            <div class="stats" style="right: 0px;">All Results
+                <textarea id="allresults" type="text" value="" class="results" style="right: 0px;"></textarea>
+                <button type="button" id="getalldata" class="getdataButton" onclick="getdataButtonClick(true)">Retrieve and Store Data</button>
+            </div>
+        </div>
+      </div>
+   </body>
+</html>
