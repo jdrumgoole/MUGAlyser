@@ -39,11 +39,21 @@ class MeetupWriter(object):
     '''
     
     
-    def _addTimestamp( self, name, doc ):
-    
-        return { name : doc, "timestamp" : datetime.datetime.utcnow(), "batchID": self._batch_ID }
-  
-    
+    def _addTimestamp( self, doc ):
+
+        if "timestamp" in doc:
+            raise ValueError( "cannot add timestamp, \
+                              'timestamp' field already exists")
+
+        if "batchID" in doc:
+            raise ValueError( "cannot add batchID, \
+                              'batchID' field already exists")
+
+        doc["timestamp"] = datetime.datetime.utcnow()
+        doc["batchID"] = self._batch_ID
+
+        return doc
+
     def __init__(self, apikey, batch_ID, mdb, reshape=True, unordered=True ):
         '''
         Write contents of meetup API to MongoDB
@@ -92,9 +102,17 @@ class MeetupWriter(object):
             docs = []
             count = 0
         
-    def write(self, collection, retrievalGenerator, processFunc, newFieldName ):
+    def write(self, collection, retrievalGenerator, processFunc):
+        """
+
+        :param collection: The collection to write too
+        :param retrievalGenerator: a generator that produces docs
+        :param processFunc: a preprocessing function for the docs to be written
+        :param newFieldName: The optional fieldname to use for the processed docs
+        :return: The number of docs written
+        """
         '''
-        Call batchWriter with a collection. Use retrievalGenerator to get a single
+        Use retrievalGenerator to get a single
         document (this should be a generator function). Use processFunc to tranform the 
         document into a new doc (it should take a doc and return a doc).
         Write the new doc using the newFieldName.
@@ -105,33 +123,27 @@ class MeetupWriter(object):
         '''
         
         #writer = bw()
-        count = 0
         docs = []
+        count = 0
         #print( "write")
-        for i in retrievalGenerator:
-
-            count = count + 1
-            docs.append( processFunc( newFieldName, i ))
-            if count == 500 :
+        for url, i in retrievalGenerator:
+            docs.append(processFunc(i))
+            if len(docs) == 1000:
+                count = count + len(docs)
                 #print( "inserted 500")
-                collection.insert_many( docs )
+                collection.insert_many(docs)
                 docs = []
-                count = 0
 
-            
-        if count > 0 :
-            collection.insert_many( docs )
-            docs = []
-            count = 0
-#             if not collection.find_one( { "member.id" : i[ "id"]}) :
-#                 writer.send( i )
-    
+        if len(docs) > 0:
+            collection.insert_many(docs)
+            count = count + len(docs)
+        return count
+
     def write_Attendees( self, group ):
         
         writer = self._meetup_api.get_attendees( group )
-        
-        newWriter = mergeEvents( writer )
-        self.write( self._attendees, newWriter, self._addTimestamp, "info"  )
+
+        self.write(self._attendees, writer, self._addTimestamp)
         
 #     def write_group(self, url_name, groupName="group"):
 #         group = self._meetup_api.get_group( url_name )
@@ -146,38 +158,46 @@ class MeetupWriter(object):
         
     def write_nopro_groups(self, mug_list):
         groups = self._meetup_api.get_groups_by_url( mug_list )
-        self.write( self._groups,  groups, self._addTimestamp, "group" )
-        
-    def write_pro_groups(self):
+        self.write( self._groups,  groups, self._addTimestamp)
+
+    def select_groups(self, groups, urls):
+        for url,g in groups:
+            if g["urlname"] in urls:
+                #print(g["urlname"])
+                yield url, g
+
+    def write_pro_groups(self, urls):
+
         groups = self._meetup_api.get_pro_groups()
-        self.write( self._pro_groups,  groups, self._addTimestamp, "group" )
+        self.write( self._pro_groups,  self.select_groups(groups, urls), self._addTimestamp)
         
     def write_groups(self, collect, urls):
         if collect == "nopro":
-            self.write_nopro_groups( urls )
+            self.write_nopro_groups(urls)
         elif collect == "pro":
-            self.write_pro_groups()
+            self.write_pro_groups(urls)
         else:
-            self.write_pro_groups()
+            self.write_pro_groups(urls)
             self.write_nopro_groups( urls )
 
         
     def write_PastEvents(self, url_name ):
+
         pastEvents = self._meetup_api.get_past_events( url_name )
-        self.write( self._pastEvents, pastEvents, self._addTimestamp, "event" )
+        self.write(self._pastEvents, pastEvents, self._addTimestamp)
    
     def write_UpcomingEvents(self, url_name ):
         upcomingEvents = self._meetup_api.get_upcoming_events( url_name )
-        self.write( self._upcomingEvents, upcomingEvents, self._addTimestamp, "event" )
+        self.write(self._upcomingEvents, upcomingEvents, self._addTimestamp)
         
     def write_pro_members(self):
         members = self._meetup_api.get_pro_members()
-        self.write( self._pro_members, members, self._addTimestamp, "member" )
+        self.write(self._pro_members, members, self._addTimestamp)
     
     def write_nopro_members(self, urls ):
         members = self._meetup_api.get_members( urls )
-        self.update_members( self._members, members, self._addTimestamp, "member" )
-        
+        self.update_members( self._members, members, self._addTimestamp)
+
     def write_members( self, collect, urls  ):
         if collect == "nopro":
             self.write_nopro_members( urls )

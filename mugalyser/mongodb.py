@@ -8,7 +8,7 @@ import pymongo
 
 class MUGAlyserMongoDB( object ):
     
-    def __init__(self, uri="mongodb://localhost:27017/MUGS", setup=True):
+    def __init__(self, uri="mongodb://localhost:27017/MUGS", database_name="MUGS", setup=True):
 
     #def __init__(self, host="localhost", port=27017, databaseName="MUGS", replset="",
     #            username=None, password=None, ssl=False, admin="admin", connect=True):
@@ -31,23 +31,25 @@ class MUGAlyserMongoDB( object ):
         self._pastEvents      = None
         self._upcomingEvents  = None
         self._attendees       = None
-        
-        
+
         if setup:
-            self.setup()
+            self.setup(database_name)
 
         
     def create_index(self, collection, field, direction, **kwargs  ):
         collection.create_index([( field, direction )], **kwargs )
-        
-    def setup(self ):
+
+    def drop(self, database_name):
+        self._client.drop_database(database_name)
+
+    def setup(self, database_name="MUGS"):
 
         if self._uri.startswith( "mongodb://" ) or self._uri.startswith( "mongodb+srv://" ) :
             self._client = pymongo.MongoClient( host=self._uri  )
         else:
             raise ValueError( "Invalid URL: %s" % self._uri )
         
-        self._database = self._client.get_database()
+        self._database = self._client[database_name]
         
 #         if self._username :
 #             #self._admindb = self._client[ self._admin ]

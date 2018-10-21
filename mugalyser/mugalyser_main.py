@@ -100,7 +100,8 @@ access to the admin APIs.
         parser.add_argument( "--batchname", default= __programName__, help="Batch name used in creating audit batches")
         parser.add_argument( '--urlfile', 
                              help="File containing a list of MUG URLs to be used to parse data [ default: %(default)s]")
-        
+        parser.add_argument("--drop", default=False, action="store_true",
+                            help="drop the database before writing data [default: %(default)s]")
         # Process arguments
         args = parser.parse_args( argv )
             
@@ -121,9 +122,13 @@ access to the admin APIs.
         logging.getLogger("requests").setLevel(logging.WARNING)
         logging.getLogger("urllib3").setLevel(logging.WARNING)
             
-        mdb = MUGAlyserMongoDB( args.host )
-        
-        audit = Audit( mdb )
+        mdb = MUGAlyserMongoDB(uri=args.host, database_name=args.database)
+
+        if args.drop:
+            logger.warn(f"Dropping database:'{args.database}'")
+            mdb.drop(args.database)
+
+        audit = Audit(mdb)
         
         batchID = audit.start_batch( { "args"   : vars( args ), 
                                       "version" : __programName__ + " " + __version__,
@@ -138,7 +143,8 @@ access to the admin APIs.
             Use the pro API.
             '''
             logger.info( "Using pro API calls (pro account API key)")
-            mugList = list( MeetupAPI(apikey).get_pro_group_names())
+            proList = list( MeetupAPI(apikey).get_pro_group_names())
+            mugList = [x for x in proList if x in args.mugs]
         elif args.collect in [ "nopro" ] :
             if args.urlfile:
                 urlfile = os.path.abspath( args.urlfile )

@@ -5,7 +5,7 @@ Created on 6 Sep 2016
 '''
 
 import logging
-#import datetime
+import pprint
 
 from copy import deepcopy
 
@@ -67,12 +67,13 @@ class MeetupAPI(object):
         for group in groupsIterator :
             return self.get_attendees(group )
         
-    def get_attendees( self, url_name ):
+    def get_attendees(self, url_name):
         
-        for event in self.get_past_events( url_name ):
-            #pprint( event )
-            for attendee in self.get_event_attendees(event[ "id"], url_name ):
-                yield ( attendee, event )
+        for url, event in self.get_past_events( url_name ):
+            #pprint.pprint(event)
+            #print(event["id"])
+            for _, attendee in self.get_event_attendees(event["id"], url_name ):
+                yield (url, {"attendee" :attendee, "event":event})
     
             
     def get_event_attendees(self, eventID, url_name ):
@@ -151,7 +152,7 @@ class MeetupAPI(object):
         
     def get_pro_group_names( self ):
         for (url, i) in self.get_pro_groups() :
-            print("pro name:'{}'".format(i["urlname"]))
+            #print("pro name:'{}'".format(i["urlname"]))
             yield i["urlname"]
             
     def get_pro_members(self ):

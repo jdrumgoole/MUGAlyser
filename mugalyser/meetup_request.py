@@ -191,4 +191,4 @@ class MeetupRequest( object ):
     
         else: # new style but we have all the data
             for i in body:
-                yield  (url, i)
+                yield (url, i)
