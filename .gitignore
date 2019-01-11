@@ -99,3 +99,7 @@ apikey.py
 #keys
 webgui/keys.txt
 webgui/uri.txt
+
+##intellij
+.DS_Store
+.idea/
