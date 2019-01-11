@@ -1,99 +1,64 @@
-'''
+"""
 Created on 22 Jun 2016
 
 @author: jdrumgoole
-'''
+"""
 
 import pymongo
 
-class MUGAlyserMongoDB( object ):
+
+class MUGAlyserMongoDB(object):
     
-    def __init__(self, uri="mongodb://localhost:27017/MUGS", database_name="MUGS", setup=True):
+    def __init__(self, uri="mongodb://localhost:27017/MUGS", database_name="MUGS"):
 
-    #def __init__(self, host="localhost", port=27017, databaseName="MUGS", replset="",
-    #            username=None, password=None, ssl=False, admin="admin", connect=True):
-        
-        '''
-        Example URL 
-        
-        mongodb://<username>:<password>@<host list>/database?<args>
-        
-        "mongodb://jdrumgoole:PASSWORD@mugalyser-shard-00-00-ffp4c.mongodb.net:27017,
-        mugalyser-shard-00-01-ffp4c.mongodb.net:27017,
-        mugalyser-shard-00-02-ffp4c.mongodb.net:27017/admin?ssl=true&replicaSet=MUGAlyser-shard-0&authSource=admin"
-        
-        '''
-        
-        self._uri             = uri 
-        self._client          = None
-        self._members         = None
-        self._groups          = None
-        self._pastEvents      = None
-        self._upcomingEvents  = None
-        self._attendees       = None
+        self._uri             = uri
 
-        if setup:
-            self.setup(database_name)
+        if self._uri.startswith("mongodb://") or self._uri.startswith("mongodb+srv://"):
+            self._client = pymongo.MongoClient(host=self._uri)
+        else:
+            raise ValueError("Invalid URL: %s" % self._uri)
 
-        
-    def create_index(self, collection, field, direction, **kwargs  ):
+        self._database = self._client[database_name]
+        self._members = self._database["members"]
+        self._pro_members = self._database["pro_members"]
+        self._groups = self._database["groups"]
+        self._pro_groups = self._database["pro_groups"]
+        self._pastEvents = self._database["past_events"]
+        self._upcomingEvents = self._database["upcoming_events"]
+        self._audit = self._database["audit"]
+        self._attendees = self._database["attendees"]
+
+        self._audit.create_index([("name", pymongo.ASCENDING)])
+
+        self._members.create_index([("location", pymongo.GEOSPHERE)])
+        self._members.create_index([("name", pymongo.ASCENDING)])
+        self._members.create_index([("id", pymongo.ASCENDING)])
+        self._members.create_index([("batchID", pymongo.ASCENDING)])
+
+        self.create_index(self._pro_members, "location", pymongo.GEOSPHERE)
+        self._groups.create_index([("batchID", pymongo.ASCENDING)])
+        self._pastEvents.create_index([("batchID", pymongo.ASCENDING)])
+        self._upcomingEvents.create_index([("batchID", pymongo.ASCENDING)])
+        self._attendees.create_index([("batchID", pymongo.ASCENDING)])
+
+    @staticmethod
+    def create_index(collection, field, direction, **kwargs  ):
         collection.create_index([( field, direction )], **kwargs )
 
     def drop(self, database_name):
         self._client.drop_database(database_name)
 
-    def setup(self, database_name="MUGS"):
-
-        if self._uri.startswith( "mongodb://" ) or self._uri.startswith( "mongodb+srv://" ) :
-            self._client = pymongo.MongoClient( host=self._uri  )
-        else:
-            raise ValueError( "Invalid URL: %s" % self._uri )
-        
-        self._database = self._client[database_name]
-        
-#         if self._username :
-#             #self._admindb = self._client[ self._admin ]
-#             if self._database.authenticate( name=self._username, password=self._password, source=self._admin ):
-# #            if self._database.authenticate( self._username, self._password, mechanism='MONGODB-CR'):
-#                 logging.debug( "successful login by %s (method SCRAM-SHA-1)", self._username )
-#             else:
-#                 logging.error( "login failed for %s (method SCRAM-SHA-1)", self._username )
-                
-        self._members         = self._database[ "members" ]
-        self._pro_members     = self._database[ "pro_members"]
-        self._groups          = self._database[ "groups" ]
-        self._pro_groups      = self._database[ "pro_groups"]
-        self._pastEvents      = self._database[ "past_events" ]
-        self._upcomingEvents  = self._database[ "upcoming_events" ]
-        self._audit           = self._database[ "audit" ]
-        self._attendees       = self._database[ "attendees"]
-        
-        self._audit.create_index( [("name", pymongo.ASCENDING )] )
-        
-        self._members.create_index([("member.location", pymongo.GEOSPHERE)])
-        self._members.create_index([("member.name", pymongo.ASCENDING )])
-        self._members.create_index([("member.id", pymongo.ASCENDING )])
-        self._members.create_index([( "batchID", pymongo.ASCENDING )])
-        self._members.create_index([( "member.join_time", pymongo.ASCENDING )])
-        self._members.create_index([( "member.last_access_time", pymongo.ASCENDING )])
-        
-        self.create_index( self._pro_members, "member.location", pymongo.GEOSPHERE) 
-        self._groups.create_index([( "batchID", pymongo.ASCENDING )])
-        self._pastEvents.create_index([( "batchID", pymongo.ASCENDING )])
-        self._upcomingEvents.create_index([( "batchID", pymongo.ASCENDING )])
-        self._attendees.create_index([( "batchID", pymongo.ASCENDING )])
-        
     def client(self):
         return self._client
     
     def database(self) :
         return self._database
     
-    def make_collection(self, collection_name ):
-        return self._database[ collection_name ]
+    def make_collection(self, collection_name):
+        return self._database[collection_name]
     
-    def collection_stats(self, collection_name ):
-        return self._database.command( "collstats", collection_name )
+    def collection_stats(self, collection_name):
+        return self._database.command("collstats", collection_name )
     
     def pastEventsCollection(self):
         return self._pastEvents

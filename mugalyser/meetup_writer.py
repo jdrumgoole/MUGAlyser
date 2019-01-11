@@ -37,9 +37,10 @@ class MeetupWriter(object):
     embedded document with the key "newFieldname".
     
     '''
-    
-    
-    def _addTimestamp( self, doc ):
+
+    INSERT_SIZE = 1000
+
+    def _addTimestamp(self, doc):
 
         if "timestamp" in doc:
             raise ValueError( "cannot add timestamp, \
@@ -54,10 +55,9 @@ class MeetupWriter(object):
 
         return doc
 
-    def __init__(self, apikey, batch_ID, mdb, reshape=True, unordered=True ):
-        '''
-        Write contents of meetup API to MongoDB
-        '''
+    def __init__(self, apikey, batch_ID, mdb, reshape=True, unordered=True):
+        """Write contents of meetup API to MongoDB"""
+
         self._mdb = mdb 
         self._meetup_api = MeetupAPI( apikey, reshape=reshape )
         self._batch_ID = batch_ID
@@ -70,11 +70,11 @@ class MeetupWriter(object):
         self._upcomingEvents = self._mdb.upcomingEventsCollection()
 #         self._mugs = []
         self._unordered = unordered
+        self._members_set = set()
         
         self._logger = logging.getLogger( __programName__ )
-        
-        
-    def update_members(self, collection,retrievalGenerator, processFunc, newFieldName ):
+
+    def update_members(self, retrievalGenerator, processFunc):
         '''
         For nopro collections we count the members in each group. To avoid double counting
         we use update to overwrite previous records with the same member.
@@ -83,22 +83,25 @@ class MeetupWriter(object):
         docs = []
         count = 0
 
-        #print( "update_members")
-        for (url, i ) in retrievalGenerator :
-            
-            if collection.find_one( { "member.id" : i[ "id"] } ):  #ignore already inserted members
+        # print( "update_members")
+        for url, i in retrievalGenerator:
+
+            # ignore already inserted members a member may be in multiple
+            # groups.
+            if self._members.find_one({"batchID": self._batch_ID,
+                                       "id": i["id"]}):
                 continue
             else:
-                #print( "inserting : %s" %i["id"] )
+                # print( "inserting : %s" %i["id"] )
                 count = count + 1
-                docs.append( processFunc( newFieldName, i ))
-                if count == 500 :
-                    collection.insert_many( docs )
+                docs.append(processFunc(i))
+                if count == 500:
+                    self._members.insert_many(docs)
                     docs = []
                     count = 0
 
-        if count > 0 :
-            collection.insert_many( docs )
+        if count > 0:
+            self._members.insert_many( docs )
             docs = []
             count = 0
         
@@ -108,7 +111,6 @@ class MeetupWriter(object):
         :param collection: The collection to write too
         :param retrievalGenerator: a generator that produces docs
         :param processFunc: a preprocessing function for the docs to be written
-        :param newFieldName: The optional fieldname to use for the processed docs
         :return: The number of docs written
         """
         '''
@@ -121,14 +123,13 @@ class MeetupWriter(object):
         is reached and then writes them as a batch using BatchWriter.
         
         '''
-        
-        #writer = bw()
+
         docs = []
         count = 0
         #print( "write")
         for url, i in retrievalGenerator:
             docs.append(processFunc(i))
-            if len(docs) == 1000:
+            if len(docs) == MeetupWriter.INSERT_SIZE:
                 count = count + len(docs)
                 #print( "inserted 500")
                 collection.insert_many(docs)
@@ -158,7 +159,7 @@ class MeetupWriter(object):
         
     def write_nopro_groups(self, mug_list):
         groups = self._meetup_api.get_groups_by_url( mug_list )
-        self.write( self._groups,  groups, self._addTimestamp)
+        self.write(self._groups,  groups, self._addTimestamp)
 
     def select_groups(self, groups, urls):
         for url,g in groups:
@@ -169,7 +170,7 @@ class MeetupWriter(object):
     def write_pro_groups(self, urls):
 
         groups = self._meetup_api.get_pro_groups()
-        self.write( self._pro_groups,  self.select_groups(groups, urls), self._addTimestamp)
+        self.write(self._pro_groups,  self.select_groups(groups, urls), self._addTimestamp)
         
     def write_groups(self, collect, urls):
         if collect == "nopro":
@@ -178,7 +179,7 @@ class MeetupWriter(object):
             self.write_pro_groups(urls)
         else:
             self.write_pro_groups(urls)
-            self.write_nopro_groups( urls )
+            self.write_nopro_groups(urls)
 
         
     def write_PastEvents(self, url_name ):
@@ -194,24 +195,23 @@ class MeetupWriter(object):
         members = self._meetup_api.get_pro_members()
         self.write(self._pro_members, members, self._addTimestamp)
     
-    def write_nopro_members(self, urls ):
-        members = self._meetup_api.get_members( urls )
-        self.update_members( self._members, members, self._addTimestamp)
+    def write_nopro_members(self, urls):
+        members = self._meetup_api.get_members(urls)
+        self.update_members(members, self._addTimestamp)
 
-    def write_members( self, collect, urls  ):
+    def write_members( self, collect, urls):
         if collect == "nopro":
-            self.write_nopro_members( urls )
+            self.write_nopro_members(urls)
         elif collect == "pro":
             self.write_pro_members()
         else:
             self.write_pro_members()
-            self.write_nopro_members( urls ) 
-        
+            self.write_nopro_members(urls)
             
 #     def mug_list(self):
 #         return self._mugs
-        
-    def capture_snapshot(self, url_name,  admin_arg, phases ):
+
+    def capture_snapshot(self, url_name,  admin_arg, phases):
 
         try :
             for i in phases:
@@ -234,18 +234,7 @@ class MeetupWriter(object):
                     self._logger.warn( "ignoring phase '%s': not a valid execution phase", i )
     
         except HTTPError as e:
-            self._logger.fatal( "Stopped processing: %s", e )
+            self._logger.fatal("Stopped processing: %s", e)
             raise
-
-class Meetup_Writer(object):
-    
-    def read(self, urls):
-        pass
-    
-    def write(self, generator ):
-        pass
-    
-    def feedback(self, doc ):
-        pass
 
 

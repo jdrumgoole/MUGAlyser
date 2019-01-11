@@ -138,30 +138,31 @@ access to the admin APIs.
         logger.info( "Started MUG processing for batch ID: %i", batchID )
         logger.info( "Writing to database : '%s'", mdb.database().name )
         
-        if args.collect in [ "pro", "all"]:
+        if args.collect in ["pro", "all"]:
             '''
             Use the pro API.
             '''
             logger.info( "Using pro API calls (pro account API key)")
-            proList = list( MeetupAPI(apikey).get_pro_group_names())
-            mugList = [x for x in proList if x in args.mugs]
-        elif args.collect in [ "nopro" ] :
+            mugList = list( MeetupAPI(apikey).get_pro_group_names())
+
+        if args.collect in ["nopro", "all"]:
             if args.urlfile:
-                urlfile = os.path.abspath( args.urlfile )
-                logger.info( "Reading groups from: '%s'", urlfile )
-                with open( urlfile ) as f:
+                urlfile = os.path.abspath(args.urlfile)
+                logger.info( "Reading groups from: '%s'", urlfile)
+                with open(urlfile) as f:
                     lines = f.read().splitlines()
-                    # string come
+                    # string comments
                     regex = "^\s*#.*|^\s*$" # comments with # or blank lines
-                    mugList = []
                     for i in lines :
                         clean_line = i.rstrip()
-                        if not re.match( regex, clean_line ):
-                            mugList.append( clean_line )
-            else:
-                mugList = args.mugs
+                        if not re.match(regex, clean_line):
+                            mugList.append(clean_line)
 
-        writer = MeetupWriter( apikey, batchID, mdb, reshape=True )
+        # scoop up any command line args
+        mugList.extend(args.mugs)
+        mugList=list(set(mugList))  # strip duplicates
+
+        writer = MeetupWriter(apikey, batchID, mdb, reshape=True)
             
         if "all" in args.phases :
             phases = [ "groups", "members", "upcomingevents", "pastevents" ]
@@ -170,27 +171,27 @@ access to the admin APIs.
             phases = args.phases
             
         if args.admin :
-            logger.info( "--admin : we will collect attendee info")
+            logger.info("--admin : we will collect attendee info")
             phases.append( "attendees")
         else:
             logger.info( "No admin account")
             logger.info( "We will not collect attendee info: ignoring attendees")
             
-        logger.info( "Processing phases: %s", phases )
+        logger.info("Processing phases: %s", phases)
         
-        if  "groups" in phases :
-            logger.info( "processing group info for %i groups: collect=%s", len( mugList), args.collect )
-            writer.write_groups( args.collect, mugList)
-            phases.remove( "groups")
-        if "members" in phases :
-            logger.info( "processing members info for %i groups: collect=%s", len( mugList), args.collect  )
-            writer.write_members( args.collect, mugList )
-            phases.remove( "members")
+        if "groups" in phases:
+            logger.info("processing group info for %i groups: collect=%s", len(mugList), args.collect)
+            writer.write_groups(args.collect, mugList)
+            phases.remove("groups")
+        if "members" in phases:
+            logger.info( "processing members info for %i groups: collect=%s", len(mugList), args.collect)
+            writer.write_members(args.collect, mugList)
+            phases.remove("members")
             
-        for i in mugList :
-            writer.capture_snapshot( i, args.admin, phases )
+        for i in mugList:
+            writer.capture_snapshot(i, args.admin, phases)
         
-        audit.end_batch( batchID )
+        audit.end_batch(batchID)
         end = datetime.utcnow()
     
         elapsed = end - start
