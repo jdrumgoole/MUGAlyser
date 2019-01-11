@@ -10,4 +10,4 @@ __programName__   = "MUGAlyser"
 # Schena Version 1.3 : Removed top level objects from each collection so now instead of member.name you use name.:wq
 # Schema version 1.1 : Date mapped the new Group fields so they appear as date time.
 #
-__schemaVersion__ = "1.3""
+__schemaVersion__ = "1.3"
