@@ -110,7 +110,7 @@ class MeetupAPI(object):
 
     def get_members(self, urls):
         for i in urls:
-            # print( "processing: %s" % i )
+            self._logger.info("processing members for group: %s" % i)
             for (url, member) in self.__get_members(i):
                 # print("processing: %s" % member[ "name"])
                 yield (url, member)
@@ -138,22 +138,22 @@ class MeetupAPI(object):
         else:
             return self._requester.paged_request(self._api + "self/groups", self._params)
 
-    def get_pro_groups(self):
-        '''
-        Get all groups associated with this API key.
-        '''
-        self._logger.debug("get_pro_groups")
-
-        if self._reshape:
-            return ((url, Reshape_Pro_Group(i).reshape()) for (url, i) in
-                    self._requester.paged_request(self._api + "pro/MongoDB/groups", self._params))
-        else:
-            return self._requester.paged_request(self._api + "pro/MongoDB/groups", self._params)
-
-    def get_pro_group_names(self):
-        for (url, i) in self.get_pro_groups():
-            # print("pro name:'{}'".format(i["urlname"]))
-            yield i["urlname"]
+    # def get_pro_groups(self):
+    #     '''
+    #     Get all groups associated with this API key.
+    #     '''
+    #     self._logger.debug("get_pro_groups")
+    #
+    #     if self._reshape:
+    #         return ((url, Reshape_Pro_Group(i).reshape()) for (url, i) in
+    #                 self._requester.paged_request(self._api + "pro/MongoDB/groups", self._params))
+    #     else:
+    #         return self._requester.paged_request(self._api + "pro/MongoDB/groups", self._params)
+    #
+    # def get_pro_group_names(self):
+    #     for (url, i) in self.get_pro_groups():
+    #         # print("pro name:'{}'".format(i["urlname"]))
+    #         yield i["urlname"]
 
     def get_pro_members(self):
 

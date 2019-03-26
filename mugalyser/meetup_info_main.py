@@ -51,7 +51,7 @@ def main():
             m = MeetupAPI(apikey=args.apikey, reshape=args.reshape)
 
         for i in range(args.loop):
-            if args.member_id:
+            if args.member_id and not (args.progroups or args.allgroups):
                 (url, member) = m.get_member_by_id(args.member_id)
                 if args.req:
                     print("req: '{}'".format(url))
@@ -73,15 +73,18 @@ def main():
 
             if args.progroups:
                 member_total = 0
-                for group_count, g in enumerate(m.get_pro_groups(), 1):
-                    #pprint.pprint(g)
+                group_count = 0
+                for url, g in m.get_groups():
+                    print(f"URL   :{url}")
+                    pprint.pprint(g)
                     #print(f"{g[1]['urlname']}")
-                    group = g[1]
-                    full_group = m.get_group(group['urlname'])[1]
-                    if full_group["organizer"]["id"] == args.member_id:
-                        pprint.pprint(full_group)
+                    group = g
+                    url, full_group = m.get_group(group['urlname'])
+                    if "pro_network" in full_group and full_group["pro_network"]["name"] == "MongoDB":
+                        #pprint.pprint(full_group)
                         print(f"{full_group['urlname']}, {full_group['members']}")
                         member_total = member_total + full_group['members']
+                        group_count = group_count + 1
                 print(f"{group_count} groups in total")
                 print(f"Total members: {member_total}")
             if args.groups:
