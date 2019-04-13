@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 pymongo = "*"
 requests = "*"
+fab = "*"
+fabric2 = "*"
 
 [dev-packages]
 

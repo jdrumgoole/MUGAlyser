@@ -15,7 +15,7 @@ env.key_filename = os.path.join( home, "Documents", "jdrumgoole-vosa-eu.pem" )
 if env.has_key( "instance_id" ) :
     instance_id = env.instance_id 
 else:
-    instance_id = "i-0600d15742f2bc599"
+    instance_id = "i-0db8699d69ee3ea79"
 
 
 print( "using PEM file '%s' :" % env.key_filename ) 

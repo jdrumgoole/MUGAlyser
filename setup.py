@@ -1,8 +1,8 @@
-'''
+"""
 Created on 30 Sep 2016
 
 @author: jdrumgoole
-'''
+"""
 from setuptools import setup, find_packages
 from mugalyser.version import __version__, __programName__
 import os
