@@ -14,7 +14,6 @@ Caracas-MongoDB-User-Group
 Casablanca-MongoDB-User-Group
 Chandigarh-mongoDB-Meetup
 Charlotte-MongoDB-User-Group
-Chennai-mongoDB-User-Group
 Chicago-MongoDB-User-Group
 Cincinnati-MongoDB-User-Group
 Coimbra-MongoDB-User-Group
@@ -68,7 +67,6 @@ MongoDB-Prague
 MongoDB-Rennes
 MongoDB-Roma
 MongoDB-San-Diego-Meetup
-MongoDB-Users-Group-Bangalore
 MongoDB-Users-Stuttgart
 MongoDB-Vienna
 MongoDB-Whats-in-Store
