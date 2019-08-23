@@ -156,7 +156,14 @@ access to the admin APIs.
         group_dict = {}
 
         count = 0
-        for url, group in api.get_groups():
+        group_list = []
+        if args.mugs:
+            for url in args.mugs:
+                group_list.append(api.get_group(url))
+        else:
+            group_list = list(api.get_groups())
+
+        for url, group in group_list:
 
             #print(f"Checking:{group['urlname']}")
             urlname = group['urlname']
