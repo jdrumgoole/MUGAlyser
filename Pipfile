@@ -4,13 +4,19 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pymongo = "*"
-requests = "*"
+pymongo = ">=4.6.3"
+requests = ">=2.31.0"
 fab = "*"
 fabric2 = "*"
+setuptools = ">=65.5.1"
+cryptography = ">=41.0.0"
+certifi = ">=2023.7.22"
+urllib3 = ">=1.26.17"
+paramiko = ">=3.4.0"
+idna = ">=3.7"
 
 [dev-packages]
 pylint = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.10"
